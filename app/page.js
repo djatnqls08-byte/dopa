@@ -682,9 +682,9 @@ export default function GamePlatform() {
                   })()}
                 </section>
 
-{/* ── C. 사건 단서 및 물증 보관소 (선 버그 없는 100% 안전 토글) ── */}
+{/* ── C. 사건 단서 및 물증 보관소 (선 버그 없는 안전한 개폐 토글) ── */}
 <div style={{ backgroundColor: theme.panel, borderRadius: "14px", border: `1.5px solid ${theme.border}`, overflow: "hidden", marginBottom: "14px", boxShadow: "0 4px 16px rgba(0,0,0,0.06)" }}>
-  {/* 헤더 바: 누르면 닫히고 열림 */}
+  {/* 누르면 부드럽게 열리고 닫히는 헤더 바 */}
   <div
     onClick={() => setIsEvidenceOpen(!isEvidenceOpen)}
     style={{ padding: "14px 18px", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer", backgroundColor: theme.panelAlt, userSelect: "none" }}
@@ -701,7 +701,7 @@ export default function GamePlatform() {
     </span>
   </div>
 
-  {/* 펼쳤을 때 나오는 본문 */}
+  {/* 열었을 때만 나타나는 단서 목록 */}
   {isEvidenceOpen && (
     <div style={{ padding: "16px", borderTop: `1px solid ${theme.border}`, display: "flex", flexDirection: "column", gap: "12px" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -743,7 +743,7 @@ export default function GamePlatform() {
                 <button
                   type="button"
                   onClick={() => setEvidenceList(evidenceList.filter(ev => ev.id !== item.id))}
-                  style={{ background: "none", border: "none", color: theme.danger, cursor: "pointer", padding: "2px", fontSize: "0.8rem" }}
+                  style={{ background: "none", border: "none", color: theme.danger, cursor: "pointer", fontSize: "0.8rem" }}
                 >
                   🗑
                 </button>
