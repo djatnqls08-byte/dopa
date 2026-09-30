@@ -515,16 +515,16 @@ const [showEvidence, setShowEvidence] = useState(false);
               </>
             )}
             
-            {/* 2. 인게임 상태일 때 (메신저, 증거보드, 캐릭터 시트) */}
+{/* 2. 인게임 상태일 때 (메신저, 증거보드, 캐릭터 시트) */}
             {activeSession && (
-              <>
-                {/* 📱 스마트폰 메신저 */}
+              <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
+                
+                {/* 📱 스마트폰 메신저 (연애/자유 모드) */}
                 {(activeSession.ruleMode?.startsWith("dating") || activeSession.ruleMode?.includes("free")) && (() => {
                   const phoneChats = activeSession.sheet?.phoneChats || {};
                   let unreadCount = 0;
-                  Object.values(phoneChats).forEach(msgs => {
-                    unreadCount += (msgs || []).filter(m => m.unread).length;
-                  });
+                  Object.values(phoneChats).forEach(msgs => { unreadCount += (msgs || []).filter(m => m.unread).length; });
+                  
                   return (
                     <button
                       type="button"
@@ -535,12 +535,12 @@ const [showEvidence, setShowEvidence] = useState(false);
                         setActivePhoneContactId(null);
                         setIsPhoneDrawerOpen(!isPhoneDrawerOpen);
                       }}
-                      title="스마트폰 메신저 열기"
-                      style={{ position: "relative", width: "36px", height: "36px", display: "flex", alignItems: "center", justifyContent: "center", background: isPhoneDrawerOpen ? "rgba(0,0,0,0.06)" : "none", border: "none", borderRadius: "8px", cursor: "pointer", color: isPhoneDrawerOpen ? theme.accent : theme.text, padding: 0 }}
+                      title="스마트폰 메신저"
+                      style={{ position: "relative", width: "36px", height: "36px", display: "flex", alignItems: "center", justifyContent: "center", background: isPhoneDrawerOpen ? theme.panelAlt : "transparent", border: `1px solid ${isPhoneDrawerOpen ? theme.accent : theme.border}`, borderRadius: "10px", cursor: "pointer", color: isPhoneDrawerOpen ? theme.accent : theme.text, transition: "all 0.2s" }}
                     >
-                      <span style={{ fontSize: "1.15rem", lineHeight: 1 }}>📱</span>
+                      <Smartphone size={20} strokeWidth={2.5} />
                       {unreadCount > 0 && (
-                        <span style={{ position: "absolute", top: "2px", right: "2px", backgroundColor: theme.danger, color: "#fff", borderRadius: "10px", minWidth: "15px", height: "15px", padding: "0 3px", fontSize: "0.58rem", fontWeight: "800", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        <span style={{ position: "absolute", top: "-4px", right: "-4px", backgroundColor: theme.danger, color: "#fff", borderRadius: "10px", minWidth: "16px", height: "16px", fontSize: "0.6rem", fontWeight: "900", display: "flex", alignItems: "center", justifyContent: "center", border: `1.5px solid ${theme.panel}` }}>
                           {unreadCount > 9 ? "9+" : unreadCount}
                         </span>
                       )}
@@ -548,7 +548,7 @@ const [showEvidence, setShowEvidence] = useState(false);
                   );
                 })()}
 
-                {/* 📌 증거보드 (추리 모드 전용 - 팝업 모달로 열림) */}
+                {/* 📌 증거보드 (추리 모드 전용 - 팝업 모달) */}
                 {activeSession.ruleMode === "freeform" && (
                   <button
                     type="button"
@@ -556,59 +556,42 @@ const [showEvidence, setShowEvidence] = useState(false);
                       e.stopPropagation();
                       setIsPhoneDrawerOpen(false);
                       setIsSheetOpen(false);
-                      setShowEvidenceBoard(true); // 🌟 화면 중앙에 팝업으로 띄우기
+                      setShowEvidenceBoard(true); // 🌟 팝업창 오픈
                     }}
-                    title="수사 본부 증거보드 열기"
-                    style={{ width: "36px", height: "36px", display: "flex", alignItems: "center", justifyContent: "center", background: "none", border: "none", borderRadius: "8px", cursor: "pointer", color: theme.text, padding: 0 }}
+                    title="수사 본부 증거보드"
+                    style={{ width: "36px", height: "36px", display: "flex", alignItems: "center", justifyContent: "center", background: "transparent", border: `1px solid ${theme.border}`, borderRadius: "10px", cursor: "pointer", color: theme.danger, transition: "all 0.2s" }}
                   >
-                    <span style={{ fontSize: "1.15rem", lineHeight: 1 }}>📌</span>
+                    <Pin size={20} strokeWidth={2.5} style={{ transform: "rotate(45deg)" }} />
                   </button>
                 )}
 
-                {/* 🃏 핸드아웃 (인세인 모드 전용) */}
+                {/* 🃏 핸드아웃 / 🎲 주사위 (인세인/CoC 전용) */}
                 {activeSession.ruleMode === "insane" && (
-                  <button 
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setIsTabletopOpen(!isTabletopOpen);
-                    }}
-                    title="테이블탑 핸드아웃"
-                    style={{ width: "36px", height: "36px", display: "flex", alignItems: "center", justifyContent: "center", background: isTabletopOpen ? "rgba(214, 56, 87, 0.12)" : "none", border: "none", borderRadius: "8px", cursor: "pointer", color: isTabletopOpen ? theme.danger : theme.text, padding: 0 }}
-                  >
-                    <span style={{ fontSize: "1.15rem", lineHeight: 1 }}>🃏</span>
+                  <button type="button" onClick={() => setIsTabletopOpen(!isTabletopOpen)} title="테이블탑 핸드아웃" style={{ width: "36px", height: "36px", display: "flex", alignItems: "center", justifyContent: "center", background: isTabletopOpen ? "rgba(214, 56, 87, 0.12)" : "transparent", border: `1px solid ${isTabletopOpen ? theme.danger : theme.border}`, borderRadius: "10px", cursor: "pointer", color: isTabletopOpen ? theme.danger : theme.text }}>
+                    <BookOpen size={20} strokeWidth={2.5} />
                   </button>
                 )}
-
-                {/* 🎲 주사위 (CoC / 인세인 모드 전용) */}
                 {(activeSession.ruleMode === "coc" || activeSession.ruleMode === "insane") && (
-                  <button
-                    type="button"
-                    onClick={() => rollDiceDirectly()}
-                    title={activeSession.ruleMode === "coc" ? "1D100 주사위 굴리기" : "2D6 주사위 굴리기"}
-                    style={{ width: "36px", height: "36px", display: "flex", alignItems: "center", justifyContent: "center", background: "none", border: "none", borderRadius: "8px", cursor: "pointer", padding: 0 }}
-                  >
-                    <span style={{ fontSize: "1.15rem", lineHeight: 1 }}>🎲</span>
+                  <button type="button" onClick={() => rollDiceDirectly()} title="주사위 굴리기" style={{ width: "36px", height: "36px", display: "flex", alignItems: "center", justifyContent: "center", background: "transparent", border: `1px solid ${theme.border}`, borderRadius: "10px", cursor: "pointer", color: theme.warning }}>
+                    <Dices size={20} strokeWidth={2.5} />
                   </button>
                 )}
 
-                {/* 📋 캐릭터 시트 (오버레이로 우측에서 열림) */}
+                {/* 📋 캐릭터 시트 (오버레이) */}
                 <button 
                   type="button"
                   onClick={(e) => {
                     e.stopPropagation();
                     setIsPhoneDrawerOpen(false);
                     setShowEvidenceBoard(false);
-                    setIsSheetOpen(!isSheetOpen); // 🌟 우측 패널 오버레이 토글
+                    setIsSheetOpen(!isSheetOpen); // 🌟 우측 오버레이 패널 토글
                   }} 
-                  title={activeSession.ruleMode?.startsWith("dating") ? "캐릭터 정보" : "캐릭터 시트"} 
-                  style={{ width: "36px", height: "36px", display: "flex", alignItems: "center", justifyContent: "center", background: isSheetOpen ? "rgba(0,0,0,0.06)" : "none", border: "none", borderRadius: "8px", color: isSheetOpen ? theme.accent : theme.text, cursor: "pointer", padding: 0 }}
+                  title="캐릭터 시트" 
+                  style={{ width: "36px", height: "36px", display: "flex", alignItems: "center", justifyContent: "center", background: isSheetOpen ? theme.panelAlt : "transparent", border: `1px solid ${isSheetOpen ? theme.accent : theme.border}`, borderRadius: "10px", color: isSheetOpen ? theme.accent : theme.text, cursor: "pointer", transition: "all 0.2s" }}
                 >
-                  <span style={{ fontSize: "1.15rem", lineHeight: 1 }}>
-                    {activeSession.ruleMode?.startsWith("dating") ? "👤" : "📋"}
-                  </span>
+                  {activeSession.ruleMode?.startsWith("dating") ? <UserRound size={20} strokeWidth={2.5} /> : <ClipboardList size={20} strokeWidth={2.5} />}
                 </button>
-              </>
+              </div>
             )}
             
             {/* 🌙 다크모드 토글 버튼 (항상 노출) */}
