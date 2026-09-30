@@ -113,6 +113,13 @@ const [showEvidence, setShowEvidence] = useState(false);
   const [inputMsg, setInputMsg] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
+  // ── [7. 인게임 UI 토글 상태 관리 (누락된 변수 추가)] ──
+  const [isPhoneDrawerOpen, setIsPhoneDrawerOpen] = useState(false); // 메신저 창 열림 상태
+  const [isSheetOpen, setIsSheetOpen] = useState(false); // 우측 캐릭터 시트 열림 상태
+  const [showEvidenceBoard, setShowEvidenceBoard] = useState(false); // 중앙 증거보드 모달 열림 상태
+  const [isTabletopOpen, setIsTabletopOpen] = useState(false); // 테이블탑 핸드아웃 열림 상태
+  const [activePhoneContactId, setActivePhoneContactId] = useState(null); // 메신저에서 현재 대화 중인 대상
+
   // ── [9. 인게임 진행 상태 관리 (원본에서 이식)] ──
   const [sessions, setSessions] = useState([]); // 진행 중인 전체 세션 목록
   const [activeSessionId, setActiveSessionId] = useState(null); // 현재 띄워진 세션 ID
