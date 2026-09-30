@@ -393,17 +393,14 @@ export default function GamePlatform() {
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "10px" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                       <span style={{ fontSize: "1.1rem" }}>📌</span>
-                      <span style={{ fontWeight: "900", fontSize: "0.95rem", color: theme.text }}>
-                        용의자 수사망 ({suspects.length}명 / 최대 15명)
-                      </span>
+<span style={{ fontSize: "0.95rem", color: theme.text }}>
+  <strong style={{ fontWeight: "900" }}>용의자 수사망</strong>
+  <span style={{ fontWeight: "500", color: theme.textMuted, marginLeft: "4px" }}>({suspects.length}명 / 최대 15명)</span>
+</span>
                     </div>
-                    <button
-                      type="button"
-                      onClick={handleAddSuspect}
-                      style={{ padding: "6px 14px", backgroundColor: theme.panelAlt, border: `1.5px solid ${theme.accent}`, borderRadius: "16px", color: theme.accent, fontSize: "0.76rem", fontWeight: "800", cursor: "pointer" }}
-                    >
-                      ＋ 인물 추가
-                    </button>
+<button type="button" onClick={handleAddSuspect} style={{ padding: "6px 14px", backgroundColor: theme.panelAlt, border: `1px solid ${theme.accent}`, borderRadius: "16px", color: theme.accent, fontSize: "0.76rem", fontWeight: "600", cursor: "pointer" }}>
+  ＋ 인물 추가
+</button>
                   </div>
 
                  {/* 폴라로이드 핀 보드 */}
@@ -545,10 +542,10 @@ export default function GamePlatform() {
                         </div>
 
                         <div style={{ backgroundColor: isDarkMode ? "rgba(0,0,0,0.2)" : "rgba(255,255,255,0.6)", borderRadius: "8px", border: `1px solid ${theme.danger}`, padding: "10px 12px", marginTop: "4px" }}>
-                          <button type="button" onClick={() => handleUpdateSuspect(cur.id, "showSecret", !cur.showSecret)} style={{ width: "100%", textAlign: "left", background: "none", border: "none", fontSize: "0.76rem", fontWeight: "800", color: theme.danger, cursor: "pointer", display: "flex", justifyContent: "space-between" }}>
-                            <span>🔒 숨겨진 비밀 / 약점</span>
-                            <span>{cur.showSecret ? "▲ 닫기" : "▼ 열기"}</span>
-                          </button>
+<button type="button" onClick={() => handleUpdateSuspect(cur.id, "showSecret", !cur.showSecret)} style={{ width: "100%", textAlign: "left", background: "none", border: "none", fontSize: "0.76rem", color: theme.danger, cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+  <span style={{ fontWeight: "800" }}>🔒 숨겨진 비밀 / 약점</span>
+  <span style={{ fontWeight: "500", fontSize: "0.85rem" }}>{cur.showSecret ? "▲" : "▼"}</span>
+</button>
                           
                           {cur.showSecret && (
                             <input type="text" value={cur.secret} onChange={e => handleUpdateSuspect(cur.id, "secret", e.target.value)} placeholder="결정적 진실 또는 알리바이 허점..." style={{ width: "100%", boxSizing: "border-box", padding: "8px 10px", marginTop: "8px", borderRadius: "6px", border: `1px solid ${theme.danger}`, backgroundColor: theme.inputBg, color: theme.danger, fontSize: "0.82rem", outline: "none" }} />
@@ -564,9 +561,12 @@ export default function GamePlatform() {
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "8px" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                       <span style={{ fontSize: "1.1rem" }}>🔍</span>
-                      <span style={{ fontWeight: "900", fontSize: "0.95rem", color: theme.text }}>사건 단서 및 물증 ({evidenceList.length}건 / 최대 15개)</span>
+                      <span style={{ fontSize: "0.95rem", color: theme.text }}>
+  <strong style={{ fontWeight: "900" }}>사건 단서 및 물증</strong>
+  <span style={{ fontWeight: "500", color: theme.textMuted, marginLeft: "4px" }}>({evidenceList.length}건 / 최대 15개)</span>
+</span>
                     </div>
-                    <button type="button" onClick={handleAddEvidence} style={{ padding: "6px 14px", backgroundColor: theme.panelAlt, border: `1.5px solid ${theme.accent}`, borderRadius: "16px", color: theme.accent, fontSize: "0.76rem", fontWeight: "800", cursor: "pointer" }}>＋ 단서 추가</button>
+                    <button type="button" onClick={handleAddEvidence} style={{ padding: "6px 14px", backgroundColor: theme.panelAlt, border: `1.5px solid ${theme.accent}`, borderRadius: "16px", color: theme.accent, fontSize: "0.76rem", fontWeight: "600", cursor: "pointer" }}>＋ 단서 추가</button>
                   </div>
                   <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: "12px" }}>
                     {evidenceList.map((item, idx) => (
@@ -579,10 +579,10 @@ export default function GamePlatform() {
                         </div>
                         <input type="text" value={item.overview} onChange={e => handleUpdateEvidence(item.id, "overview", e.target.value)} placeholder="발견 위치 및 겉모습..." style={{ width: "100%", boxSizing: "border-box", padding: "8px 10px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.78rem", outline: "none" }} />
                         <div style={{ backgroundColor: isDarkMode ? "rgba(0,0,0,0.2)" : "rgba(255,255,255,0.6)", borderRadius: "8px", border: `1px solid ${theme.danger}`, padding: "10px 12px" }}>
-                          <button type="button" onClick={() => handleUpdateEvidence(item.id, "showSecret", !item.showSecret)} style={{ width: "100%", textAlign: "left", background: "none", border: "none", fontSize: "0.72rem", fontWeight: "800", color: theme.danger, cursor: "pointer", display: "flex", justifyContent: "space-between" }}>
-                            <span>🔒 감식 진상 / 모순</span>
-                            <span>{item.showSecret ? "▲ 닫기" : "▼ 열기"}</span>
-                          </button>
+<button type="button" onClick={() => handleUpdateEvidence(item.id, "showSecret", !item.showSecret)} style={{ width: "100%", textAlign: "left", background: "none", border: "none", fontSize: "0.72rem", color: theme.danger, cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+  <span style={{ fontWeight: "800" }}>🔒 감식 진상 / 모순</span>
+  <span style={{ fontWeight: "500", fontSize: "0.85rem" }}>{item.showSecret ? "▲" : "▼"}</span>
+</button>
                           {item.showSecret && (
                             <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginTop: "8px" }}>
                               <input type="text" value={item.contradiction} onChange={e => handleUpdateEvidence(item.id, "contradiction", e.target.value)} placeholder="알리바이를 깰 모순점..." style={{ width: "100%", boxSizing: "border-box", padding: "6px 10px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.78rem", outline: "none" }} />
@@ -597,10 +597,10 @@ export default function GamePlatform() {
 
                 {/* D. 사건 진상 기밀 봉투 */}
                 <section style={{ ...GLASS_STYLE, padding: isMobile ? "16px" : "20px", backgroundColor: theme.panel, borderRadius: "18px", border: `1px solid ${theme.accent}`, display: "flex", flexDirection: "column", gap: "12px" }}>
-                  <button type="button" onClick={() => setShowHiddenTruth(!showHiddenTruth)} style={{ width: "100%", textAlign: "left", background: "none", border: "none", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}><span style={{ fontSize: "1.1rem" }}>✉️</span><span style={{ fontWeight: "900", fontSize: "0.95rem", color: theme.accent }}>사건 진상 봉투</span></div>
-                    <span style={{ color: theme.accent, fontSize: "0.8rem", fontWeight: "800" }}>{showHiddenTruth ? "▲ 기밀 닫기" : "▼ 기밀 열기"}</span>
-                  </button>
+<button type="button" onClick={() => setShowHiddenTruth(!showHiddenTruth)} style={{ width: "100%", textAlign: "left", background: "none", border: "none", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer" }}>
+  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}><span style={{ fontSize: "1.1rem" }}>✉️</span><span style={{ fontWeight: "900", fontSize: "0.95rem", color: theme.accent }}>사건 진상 봉투</span></div>
+  <span style={{ color: theme.accent, fontSize: "0.85rem", fontWeight: "500" }}>{showHiddenTruth ? "▲" : "▼"}</span>
+</button>
                   {showHiddenTruth && (
                     <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginTop: "4px" }}>
                       <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 2fr", gap: "10px" }}>
