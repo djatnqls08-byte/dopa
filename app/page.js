@@ -406,13 +406,13 @@ export default function GamePlatform() {
                     </button>
                   </div>
 
-                  {/* 🌟 개선된 폴라로이드 리스트 (모바일: 가로 스와이프, PC: 바둑판) */}
+                 {/* 폴라로이드 핀 보드 */}
                   <div style={{ 
                     display: isMobile ? "flex" : "grid", 
                     gridTemplateColumns: isMobile ? "none" : "repeat(auto-fill, minmax(135px, 1fr))", 
                     gap: "12px", 
                     overflowX: isMobile ? "auto" : "visible", 
-                    paddingBottom: isMobile ? "8px" : "0",
+                    padding: "14px 10px 14px 4px", /* 🌟 핵심 1: 위(14px), 오른쪽(10px) 여백을 주어 핀과 X 버튼이 잘리지 않게 방어! */
                     WebkitOverflowScrolling: "touch" 
                   }}>
                     {suspects.map((s, idx) => {
@@ -422,7 +422,7 @@ export default function GamePlatform() {
                           key={s.id}
                           onClick={() => setSelectedSuspectId(s.id)}
                           style={{
-                            flex: isMobile ? "0 0 120px" : "auto", // 모바일에서는 카드 너비 120px 고정
+                            flex: isMobile ? "0 0 125px" : "auto", /* 🌟 핵심 2: 모바일에서 카드가 찌그러지지 않고 나란히 가로 스크롤되도록 고정 */
                             backgroundColor: theme.polaroidBg || "#ded7cb", borderRadius: "6px", padding: "8px 8px 12px 8px", color: theme.polaroidText || "#292524",
                             boxShadow: isSelected ? `0 0 0 2px ${theme.accent}, 0 8px 24px rgba(0,0,0,0.3)` : "0 3px 10px rgba(0,0,0,0.18)",
                             position: "relative", cursor: "pointer", transform: isSelected ? "scale(1.03)" : "scale(1)", transition: "all 0.15s ease", display: "flex", flexDirection: "column", alignItems: "center"
