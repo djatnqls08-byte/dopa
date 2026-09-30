@@ -162,22 +162,77 @@ export default function GamePlatform() {
     setEvidenceList(evidenceList.map(ev => ev.id === id ? { ...ev, [field]: value } : ev));
   };
 
-  const handleApplyPastedScenario = () => {
+    // 🌟 AI 백엔드와 통신하는 스마트 파서 엔진으로 교체!
+  const handleApplyPastedScenario = async () => {
     if (!pastedText.trim()) return;
-    const titleMatch = pastedText.match(/(?:시나리오\s*제목|사건명|사건\s*제목|제목)\s*[:：]\s*([^\n\r]+)/i);
-    if (titleMatch) setScenarioTitle(titleMatch[1].trim());
-    const victimMatch = pastedText.match(/(?:피해자|사망자|타깃|의뢰인)\s*[:：]\s*([^\n\r]+)/i);
-    if (victimMatch) setVictimName(victimMatch[1].trim());
-    const synMatch = pastedText.match(/(?:\[공개\s*시놉시스\]|공개\s*시놉시스\s*[:：]?|사건\s*개요\s*[:：]?)\s*([\s\S]*?)(?=\n\s*(?:\[서막\]|서막\s*[:：]|\[도입부\]|도입부\s*[:：]|#+|\[|$))/i);
-    if (synMatch) setPublicSynopsis(synMatch[1].trim());
-    const opMatch = pastedText.match(/(?:\[서막\]|서막\s*[:：]?|\[도입부\]|도입부\s*[:：]?|오프닝\s*[:：]?)\s*([\s\S]*?)(?=\n\s*(?:\[진상|진상\s*[:：]|#+|\[|$))/i);
-    if (opMatch) setOpeningScene(opMatch[opMatch.length > 1 ? 1 : 0].trim());
-    const trMatch = pastedText.match(/(?:\[사건의\s*진상\]|사건의\s*진상\s*[:：]?|진상\s*[:：]?)\s*([\s\S]*?)(?=\n\s*(?:###|\[|$))/i);
-    if (trMatch) setHiddenTruth(trMatch[1].trim());
-    setShowPasteModal(false);
-    setPastedText("");
-    triggerToast("파싱 완료", "작성된 양식에 자동 배치되었습니다.", "✨");
+
+    // 파싱하는 동안 버튼을 연타하지 못하게 로딩 알림 띄우기
+    triggerToast("파싱 중...", "AI가 서류를 분석하고 있습니다. 잠시만 기다려주세요.", "⏳");
+
+    try {
+      // 우리가 만든 백엔드 API로 텍스트를 보냅니다.
+      const response = await fetch("/api/parse-scenario", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          rawText: pastedText,
+          ruleMode: selectedMode,
+          pcName: "주인공", // 필요시 플레이어 이름 변수 연동
+          kpcName: "파트너"
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error("서버 에러가 발생했습니다.");
+      }
+
+      const data = await response.json();
+
+      // 🌟 AI가 예쁘게 정리해 준 JSON 데이터를 화면에 착착 꽂아줍니다.
+      if (data.scenarioTitle) setScenarioTitle(data.scenarioTitle);
+      if (data.publicSynopsis) setPublicSynopsis(data.publicSynopsis);
+      if (data.openingScene) setOpeningScene(data.openingScene);
+      if (data.hiddenTruth) setHiddenTruth(data.hiddenTruth);
+
+      // 용의자(NPC) 리스트 자동 생성
+      if (data.npcs && data.npcs.length > 0) {
+        const newSuspects = data.npcs.map((npc, idx) => ({
+          id: Date.now() + idx,
+          name: npc.name || "",
+          job: npc.job || "",
+          behavior: npc.detail || "",
+          secret: npc.secret || "",
+          ageGender: "",
+          portraitUrl: "",
+          showSecret: false
+        }));
+        setSuspects(newSuspects);
+      }
+
+      // 단서(Handouts) 리스트 자동 생성
+      if (data.handouts && data.handouts.length > 0) {
+        const newEvidence = data.handouts.map((h, idx) => ({
+          id: Date.now() + idx,
+          name: h.title || "",
+          overview: h.overview || "",
+          secret: h.secret || "",
+          contradiction: "",
+          showSecret: false
+        }));
+        setEvidenceList(newEvidence);
+      }
+
+      // 창 닫고 성공 알림 띄우기
+      setShowPasteModal(false);
+      setPastedText("");
+      triggerToast("파싱 완료!", "AI가 사건 서류철 배치를 완료했습니다.", "✨");
+
+    } catch (error) {
+      console.error(error);
+      triggerToast("파싱 실패", "양식을 분석하지 못했습니다. 백엔드 연결을 확인해 주세요.", "⚠️");
+    }
   };
+
 
   const handleStartGame = () => {
     if (!scenarioTitle.trim()) {
