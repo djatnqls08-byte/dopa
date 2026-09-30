@@ -763,15 +763,27 @@ const [showEvidence, setShowEvidence] = useState(false);
                   )}
                 </section>
 
-                {/* D. 사건 진상 기밀 봉투 */}
-                <section style={{ ...GLASS_STYLE, padding: isMobile ? "16px" : "20px", backgroundColor: theme.panel, borderRadius: "18px", border: `1px solid ${theme.accent}`, display: "flex", flexDirection: "column", gap: "12px" }}>
-<button type="button" onClick={() => setShowHiddenTruth(!showHiddenTruth)} style={{ width: "100%", textAlign: "left", background: "none", border: "none", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer" }}>
-  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-    <Mailbox size={22} strokeWidth={2} color={theme.accent} />
-    <span style={{ fontWeight: "900", fontSize: "0.95rem", color: theme.accent }}>사건 진상 봉투</span>
-  </div>
-  <span style={{ color: theme.accent, fontSize: "0.85rem", fontWeight: "500" }}>{showHiddenTruth ? "▲" : "▼"}</span>
-</button>
+               {/* D. 사건 진상 기밀 봉투 */}
+                <section style={{ ...GLASS_STYLE, padding: isMobile ? "16px" : "20px", backgroundColor: theme.panel, borderRadius: "18px", border: `1px solid ${theme.border}`, display: "flex", flexDirection: "column", gap: "12px" }}>
+                  
+                  {/* 🌟 단서 영역과 100% 동일한 버튼 가이드라인 적용 */}
+                  <button 
+                    type="button" 
+                    onClick={() => setShowHiddenTruth(!showHiddenTruth)} 
+                    style={{ width: "100%", textAlign: "left", background: "none", border: "none", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer", padding: 0 }}
+                  >
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                      {/* 아이콘만 포인트 색상을 유지하고 글씨는 일반 색상으로 뺍니다 */}
+                      <Mailbox size={22} strokeWidth={2} color={theme.accent} />
+                      <span style={{ fontWeight: "900", fontSize: "0.95rem", color: theme.text }}>사건 진상 봉투</span>
+                    </div>
+                    {/* 화살표 역시 일반 텍스트 색상으로 변경 */}
+                    <span style={{ color: theme.text, fontSize: "0.85rem", fontWeight: "500" }}>
+                      {showHiddenTruth ? "▲" : "▼"}
+                    </span>
+                  </button>
+                  
+                  {/* 열렸을 때 나오는 내부 내용 (기존 유지) */}
                   {showHiddenTruth && (
                     <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginTop: "4px" }}>
                       <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 2fr", gap: "10px" }}>
