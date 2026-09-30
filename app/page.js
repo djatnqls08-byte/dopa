@@ -277,7 +277,9 @@ export default function GamePlatform() {
         {!activeSession ? (
           <main style={{ flex: 1, overflowY: "auto", padding: isMobile ? "16px 14px 140px 14px" : "20px 16px 160px 16px", maxWidth: "860px", margin: "0 auto", width: "100%", display: "flex", flexDirection: "column", gap: isMobile ? "14px" : "18px", boxSizing: "border-box" }}>
               
-              {/* 🌟 잃어버렸던 제목을 다시 복구했습니다! */}
+{/* 1. 3대 모드 선택 카드 */}
+            <section style={{ ...GLASS_STYLE, padding: isMobile ? "14px" : "18px", backgroundColor: theme.panel, borderRadius: "16px", border: `1px solid ${theme.border}` }}>
+              
               <div style={{ fontSize: "0.9rem", fontWeight: "800", marginBottom: "12px", color: theme.text }}>
                 1. 룰 시스템 선택
               </div>
@@ -285,7 +287,7 @@ export default function GamePlatform() {
               {/* 🌟 룰 시스템 3열 가로 배치 (모바일/PC 공통) */}
               <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "10px" }}>
                 {[
-                  { key: "추리", icon: "🕵️‍♂️️", title: "추리", desc: "진상을 파헤치는 수사" },
+                  { key: "추리", icon: "🕵️‍♂️", title: "추리", desc: "진상을 파헤치는 수사" },
                   { key: "연애", icon: "🌸", title: "연애", desc: "선택지와 감정선 중심의 서사" },
                   { key: "괴담", icon: "🕯️", title: "괴담", desc: "이면을 밝히는 호러" }
                 ].map(m => {
@@ -305,7 +307,7 @@ export default function GamePlatform() {
                         transition: "all 0.2s"
                       }}
                     >
-                      {/* 우측 상단 물음표 버튼 (절대 위치로 고정) */}
+                      {/* 우측 상단 물음표 버튼 */}
                       <button
                         onClick={(e) => { e.stopPropagation(); setRuleHelpModal(m); }}
                         title={`${m.title} 규칙 설명 보기`}
@@ -327,7 +329,6 @@ export default function GamePlatform() {
                       {/* 하단 텍스트 영역 */}
                       <div style={{ textAlign: "center", width: "100%" }}>
                         <div style={{ fontWeight: "900", fontSize: "0.95rem", color: isSel ? theme.accent : theme.text }}>{m.title}</div>
-                        {/* 🌟 모바일에서는 설명 텍스트를 숨겨서 디자인을 깔끔하게 유지합니다 */}
                         {!isMobile && (
                           <div style={{ fontSize: "0.72rem", color: theme.textMuted, marginTop: "4px", wordBreak: "keep-all" }}>
                             {m.desc}
