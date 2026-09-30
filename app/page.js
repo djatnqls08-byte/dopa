@@ -47,13 +47,11 @@ export default function GamePlatform() {
   const [playPreference, setPlayPreference] = useState("");
 
   // ── [6. 추리 모드 전용 범용 상태] ──
-  // A. 사건 개요서
+ // A. 사건 개요서
   const [scenarioTitle, setScenarioTitle] = useState("");
   const [victimName, setVictimName] = useState("");
   const [publicSynopsis, setPublicSynopsis] = useState("");
   const [openingScene, setOpeningScene] = useState("");
-  const [isEvidenceOpen, setIsEvidenceOpen] = useState(false); // 단서함 열림/닫힘
-  const [isTruthOpen, setIsTruthOpen] = useState(false);       // 진상 봉투 열림/닫힘
 
   // B. 동적 용의자 수사망
   const [suspects, setSuspects] = useState([
