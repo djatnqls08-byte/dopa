@@ -1260,201 +1260,198 @@ const [showEvidence, setShowEvidence] = useState(false);
 }
                 
 {/* ── 📱 하단 세그먼트 글래스 탭바 ── */}
-        {!activeSession && (
-          <nav
-            style={{
-              position: "fixed", bottom: "16px", left: "50%", transform: "translateX(-50%)",
-              width: "calc(100% - 32px)", maxWidth: "440px", height: "62px",
-              backgroundColor: isDarkMode ? "rgba(35, 30, 28, 0.75)" : "rgba(240, 236, 228, 0.85)",
-              backdropFilter: "blur(18px)", WebkitBackdropFilter: "blur(18px)",
-              border: `1px solid ${theme.border}`, borderRadius: "20px",
-              display: "flex", overflow: "hidden", zIndex: 50,
-              boxShadow: isDarkMode ? "0 12px 36px rgba(0, 0, 0, 0.45)" : "0 10px 30px rgba(0, 0, 0, 0.08)",
-              transition: "background-color 0.25s ease, border-color 0.25s ease"
-            }}
-          >
-            {[
-              { key: "explore", icon: <Search size={20} strokeWidth={2.5} />, label: "탐색" },
-              { key: "library", icon: <LibraryBig size={20} strokeWidth={2.5} />, label: "서재" },
-              { key: "lobby", icon: <PenTool size={20} strokeWidth={2.5} />, label: "창작" },
-              { key: "profile", icon: <UserRound size={20} strokeWidth={2.5} />, label: "내정보" }
-            ].map((tab, idx, arr) => {
-              const isSelected = activeTab === tab.key;
-              const isLast = idx === arr.length - 1;
+        {!activeSession && (
+          <nav
+            style={{
+              position: "fixed", bottom: "16px", left: "50%", transform: "translateX(-50%)",
+              width: "calc(100% - 32px)", maxWidth: "440px", height: "62px",
+              backgroundColor: isDarkMode ? "rgba(35, 30, 28, 0.75)" : "rgba(240, 236, 228, 0.85)",
+              backdropFilter: "blur(18px)", WebkitBackdropFilter: "blur(18px)",
+              border: `1px solid ${theme.border}`, borderRadius: "20px",
+              display: "flex", overflow: "hidden", zIndex: 50,
+              boxShadow: isDarkMode ? "0 12px 36px rgba(0, 0, 0, 0.45)" : "0 10px 30px rgba(0, 0, 0, 0.08)",
+              transition: "background-color 0.25s ease, border-color 0.25s ease"
+            }}
+          >
+            {[
+              { key: "explore", icon: <Search size={20} strokeWidth={2.5} />, label: "탐색" },
+              { key: "library", icon: <LibraryBig size={20} strokeWidth={2.5} />, label: "서재" },
+              { key: "lobby", icon: <PenTool size={20} strokeWidth={2.5} />, label: "창작" },
+              { key: "profile", icon: <UserRound size={20} strokeWidth={2.5} />, label: "내정보" }
+            ].map((tab, idx, arr) => {
+              const isSelected = activeTab === tab.key;
+              const isLast = idx === arr.length - 1;
 
-              return (
-                <div
-                  key={tab.key}
-                  onClick={() => setActiveTab(tab.key)}
-                  style={{
-                    flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-                    cursor: "pointer", gap: "4px",
-                    borderRight: isLast ? "none" : `1px solid ${theme.border}`,
-                    backgroundColor: isSelected ? (isDarkMode ? "rgba(235, 227, 218, 0.12)" : "rgba(120, 105, 90, 0.12)") : "transparent",
-                    color: isSelected ? theme.accent : theme.textMuted,
-                    transition: "all 0.2s"
-                  }}
-                >
-                  <div style={{ transform: isSelected ? "scale(1.15)" : "scale(1)", transition: "transform 0.2s", display: "flex", alignItems: "center" }}>
-                    {tab.icon}
-                  </div>
-                  <span style={{ fontSize: "0.65rem", fontWeight: isSelected ? "800" : "600" }}>{tab.label}</span>
-                </div>
-              );
-            })}
-          </nav>
-        )}
-
-      {/* ── 🖼️ 초상화 모달 (크게 보기 + 연필 아이콘 업로드) ── */}
-      {showPortraitModal && (() => {
-        // 🌟 클릭한 사람이 주인공(pc)인지 확인합니다.
-        const isPc = activePortraitSuspectId === "pc";
-        let target;
-
-        // 주인공일 경우와 용의자일 경우 정보를 각각 다르게 불러옵니다.
-        if (isPc) {
-          target = {
-            id: "pc",
-            name: pcName || "주인공 (수사관)",
-            job: pcJob,
-            ageGender: pcAgeGender,
-            portraitUrl: pcPortraitUrl
-          };
-        } else {
-          target = suspects.find(s => s.id === activePortraitSuspectId) || suspects[0];
-        }
-
-        if (!target) return null;
-
-        return (
-          <div
-            onClick={() => setShowPortraitModal(false)}
-            style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0, 0, 0, 0.8)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 99999, padding: "16px", animation: "fadeIn 0.2s ease-out" }}
-          >
-            <div
-              onClick={e => e.stopPropagation()}
-              style={{ ...GLASS_STYLE, width: "100%", maxWidth: "380px", backgroundColor: theme.panel, border: `1.5px solid ${theme.border}`, borderRadius: "18px", padding: "20px", color: theme.text, display: "flex", flexDirection: "column", gap: "14px", boxShadow: "0 20px 50px rgba(0,0,0,0.5)" }}
-            >
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: `1px solid ${theme.border}`, paddingBottom: "10px" }}>
-                <div>
-                  <h3 style={{ margin: 0, fontSize: "1rem", fontWeight: "900", color: theme.accent }}>
-                    {target.name || "신원 미상"}
-                  </h3>
-                  <div style={{ fontSize: "0.74rem", color: theme.textMuted, marginTop: "2px" }}>
-                    {target.job ? `${target.job} · ` : ""}{target.ageGender || "인적사항 미기재"}
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setShowPortraitModal(false)}
-                  style={{ background: "none", border: "none", color: theme.textMuted, fontSize: "1.2rem", cursor: "pointer", lineHeight: 1 }}
-                >
-                  ✕
-                </button>
-              </div>
-
-              <div style={{ width: "100%", aspectRatio: "1/1", borderRadius: "14px", overflow: "hidden", border: `1.5px solid ${theme.border}`, backgroundColor: isDarkMode ? "rgba(0, 0, 0, 0.25)" : "#f0ece4", display: "flex", alignItems: "center", justifyContent: "center", position: "relative" }}>
-                {target.portraitUrl ? (
-                  <img src={target.portraitUrl} alt="초상화" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                ) : (
-                  <div style={{ textAlign: "center", color: theme.textMuted, fontSize: "0.85rem", lineHeight: "1.6" }}>
-                    <div style={{ fontSize: "2.4rem", marginBottom: "6px", display: "flex", justifyContent: "center" }}>
-                      <ImageIcon size={48} strokeWidth={1} color={theme.textMuted} />
-                    </div>
-                    등록된 사진이 없습니다.
-                  </div>
-                )}
-
-                <label
-                  title="사진 변경/등록"
-                  style={{
-                    position: "absolute", bottom: "12px", right: "12px", width: "38px", height: "38px", borderRadius: "50%",
-                    backgroundColor: "rgba(0,0,0,0.7)", color: "#fff", border: "1.5px solid rgba(255,255,255,0.4)", 
-                    cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 5,
-                    boxShadow: "0 4px 10px rgba(0,0,0,0.5)"
-                  }}
-                >
-                  <PenTool size={18} strokeWidth={2.5} />
-                  <input 
-                    type="file" 
-                    accept="image/*" 
-                    style={{ display: "none" }} 
-                    onChange={(e) => {
-                      const file = e.target.files[0];
-                      if (!file) return;
-                      const reader = new FileReader();
-                      reader.onload = (ev) => {
-                        // 🌟 누구의 사진을 바꾸는 것인지 판별하여 올바른 곳에 저장합니다.
-                        if (isPc) {
-                          setPcPortraitUrl(ev.target.result);
-                        } else {
-                          handleUpdateSuspect(target.id, "portraitUrl", ev.target.result);
-                        }
-                      };
-                      reader.readAsDataURL(file);
-                      e.target.value = null; 
-                    }} 
-                  />
-                </label>
-              </div>
-            </div>
-          </div>
-        );
-      })()}
-
-      {/* ── 📄 시나리오 텍스트 붙여넣기 모달 ── */}
-      {showPasteModal && (
-        <div onClick={() => setShowPasteModal(false)} style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 200, padding: "20px" }}>
-          <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: "520px", backgroundColor: theme.panel, border: `1px solid ${theme.border}`, borderRadius: "16px", padding: "20px", display: "flex", flexDirection: "column", gap: "12px", boxShadow: "0 20px 40px rgba(0,0,0,0.5)" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-             <span style={{ fontWeight: "800", fontSize: "0.95rem", display: "flex", alignItems: "center", gap: "6px" }}>
-                <ClipboardPaste size={20} strokeWidth={2.5} color={theme.accent} /> 시나리오 텍스트 붙여넣기
-              </span>
-              <button onClick={() => setShowPasteModal(false)} style={{ background: "none", border: "none", color: theme.text, fontSize: "1.2rem", cursor: "pointer" }}><X size={20}/></button>
-            </div>
-            <textarea rows={8} value={pastedText} onChange={e => setPastedText(e.target.value)} placeholder="스튜디오에서 작성된 시나리오 전체 글을 여기에 붙여넣으세요..." style={{ width: "100%", boxSizing: "border-box", padding: "12px", backgroundColor: theme.inputBg, border: `1px solid ${theme.border}`, borderRadius: "8px", color: theme.text, fontSize: "0.82rem", outline: "none", resize: "none" }} />
-            <div style={{ display: "flex", gap: "8px" }}>
-              <button onClick={() => setShowPasteModal(false)} style={{ flex: 1, padding: "10px", backgroundColor: theme.panelAlt, border: `1px solid ${theme.border}`, borderRadius: "8px", color: theme.text, fontSize: "0.8rem", cursor: "pointer" }}>취소</button>
-              <button onClick={handleApplyPastedScenario} style={{ flex: 2, padding: "10px", backgroundColor: theme.accent, color: isDarkMode ? "#1a1817" : "#fff", border: "none", borderRadius: "8px", fontSize: "0.8rem", fontWeight: "800", cursor: "pointer" }}>서류철에 자동 배치 ➔</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* 🌟 4. 룰 모드 가이드 모달 */}
-      {ruleHelpModal && (
-        <div onClick={() => setRuleHelpModal(null)} style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 160, padding: "20px" }}>
-          <div onClick={e => e.stopPropagation()} className="glass-card" style={{ width: "100%", maxWidth: "440px", padding: "22px", borderRadius: "16px", backgroundColor: theme.panel, color: theme.text, display: "flex", flexDirection: "column", gap: "12px", boxShadow: "0 16px 40px rgba(0,0,0,0.3)" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: `1px solid ${theme.border}`, paddingBottom: "10px" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                <span style={{ fontSize: "1.2rem", color: theme.accent }}>{ruleHelpModal.icon}</span>
-                <div>
-                  <h3 style={{ margin: 0, fontSize: "0.95rem", fontWeight: "800" }}>{ruleHelpModal.title}</h3>
-                  <div style={{ fontSize: "0.72rem", color: theme.textMuted }}>{ruleHelpModal.desc}</div>
+              return (
+                <div
+                  key={tab.key}
+                  onClick={() => setActiveTab(tab.key)}
+                  style={{
+                    flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+                    cursor: "pointer", gap: "4px",
+                    borderRight: isLast ? "none" : `1px solid ${theme.border}`,
+                    backgroundColor: isSelected ? (isDarkMode ? "rgba(235, 227, 218, 0.12)" : "rgba(120, 105, 90, 0.12)") : "transparent",
+                    color: isSelected ? theme.accent : theme.textMuted,
+                    transition: "all 0.2s"
+                  }}
+                >
+                  <div style={{ transform: isSelected ? "scale(1.15)" : "scale(1)", transition: "transform 0.2s", display: "flex", alignItems: "center" }}>
+                    {tab.icon}
+                  </div>
+                  <span style={{ fontSize: "0.65rem", fontWeight: isSelected ? "800" : "600" }}>{tab.label}</span>
                 </div>
-              </div>
-              <button type="button" onClick={() => setRuleHelpModal(null)} style={{ background: "none", border: "none", color: theme.text, fontSize: "1.2rem", cursor: "pointer", lineHeight: 1 }}><X size={20}/></button>
-            </div>
+              );
+            })}
+          </nav>
+        )}
 
-            <div style={{ display: "flex", flexDirection: "column", gap: "8px", overflowY: "auto", paddingRight: "4px" }}>
-              <div style={{ backgroundColor: theme.panelAlt, padding: "12px", borderRadius: "10px", border: `1px solid ${theme.border}` }}>
-                <div style={{ fontWeight: "800", fontSize: "0.82rem", color: theme.accent, marginBottom: "4px" }}>• 게임 진행 방식</div>
-                <div style={{ fontSize: "0.76rem", color: theme.text, lineHeight: "1.6" }}>
-                  {ruleHelpModal.key === "추리" ? "단서를 모으고 인물들을 심문하여 사건의 진상을 밝혀냅니다." :
-                   ruleHelpModal.key === "연애" ? "상대방의 호감도를 관리하며 다양한 엔딩을 향해 나아갑니다." :
-                   "숨겨진 이면을 밝히고, 침식을 견디며 서스펜스 호러의 끝을 봅니다."}
+        {/* ── 🖼️ 초상화 모달 (크게 보기 + 연필 아이콘 업로드) ── */}
+        {showPortraitModal && (() => {
+          const isPc = activePortraitSuspectId === "pc";
+          let target;
+
+          if (isPc) {
+            target = {
+              id: "pc",
+              name: pcName || "주인공 (수사관)",
+              job: pcJob,
+              ageGender: pcAgeGender,
+              portraitUrl: pcPortraitUrl
+            };
+          } else {
+            target = suspects.find(s => s.id === activePortraitSuspectId) || suspects[0];
+          }
+
+          if (!target) return null;
+
+          return (
+            <div
+              onClick={() => setShowPortraitModal(false)}
+              style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0, 0, 0, 0.8)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 99999, padding: "16px", animation: "fadeIn 0.2s ease-out" }}
+            >
+              <div
+                onClick={e => e.stopPropagation()}
+                style={{ backgroundColor: theme.panel, border: `1.5px solid ${theme.border}`, width: "100%", maxWidth: "380px", borderRadius: "18px", padding: "20px", color: theme.text, display: "flex", flexDirection: "column", gap: "14px", boxShadow: "0 20px 50px rgba(0,0,0,0.5)" }}
+              >
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: `1px solid ${theme.border}`, paddingBottom: "10px" }}>
+                  <div>
+                    <h3 style={{ margin: 0, fontSize: "1rem", fontWeight: "900", color: theme.accent }}>
+                      {target.name || "신원 미상"}
+                    </h3>
+                    <div style={{ fontSize: "0.74rem", color: theme.textMuted, marginTop: "2px" }}>
+                      {target.job ? `${target.job} · ` : ""}{target.ageGender || "인적사항 미기재"}
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowPortraitModal(false)}
+                    style={{ background: "none", border: "none", color: theme.textMuted, fontSize: "1.2rem", cursor: "pointer", lineHeight: 1 }}
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                <div style={{ width: "100%", aspectRatio: "1/1", borderRadius: "14px", overflow: "hidden", border: `1.5px solid ${theme.border}`, backgroundColor: isDarkMode ? "rgba(0, 0, 0, 0.25)" : "#f0ece4", display: "flex", alignItems: "center", justifyContent: "center", position: "relative" }}>
+                  {target.portraitUrl ? (
+                    <img src={target.portraitUrl} alt="초상화" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                  ) : (
+                    <div style={{ textAlign: "center", color: theme.textMuted, fontSize: "0.85rem", lineHeight: "1.6" }}>
+                      <div style={{ fontSize: "2.4rem", marginBottom: "6px", display: "flex", justifyContent: "center" }}>
+                        <ImageIcon size={48} strokeWidth={1} color={theme.textMuted} />
+                      </div>
+                      등록된 사진이 없습니다.
+                    </div>
+                  )}
+
+                  <label
+                    title="사진 변경/등록"
+                    style={{
+                      position: "absolute", bottom: "12px", right: "12px", width: "38px", height: "38px", borderRadius: "50%",
+                      backgroundColor: "rgba(0,0,0,0.7)", color: "#fff", border: "1.5px solid rgba(255,255,255,0.4)", 
+                      cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 5,
+                      boxShadow: "0 4px 10px rgba(0,0,0,0.5)"
+                    }}
+                  >
+                    <PenTool size={18} strokeWidth={2.5} />
+                    <input 
+                      type="file" 
+                      accept="image/*" 
+                      style={{ display: "none" }} 
+                      onChange={(e) => {
+                        const file = e.target.files[0];
+                        if (!file) return;
+                        const reader = new FileReader();
+                        reader.onload = (ev) => {
+                          if (isPc) {
+                            setPcPortraitUrl(ev.target.result);
+                          } else {
+                            handleUpdateSuspect(target.id, "portraitUrl", ev.target.result);
+                          }
+                        };
+                        reader.readAsDataURL(file);
+                        e.target.value = null; 
+                      }} 
+                    />
+                  </label>
                 </div>
               </div>
             </div>
+          );
+        })()}
 
-            <button type="button" onClick={() => setRuleHelpModal(null)} style={{ width: "100%", padding: "10px", backgroundColor: theme.accent, color: isDarkMode ? "#1a1817" : "#fff", border: "none", borderRadius: "10px", fontWeight: "800", fontSize: "0.82rem", cursor: "pointer", marginTop: "4px" }}>
-              확인
-            </button>
+        {/* ── 📄 시나리오 텍스트 붙여넣기 모달 ── */}
+        {showPasteModal && (
+          <div onClick={() => setShowPasteModal(false)} style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 200, padding: "20px" }}>
+            <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: "520px", backgroundColor: theme.panel, border: `1px solid ${theme.border}`, borderRadius: "16px", padding: "20px", display: "flex", flexDirection: "column", gap: "12px", boxShadow: "0 20px 40px rgba(0,0,0,0.5)" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <span style={{ fontWeight: "800", fontSize: "0.95rem", display: "flex", alignItems: "center", gap: "6px" }}>
+                  <ClipboardPaste size={20} strokeWidth={2.5} color={theme.accent} /> 시나리오 텍스트 붙여넣기
+                </span>
+                <button onClick={() => setShowPasteModal(false)} style={{ background: "none", border: "none", color: theme.text, fontSize: "1.2rem", cursor: "pointer" }}><X size={20}/></button>
+              </div>
+              <textarea rows={8} value={pastedText} onChange={e => setPastedText(e.target.value)} placeholder="스튜디오에서 작성된 시나리오 전체 글을 여기에 붙여넣으세요..." style={{ width: "100%", boxSizing: "border-box", padding: "12px", backgroundColor: theme.inputBg, border: `1px solid ${theme.border}`, borderRadius: "8px", color: theme.text, fontSize: "0.82rem", outline: "none", resize: "none" }} />
+              <div style={{ display: "flex", gap: "8px" }}>
+                <button onClick={() => setShowPasteModal(false)} style={{ flex: 1, padding: "10px", backgroundColor: theme.panelAlt, border: `1px solid ${theme.border}`, borderRadius: "8px", color: theme.text, fontSize: "0.8rem", cursor: "pointer" }}>취소</button>
+                <button onClick={handleApplyPastedScenario} style={{ flex: 2, padding: "10px", backgroundColor: theme.accent, color: isDarkMode ? "#1a1817" : "#fff", border: "none", borderRadius: "8px", fontSize: "0.8rem", fontWeight: "800", cursor: "pointer" }}>서류철에 자동 배치 ➔</button>
+              </div>
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
-      </div>
-    </div>
+        {/* 🌟 4. 룰 모드 가이드 모달 */}
+        {ruleHelpModal && (
+          <div onClick={() => setRuleHelpModal(null)} style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 160, padding: "20px" }}>
+            <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: "440px", padding: "22px", borderRadius: "16px", backgroundColor: theme.panel, color: theme.text, display: "flex", flexDirection: "column", gap: "12px", boxShadow: "0 16px 40px rgba(0,0,0,0.3)" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: `1px solid ${theme.border}`, paddingBottom: "10px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                  <span style={{ fontSize: "1.2rem", color: theme.accent }}>{ruleHelpModal.icon}</span>
+                  <div>
+                    <h3 style={{ margin: 0, fontSize: "0.95rem", fontWeight: "800" }}>{ruleHelpModal.title}</h3>
+                    <div style={{ fontSize: "0.72rem", color: theme.textMuted }}>{ruleHelpModal.desc}</div>
+                  </div>
+                </div>
+                <button type="button" onClick={() => setRuleHelpModal(null)} style={{ background: "none", border: "none", color: theme.text, fontSize: "1.2rem", cursor: "pointer", lineHeight: 1 }}><X size={20}/></button>
+              </div>
+
+              <div style={{ display: "flex", flexDirection: "column", gap: "8px", overflowY: "auto", paddingRight: "4px" }}>
+                <div style={{ backgroundColor: theme.panelAlt, padding: "12px", borderRadius: "10px", border: `1px solid ${theme.border}` }}>
+                  <div style={{ fontWeight: "800", fontSize: "0.82rem", color: theme.accent, marginBottom: "4px" }}>• 게임 진행 방식</div>
+                  <div style={{ fontSize: "0.76rem", color: theme.text, lineHeight: "1.6" }}>
+                    {ruleHelpModal.key === "추리" ? "단서를 모으고 인물들을 심문하여 사건의 진상을 밝혀냅니다." :
+                     ruleHelpModal.key === "연애" ? "상대방의 호감도를 관리하며 다양한 엔딩을 향해 나아갑니다." :
+                     "숨겨진 이면을 밝히고, 침식을 견디며 서스펜스 호러의 끝을 봅니다."}
+                  </div>
+                </div>
+              </div>
+
+              <button type="button" onClick={() => setRuleHelpModal(null)} style={{ width: "100%", padding: "10px", backgroundColor: theme.accent, color: isDarkMode ? "#1a1817" : "#fff", border: "none", borderRadius: "10px", fontWeight: "800", fontSize: "0.82rem", cursor: "pointer", marginTop: "4px" }}>
+                확인
+              </button>
+            </div>
+          </div>
+        )}
+
+      </div> {/* 메인 콘텐츠 뷰 닫기 */}
+    </div> {/* 전체 화면 닫기 */}
   );
 }
