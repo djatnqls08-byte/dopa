@@ -29,6 +29,9 @@ export default function GamePlatform() {
       ::-webkit-scrollbar { width: 5px; height: 5px; }
       ::-webkit-scrollbar-track { background: transparent; }
       ::-webkit-scrollbar-thumb { background: rgba(120, 120, 120, 0.4); border-radius: 10px; }
+      textarea::-webkit-scrollbar { width: 4px; }
+      textarea::-webkit-scrollbar-thumb { background: rgba(150, 150, 150, 0.4); border-radius: 4px; }
+      
     `;
     document.head.appendChild(style);
     return () => document.head.removeChild(style);
@@ -521,7 +524,7 @@ const [showEvidence, setShowEvidence] = useState(false);
             {activeSession && (
               <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
                 
-                {/* 📱 스마트폰 메신저 (연애/자유 모드) */}
+                {/* 📱 스마트폰 메신저 */}
                 {(activeSession.ruleMode?.startsWith("dating") || activeSession.ruleMode?.includes("free")) && (() => {
                   const phoneChats = activeSession.sheet?.phoneChats || {};
                   let unreadCount = 0;
@@ -538,11 +541,12 @@ const [showEvidence, setShowEvidence] = useState(false);
                         setIsPhoneDrawerOpen(!isPhoneDrawerOpen);
                       }}
                       title="스마트폰 메신저"
-                      style={{ position: "relative", width: "36px", height: "36px", display: "flex", alignItems: "center", justifyContent: "center", background: isPhoneDrawerOpen ? theme.panelAlt : "transparent", border: `1px solid ${isPhoneDrawerOpen ? theme.accent : theme.border}`, borderRadius: "10px", cursor: "pointer", color: isPhoneDrawerOpen ? theme.accent : theme.text, transition: "all 0.2s" }}
+                      style={{ position: "relative", width: "36px", height: "36px", display: "flex", alignItems: "center", justifyContent: "center", background: isPhoneDrawerOpen ? theme.panelAlt : "transparent", border: `1px solid ${isPhoneDrawerOpen ? theme.accent : "transparent"}`, borderRadius: "10px", cursor: "pointer", color: isPhoneDrawerOpen ? theme.accent : theme.text, transition: "all 0.2s" }}
                     >
-                      <Smartphone size={20} strokeWidth={2.5} />
+                      {/* 🌟 굵기를 1.5로 얇게 수정 */}
+                      <Smartphone size={20} strokeWidth={1.5} />
                       {unreadCount > 0 && (
-                        <span style={{ position: "absolute", top: "-4px", right: "-4px", backgroundColor: theme.danger, color: "#fff", borderRadius: "10px", minWidth: "16px", height: "16px", fontSize: "0.6rem", fontWeight: "900", display: "flex", alignItems: "center", justifyContent: "center", border: `1.5px solid ${theme.panel}` }}>
+                        <span style={{ position: "absolute", top: "-2px", right: "-2px", backgroundColor: theme.danger, color: "#fff", borderRadius: "10px", minWidth: "16px", height: "16px", fontSize: "0.6rem", fontWeight: "900", display: "flex", alignItems: "center", justifyContent: "center" }}>
                           {unreadCount > 9 ? "9+" : unreadCount}
                         </span>
                       )}
@@ -558,14 +562,33 @@ const [showEvidence, setShowEvidence] = useState(false);
                       e.stopPropagation();
                       setIsPhoneDrawerOpen(false);
                       setIsSheetOpen(false);
-                      setShowEvidenceBoard(true); // 🌟 팝업창 오픈
+                      setShowEvidenceBoard(true); // 🌟 확실하게 팝업창 오픈!
                     }}
                     title="수사 본부 증거보드"
-                    style={{ width: "36px", height: "36px", display: "flex", alignItems: "center", justifyContent: "center", background: "transparent", border: `1px solid ${theme.border}`, borderRadius: "10px", cursor: "pointer", color: theme.danger, transition: "all 0.2s" }}
+                    style={{ width: "36px", height: "36px", display: "flex", alignItems: "center", justifyContent: "center", background: "transparent", border: `1px solid ${showEvidenceBoard ? theme.accent : "transparent"}`, borderRadius: "10px", cursor: "pointer", color: theme.danger, transition: "all 0.2s" }}
                   >
-                    <Pin size={20} strokeWidth={2.5} style={{ transform: "rotate(45deg)" }} />
+                    {/* 🌟 굵기를 1.5로 얇게 수정 */}
+                    <Pin size={20} strokeWidth={1.5} style={{ transform: "rotate(45deg)" }} />
                   </button>
                 )}
+
+                {/* 📋 캐릭터 시트 (오버레이) */}
+                <button 
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsPhoneDrawerOpen(false);
+                    setShowEvidenceBoard(false);
+                    setIsSheetOpen(!isSheetOpen);
+                  }} 
+                  title="캐릭터 시트" 
+                  style={{ width: "36px", height: "36px", display: "flex", alignItems: "center", justifyContent: "center", background: isSheetOpen ? theme.panelAlt : "transparent", border: `1px solid ${isSheetOpen ? theme.accent : "transparent"}`, borderRadius: "10px", color: isSheetOpen ? theme.accent : theme.text, cursor: "pointer", transition: "all 0.2s" }}
+                >
+                  {/* 🌟 굵기를 1.5로 얇게 수정 */}
+                  {activeSession.ruleMode?.startsWith("dating") ? <UserRound size={20} strokeWidth={1.5} /> : <ClipboardList size={20} strokeWidth={1.5} />}
+                </button>
+              </div>
+            )}
 
                 {/* 🃏 핸드아웃 / 🎲 주사위 (인세인/CoC 전용) */}
                 {activeSession.ruleMode === "insane" && (
@@ -1095,34 +1118,125 @@ const [showEvidence, setShowEvidence] = useState(false);
           /* ── [B. 인게임 뷰: 소설 리더 본문 및 팝업/오버레이] ── */
           <div style={{ flex: 1, display: "flex", overflow: "hidden", position: "relative", backgroundColor: theme.bg }}>
             
-            {/* 📖 중앙: 소설형 텍스트 뷰어 */}
+            {/* 📖 중앙: 소설형 텍스트 뷰어 (전자책 스타일 완벽 적용) */}
             <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", position: "relative" }}>
-              <div className="serif-text" style={{ flex: 1, overflowY: "auto", padding: isMobile ? "24px 16px 120px 16px" : "40px 40px 140px 40px", display: "flex", flexDirection: "column", gap: "28px", maxWidth: "760px", margin: "0 auto", width: "100%", boxSizing: "border-box", fontSize: "1.08rem", lineHeight: 2.1, color: theme.text }}>
+              <div 
+                className="serif-text" 
+                style={{ 
+                  flex: 1, overflowY: "auto", 
+                  padding: isMobile ? "24px 20px 140px 20px" : "50px 60px 160px 60px", 
+                  display: "flex", flexDirection: "column", gap: "28px", 
+                  maxWidth: "760px", margin: "0 auto", width: "100%", boxSizing: "border-box", 
+                  fontSize: "1.12rem", lineHeight: 2.1, color: theme.text, letterSpacing: "-0.02em",
+                  fontWeight: 400 // 🌟 사반의 요청: 기본 글꼴 두께를 얇게 고정!
+                }}
+              >
                 {(activeSession.messages || []).map((m, idx) => {
                   const isUser = m.role === "user";
                   return (
-                    <div key={idx} style={{ alignSelf: "stretch", color: isUser ? theme.accent : theme.text, fontWeight: isUser ? "700" : "400", opacity: 0.95, borderLeft: isUser ? `3px solid ${theme.accent}` : "none", paddingLeft: isUser ? "16px" : "0", fontStyle: isUser ? "italic" : "normal", wordBreak: "keep-all" }}>
+                    <div key={idx} style={{ 
+                      alignSelf: "stretch",
+                      color: isUser ? theme.accent : theme.text,
+                      fontWeight: "400", // 🌟 유저 텍스트도 볼드 빼고 얇게!
+                      opacity: 0.95,
+                      textAlign: isUser ? "center" : "left",
+                      fontStyle: isUser ? "italic" : "normal",
+                      wordBreak: "keep-all",
+                      padding: isUser ? "16px 0" : "0",
+                      borderTop: isUser ? `1px dashed ${theme.border}` : "none",
+                      borderBottom: isUser ? `1px dashed ${theme.border}` : "none",
+                      margin: isUser ? "10px 0" : "0"
+                    }}>
                       {m.text}
                     </div>
                   );
                 })}
-                {isLoading && <div style={{ color: theme.textMuted, fontSize: "0.95rem", fontStyle: "italic", paddingTop: "10px", paddingLeft: "16px", borderLeft: `3px solid ${theme.border}` }}>(사건의 이면이 서술되는 중……)</div>}
+                {isLoading && (
+                  <div style={{ color: theme.textMuted, fontSize: "0.95rem", fontStyle: "italic", textAlign: "center", padding: "20px 0", animation: "pulse 1.5s infinite" }}>
+                    (사건의 이면이 서술되는 중……)
+                  </div>
+                )}
               </div>
 
-              <footer style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "16px max(16px, env(safe-area-inset-bottom))", background: `linear-gradient(to top, ${theme.bg} 80%, transparent)`, display: "flex", flexDirection: "column", alignItems: "center", gap: "10px" }}>
+              {/* ⌨️ 하단: 늘어나는 캡슐형 입력창 및 제안 칩 */}
+              <footer style={{ 
+                position: "absolute", bottom: 0, left: 0, right: 0, 
+                padding: "20px max(20px, env(safe-area-inset-bottom))", 
+                background: `linear-gradient(to top, ${theme.bg} 85%, transparent)`, 
+                display: "flex", flexDirection: "column", alignItems: "center", gap: "12px" 
+              }}>
+                {/* AI 추천 행동 칩 */}
                 {activeSession?.suggestedActions?.length > 0 && (
                   <div style={{ display: "flex", gap: "8px", overflowX: "auto", width: "100%", maxWidth: "680px", paddingBottom: "4px" }}>
                     {activeSession.suggestedActions.map((sugg, idx) => (
-                      <button key={idx} onClick={() => executeMessage(sugg)} style={{ padding: "8px 14px", backgroundColor: theme.panel, border: `1px solid ${theme.border}`, borderRadius: "20px", color: theme.text, fontSize: "0.85rem", fontWeight: "700", whiteSpace: "nowrap", cursor: "pointer", flexShrink: 0, boxShadow: "0 4px 12px rgba(0,0,0,0.05)" }}>💡 {sugg}</button>
+                      <button 
+                        key={idx} onClick={() => executeMessage(sugg)} 
+                        style={{ padding: "10px 16px", backgroundColor: theme.panelAlt, border: `1px solid ${theme.border}`, borderRadius: "20px", color: theme.text, fontSize: "0.85rem", fontWeight: "700", whiteSpace: "nowrap", cursor: "pointer", flexShrink: 0, boxShadow: "0 4px 12px rgba(0,0,0,0.05)", transition: "all 0.2s" }}
+                      >
+                        💡 {sugg}
+                      </button>
                     ))}
                   </div>
                 )}
-                <div style={{ width: "100%", maxWidth: "680px", display: "flex", gap: "8px" }}>
-                  <input type="text" value={inputMsg} onChange={e => setInputMsg(e.target.value)} onKeyDown={e => { if (e.key === "Enter") handleSendMessage(); }} placeholder="행동을 선언하거나 대사를 입력하세요..." style={{ flex: 1, padding: "14px 18px", borderRadius: "24px", border: `1.5px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.95rem", outline: "none", boxShadow: "0 4px 20px rgba(0,0,0,0.05)" }} />
+
+                {/* 🌟 캡슐형 텍스트 입력 폼 (+ 버튼 삭제됨) */}
+                <div style={{ 
+                  width: "100%", maxWidth: "680px", display: "flex", alignItems: "flex-end", gap: "8px", 
+                  backgroundColor: theme.inputBg, border: `1.5px solid ${theme.border}`, borderRadius: "28px", 
+                  padding: "6px 8px 6px 20px", boxShadow: "0 8px 24px rgba(0,0,0,0.08)" 
+                }}>
+                  {/* 🌟 글을 칠 때마다 자동으로 늘어나는 textarea */}
+                  <textarea 
+                    value={inputMsg} 
+                    onChange={e => {
+                      setInputMsg(e.target.value);
+                      e.target.style.height = "auto";
+                      e.target.style.height = Math.min(e.target.scrollHeight, 120) + "px"; // 120px 한도 설정
+                    }} 
+                    onKeyDown={e => { 
+                      if (e.key === "Enter" && !e.shiftKey) { 
+                        e.preventDefault(); 
+                        handleSendMessage(); 
+                        e.target.style.height = "auto"; // 전송 후 크기 초기화
+                      } 
+                    }} 
+                    placeholder="행동을 선언하거나 대사를 입력하세요..." 
+                    rows={1}
+                    style={{ 
+                      flex: 1, border: "none", backgroundColor: "transparent", color: theme.text, 
+                      fontSize: "0.95rem", outline: "none", resize: "none", overflowY: "auto",
+                      maxHeight: "120px", padding: "10px 0", margin: 0, fontFamily: "inherit", lineHeight: "1.5"
+                    }} 
+                  />
+                  
                   {isLoading ? (
-                    <button onClick={() => { if(abortController) abortController.abort(); }} style={{ padding: "0 24px", borderRadius: "24px", backgroundColor: theme.danger, color: "#fff", border: "none", fontWeight: "800", cursor: "pointer" }}>중단</button>
+                    <button onClick={() => { if(abortController) abortController.abort(); }} title="중단" style={{ width: "40px", height: "40px", borderRadius: "50%", backgroundColor: theme.danger, color: "#fff", border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0, marginBottom: "2px" }}>
+                      <X size={20} strokeWidth={2.5} />
+                    </button>
                   ) : (
-                    <button onClick={handleSendMessage} disabled={!inputMsg.trim()} style={{ padding: "0 24px", borderRadius: "24px", backgroundColor: inputMsg.trim() ? theme.accent : theme.border, color: "#fff", border: "none", fontWeight: "800", cursor: inputMsg.trim() ? "pointer" : "default", transition: "all 0.2s" }}>전송</button>
+                    <button 
+                      onClick={() => { 
+                        handleSendMessage(); 
+                        const el = document.querySelector('textarea[placeholder*="행동을 선언"]'); 
+                        if(el) el.style.height = "auto"; 
+                      }} 
+                      disabled={!inputMsg.trim()} 
+                      title="전송" 
+                      style={{ 
+                        width: "40px", height: "40px", borderRadius: "50%", 
+                        backgroundColor: inputMsg.trim() ? theme.accent : theme.panelAlt, 
+                        color: inputMsg.trim() ? "#fff" : theme.textMuted, 
+                        border: "none", display: "flex", alignItems: "center", justifyContent: "center", 
+                        cursor: inputMsg.trim() ? "pointer" : "default", transition: "all 0.2s", 
+                        flexShrink: 0, marginBottom: "2px" 
+                      }}
+                    >
+                      {/* 🌟 사반이 요청한 화살표(↑) 디자인 전송 버튼 */}
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <line x1="12" y1="19" x2="12" y2="5"></line>
+                        <polyline points="5 12 12 5 19 12"></polyline>
+                      </svg>
+                    </button>
                   )}
                 </div>
               </footer>
