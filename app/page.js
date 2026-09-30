@@ -6,7 +6,8 @@ import { THEME_PALETTES, GLASS_STYLE } from "@/lib/themes";
 import { 
   Search, Heart, Flame, LayoutGrid, LibraryBig, PenTool, UserRound, 
   Menu, Moon, Sun, Save, FileUp, HelpCircle, X, ChevronDown, ChevronUp, Image as ImageIcon,
-  ClipboardList, Pin, FileSearch, Mailbox, Play
+  ClipboardList, Pin, FileSearch, Mailbox, Play,
+  FolderOpen, Lock, Settings, Database, ClipboardPaste
 } from "lucide-react";
 
 export default function GamePlatform() {
@@ -223,8 +224,12 @@ export default function GamePlatform() {
             </button>
           ) : (
             <>
-              <button onClick={() => triggerToast("환경 설정", "준비 중입니다.", "⚙")} style={{ flex: 1, padding: "10px", backgroundColor: theme.panel, border: `1px solid ${theme.border}`, borderRadius: "8px", color: theme.text, fontSize: "0.78rem", fontWeight: "700", cursor: "pointer" }}>⚙ 설정</button>
-              <button onClick={() => triggerToast("데이터 관리", "준비 중입니다.", "💾")} style={{ flex: 1, padding: "10px", backgroundColor: theme.panel, border: `1px solid ${theme.border}`, borderRadius: "8px", color: theme.text, fontSize: "0.78rem", fontWeight: "700", cursor: "pointer" }}>💾 데이터</button>
+              <button onClick={() => triggerToast("환경 설정", "준비 중입니다.", <Settings size={18} color={theme.accent} />)} style={{ flex: 1, padding: "10px", backgroundColor: theme.panel, border: `1px solid ${theme.border}`, borderRadius: "8px", color: theme.text, fontSize: "0.78rem", fontWeight: "700", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}>
+  <Settings size={16} strokeWidth={2.5} /> 설정
+</button>
+<button onClick={() => triggerToast("데이터 관리", "준비 중입니다.", <Database size={18} color={theme.accent} />)} style={{ flex: 1, padding: "10px", backgroundColor: theme.panel, border: `1px solid ${theme.border}`, borderRadius: "8px", color: theme.text, fontSize: "0.78rem", fontWeight: "700", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}>
+  <Database size={16} strokeWidth={2.5} /> 데이터
+</button>
             </>
           )}
         </div>
@@ -261,12 +266,13 @@ export default function GamePlatform() {
                 </button>
                 {/* 💾 저장 버튼 */}
                 <button 
-                  onClick={() => triggerToast("세팅 저장", "현재 작성 중인 서류가 로컬에 저장되었습니다.", "💾")} 
-                  title="세팅 저장"
-                  style={{ background: "none", border: "none", cursor: "pointer", padding: "8px", color: theme.text, display: "flex", alignItems: "center" }}
-                >
-                  <Save size={20} strokeWidth={2} />
-                </button>
+                onClick={() => triggerToast("세팅 저장", "현재 작성 중인 서류가 로컬에 저장되었습니다.", <Save size={20} color={theme.accent} />)} 
+                title="세팅 저장"
+                style={{ background: "none", border: "none", cursor: "pointer", padding: "8px", color: theme.text, display: "flex", alignItems: "center" }}
+              >
+                {/* 🌟 color={theme.text} 속성을 추가하여 주변 글씨 색상과 완벽하게 맞췄습니다! */}
+                <Save size={20} strokeWidth={2.5} color={theme.text} />
+              </button>
               </>
             )}
             
@@ -320,15 +326,17 @@ export default function GamePlatform() {
                         onClick={(e) => { e.stopPropagation(); setRuleHelpModal(m); }}
                         title={`${m.title} 규칙 설명 보기`}
                         style={{
-                          position: "absolute", top: "10px", right: "10px", // 우측 여백 미세 조정
-                          width: "22px", height: "22px", borderRadius: "50%",
-                          border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg,
-                          color: theme.textMuted, fontSize: "0.75rem", fontWeight: "800",
+                          position: "absolute", top: "12px", right: "12px",
+                          background: "none", border: "none", padding: 0, // 🌟 배경, 테두리 완전 제거
+                          color: theme.textMuted,
                           display: "flex", alignItems: "center", justifyContent: "center",
-                          cursor: "pointer"
+                          cursor: "pointer",
+                          opacity: 0.7, transition: "opacity 0.2s"
                         }}
+                        onMouseEnter={(e) => e.currentTarget.style.opacity = "1"}
+                        onMouseLeave={(e) => e.currentTarget.style.opacity = "0.7"}
                       >
-                        <HelpCircle size={14} strokeWidth={2.5} />
+                        <HelpCircle size={18} strokeWidth={2} />
                       </button>
 
                       {/* 🌟 중앙 SVG 아이콘 (크기 고정 및 색상 연동) */}
@@ -512,8 +520,8 @@ export default function GamePlatform() {
                     return (
                       <div style={{ padding: isMobile ? "14px" : "16px", backgroundColor: theme.panelAlt, borderRadius: "12px", border: `1.5px solid ${theme.borderHighlight || theme.border}`, display: "flex", flexDirection: "column", gap: "12px", marginTop: "4px" }}>
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: `1px dashed ${theme.border}`, paddingBottom: "8px", flexWrap: "wrap", gap: "8px" }}>
-                          <span style={{ fontSize: "0.88rem", fontWeight: "900", color: theme.accent }}>
-                            📂 수사 서류: [{cur.name || "신원 미상"}]
+                          <span style={{ fontSize: "0.88rem", fontWeight: "900", color: theme.accent, display: "flex", alignItems: "center", gap: "6px" }}>
+                            <FolderOpen size={18} strokeWidth={2.5} /> 수사 서류: [{cur.name || "신원 미상"}]
                           </span>
                         </div>
 
@@ -539,7 +547,9 @@ export default function GamePlatform() {
 
                         <div style={{ backgroundColor: isDarkMode ? "rgba(0,0,0,0.2)" : "rgba(255,255,255,0.6)", borderRadius: "8px", border: `1px solid ${theme.danger}`, padding: "10px 12px", marginTop: "4px" }}>
 <button type="button" onClick={() => handleUpdateSuspect(cur.id, "showSecret", !cur.showSecret)} style={{ width: "100%", textAlign: "left", background: "none", border: "none", fontSize: "0.76rem", color: theme.danger, cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-  <span style={{ fontWeight: "800" }}>🔒 숨겨진 비밀 / 약점</span>
+ <span style={{ fontWeight: "800", display: "flex", alignItems: "center", gap: "6px" }}>
+    <Lock size={15} strokeWidth={2.5} /> 숨겨진 비밀 / 약점
+  </span>
   <span style={{ fontWeight: "500", fontSize: "0.85rem" }}>{cur.showSecret ? "▲" : "▼"}</span>
 </button>
                           
@@ -576,7 +586,9 @@ export default function GamePlatform() {
                         <input type="text" value={item.overview} onChange={e => handleUpdateEvidence(item.id, "overview", e.target.value)} placeholder="발견 위치 및 겉모습..." style={{ width: "100%", boxSizing: "border-box", padding: "8px 10px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.78rem", outline: "none" }} />
                         <div style={{ backgroundColor: isDarkMode ? "rgba(0,0,0,0.2)" : "rgba(255,255,255,0.6)", borderRadius: "8px", border: `1px solid ${theme.danger}`, padding: "10px 12px" }}>
 <button type="button" onClick={() => handleUpdateEvidence(item.id, "showSecret", !item.showSecret)} style={{ width: "100%", textAlign: "left", background: "none", border: "none", fontSize: "0.72rem", color: theme.danger, cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-  <span style={{ fontWeight: "800" }}>🔒 감식 진상 / 모순</span>
+ <span style={{ fontWeight: "800", display: "flex", alignItems: "center", gap: "6px" }}>
+    <Lock size={15} strokeWidth={2.5} /> 감식 진상 / 모순
+  </span>
   <span style={{ fontWeight: "500", fontSize: "0.85rem" }}>{item.showSecret ? "▲" : "▼"}</span>
 </button>
                           {item.showSecret && (
@@ -795,7 +807,9 @@ export default function GamePlatform() {
         <div onClick={() => setShowPasteModal(false)} style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 200, padding: "20px" }}>
           <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: "520px", backgroundColor: theme.panel, border: `1px solid ${theme.border}`, borderRadius: "16px", padding: "20px", display: "flex", flexDirection: "column", gap: "12px", boxShadow: "0 20px 40px rgba(0,0,0,0.5)" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span style={{ fontWeight: "800", fontSize: "0.95rem" }}>📄 시나리오 텍스트 붙여넣기</span>
+             <span style={{ fontWeight: "800", fontSize: "0.95rem", display: "flex", alignItems: "center", gap: "6px" }}>
+                <ClipboardPaste size={20} strokeWidth={2.5} color={theme.accent} /> 시나리오 텍스트 붙여넣기
+              </span>
               <button onClick={() => setShowPasteModal(false)} style={{ background: "none", border: "none", color: theme.text, fontSize: "1.2rem", cursor: "pointer" }}><X size={20}/></button>
             </div>
             <textarea rows={8} value={pastedText} onChange={e => setPastedText(e.target.value)} placeholder="스튜디오에서 작성된 시나리오 전체 글을 여기에 붙여넣으세요..." style={{ width: "100%", boxSizing: "border-box", padding: "12px", backgroundColor: theme.inputBg, border: `1px solid ${theme.border}`, borderRadius: "8px", color: theme.text, fontSize: "0.82rem", outline: "none", resize: "none" }} />
