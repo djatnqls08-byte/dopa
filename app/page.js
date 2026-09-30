@@ -279,14 +279,11 @@ export default function GamePlatform() {
             
             {/* 1. 3대 모드 선택 카드 */}
             <section style={{ ...GLASS_STYLE, padding: isMobile ? "14px" : "18px", backgroundColor: theme.panel, borderRadius: "16px", border: `1px solid ${theme.border}` }}>
-              <div style={{ fontSize: "0.9rem", fontWeight: "800", marginBottom: "12px", color: theme.text }}>
-                1. 룰 시스템 선택
-              </div>
               <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(3, 1fr)", gap: "10px" }}>
                 {[
-                  { key: "추리", icon: "🕵️", title: "추리", desc: "단서를 모아 진상을 파헤치는 수사극" },
-                  { key: "연애", icon: "🌸", title: "연애", desc: "선택지와 감정선 중심의 서사극" },
-                  { key: "괴담", icon: "🕯️", title: "괴담", desc: "이면을 밝히고 침식을 견디는 호러" }
+                  { key: "추리", icon: "🕵️", title: "추리", desc: "진상을 파헤치는 수사" },
+                  { key: "연애", icon: "🌸", title: "연애", desc: "선택지와 감정선 중심의 서사" },
+                  { key: "괴담", icon: "🕯️", title: "괴담", desc: "이면을 밝히는 호러" }
                 ].map(m => {
                   const isSel = selectedMode === m.key;
                   return (
@@ -297,26 +294,28 @@ export default function GamePlatform() {
                         padding: "14px", borderRadius: "12px", cursor: "pointer",
                         backgroundColor: isSel ? theme.panelAlt : "transparent",
                         border: `1.5px solid ${isSel ? theme.accent : theme.border}`,
-                        display: "flex", alignItems: "center", justifyContent: "space-between",
+                        display: "flex", alignItems: "center", gap: "12px", // 🌟 요소를 3개로 나누고 사이 간격을 12px로 고정합니다.
                         boxShadow: isSel ? `0 0 16px ${theme.accentGlow}` : "none",
                         transition: "all 0.2s"
                       }}
                     >
-                      <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                        <span style={{ fontSize: "1.6rem" }}>{m.icon}</span>
-                        <div>
-                          <div style={{ fontWeight: "900", fontSize: "0.9rem", color: isSel ? theme.accent : theme.text }}>{m.title}</div>
-                          <div style={{ fontSize: "0.7rem", color: theme.textMuted, marginTop: "2px" }}>{m.desc}</div>
-                        </div>
+                      {/* 1. 좌측 영역: 룰 아이콘 (크기 고정) */}
+                      <span style={{ fontSize: "1.7rem", flexShrink: 0 }}>{m.icon}</span>
+                      
+                      {/* 2. 중앙 영역: 룰 제목과 설명 (가운데 빈 공간을 꽉 채움) */}
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontWeight: "900", fontSize: "0.95rem", color: isSel ? theme.accent : theme.text }}>{m.title}</div>
+                        <div style={{ fontSize: "0.72rem", color: theme.textMuted, marginTop: "3px", wordBreak: "keep-all" }}>{m.desc}</div>
                       </div>
 
+                      {/* 3. 우측 영역: 물음표 버튼 (크기 고정) */}
                       <button
                         onClick={(e) => { e.stopPropagation(); setRuleHelpModal(m); }}
                         title={`${m.title} 규칙 설명 보기`}
                         style={{
-                          width: "22px", height: "22px", borderRadius: "50%",
+                          width: "24px", height: "24px", borderRadius: "50%", flexShrink: 0, // 🌟 찌그러짐 방지
                           border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg,
-                          color: theme.textMuted, fontSize: "0.72rem", fontWeight: "800",
+                          color: theme.textMuted, fontSize: "0.75rem", fontWeight: "800",
                           display: "flex", alignItems: "center", justifyContent: "center",
                           cursor: "pointer"
                         }}
