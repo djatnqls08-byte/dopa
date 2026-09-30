@@ -33,6 +33,12 @@ export default function GamePlatform() {
     setTimeout(() => setToast(null), 2500);
   };
 
+// ── [추리 모드 스포일러 안전 봉인 토글 상태] ──
+const [isEvidenceArchiveOpen, setIsEvidenceArchiveOpen] = useState(false); // 단서 보관소 전체 봉인
+const [isTruthEnvelopeOpen, setIsTruthEnvelopeOpen] = useState(false); // 사건 진상 기밀 봉투 봉인
+const [openedEvidenceSecretIds, setOpenedEvidenceSecretIds] = useState([]); // 단서별 내부 2차 감식 진상 접기
+const [openedSuspectSecretIds, setOpenedSuspectSecretIds] = useState([]); // 용의자별 감춰둔 비밀 접기
+  
   // ── [3. 네비게이션 & 모달 상태] ──
   const [activeTab, setActiveTab] = useState("studio");
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -668,136 +674,162 @@ export default function GamePlatform() {
                     );
                   })()}
                 </section>
+{/* ── C. 사건 단서 및 물증 보관소 (스포일러 완전 봉인 토글 카드) ── */}
+<section style={{ ...GLASS_STYLE, backgroundColor: theme.panel, borderRadius: "18px", border: `1px solid ${theme.border}`, overflow: "hidden", transition: "all 0.2s ease" }}>
+  {/* 봉인 헤더 바 (클릭 시 토글) */}
+  <div 
+    onClick={() => setIsEvidenceArchiveOpen(!isEvidenceArchiveOpen)}
+    style={{ padding: "16px 20px", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer", backgroundColor: isEvidenceArchiveOpen ? theme.panelAlt : "transparent", userSelect: "none" }}
+  >
+    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+      <span style={{ fontSize: "1.1rem" }}>🔍</span>
+      <span style={{ fontWeight: "900", fontSize: "0.95rem", color: theme.text }}>
+        사건 단서 및 물증 보관소 ({evidenceList.length}건)
+      </span>
+      <span style={{ fontSize: "0.72rem", color: theme.danger, fontWeight: "800", backgroundColor: "rgba(224, 99, 119, 0.12)", padding: "2px 8px", borderRadius: "10px" }}>
+        스포일러 주의
+      </span>
+    </div>
+    <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+      {isEvidenceArchiveOpen && (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            const nextId = Date.now();
+            setEvidenceList([...evidenceList, { id: nextId, name: "", overview: "", contradiction: "", secret: "" }]);
+            triggerToast("단서 추가", "새로운 단서 슬롯이 추가되었습니다.", "📦");
+          }}
+          style={{ padding: "4px 10px", backgroundColor: theme.panel, border: `1.5px solid ${theme.accent}`, borderRadius: "14px", color: theme.accent, fontSize: "0.72rem", fontWeight: "800", cursor: "pointer" }}
+        >
+          ＋ 단서 추가
+        </button>
+      )}
+      <span style={{ fontSize: "0.85rem", color: theme.textMuted, transform: isEvidenceArchiveOpen ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.2s ease" }}>
+        ▼
+      </span>
+    </div>
+  </div>
 
-                {/* ── C. 사건 단서 및 물증 보관소 (토글 삭제, 항상 펼침) ── */}
-                <section style={{ ...GLASS_STYLE, padding: "20px", backgroundColor: theme.panel, borderRadius: "18px", border: `1px solid ${theme.border}`, display: "flex", flexDirection: "column", gap: "16px" }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                      <span style={{ fontSize: "1.1rem" }}>🔍</span>
-                      <span style={{ fontWeight: "900", fontSize: "0.95rem", color: theme.text }}>
-                        사건 단서 및 물증 보관소 ({evidenceList.length}건)
-                      </span>
-                      <span style={{ fontSize: "0.72rem", color: theme.danger, fontWeight: "700" }}>[스포일러 주의]</span>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        const nextId = Date.now();
-                        setEvidenceList([
-                          ...evidenceList,
-                          { id: nextId, name: "", overview: "", contradiction: "", secret: "" }
-                        ]);
-                        triggerToast("단서 추가", "새로운 단서 슬롯이 추가되었습니다.", "📦");
-                      }}
-                      style={{ padding: "6px 14px", backgroundColor: theme.panelAlt, border: `1.5px solid ${theme.accent}`, borderRadius: "16px", color: theme.accent, fontSize: "0.76rem", fontWeight: "800", cursor: "pointer" }}
-                    >
-                      ＋ 단서 추가
-                    </button>
-                  </div>
+  {/* 본문: 열려 있을 때만 렌더링 (잔여 테두리 버그 0%) */}
+  {isEvidenceArchiveOpen && (
+    <div style={{ padding: "16px 20px 20px 20px", display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: "12px", borderTop: `1px solid ${theme.border}` }}>
+      {evidenceList.map((item, idx) => {
+        const isSecretOpen = openedEvidenceSecretIds.includes(item.id);
+        return (
+          <div key={item.id} style={{ backgroundColor: theme.panelAlt, border: `1px solid ${theme.border}`, borderRadius: "12px", padding: "14px", display: "flex", flexDirection: "column", gap: "10px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "6px" }}>
+              <input
+                type="text"
+                value={item.name}
+                onChange={e => setEvidenceList(evidenceList.map(ev => ev.id === item.id ? { ...ev, name: e.target.value } : ev))}
+                placeholder={`단서 ${idx + 1} 명칭 (예: 마호가니 만년필)`}
+                style={{ flex: 1, padding: "8px 10px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.82rem", fontWeight: "800", outline: "none" }}
+              />
+              {evidenceList.length > 1 && (
+                <button
+                  type="button"
+                  onClick={() => setEvidenceList(evidenceList.filter(ev => ev.id !== item.id))}
+                  style={{ background: "none", border: "none", color: theme.danger, cursor: "pointer", padding: "2px", fontSize: "0.8rem" }}
+                >
+                  🗑
+                </button>
+              )}
+            </div>
 
-                  <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: "12px" }}>
-                    {evidenceList.map((item, idx) => (
-                      <div key={item.id} style={{ backgroundColor: theme.panelAlt, border: `1px solid ${theme.border}`, borderRadius: "12px", padding: "14px", display: "flex", flexDirection: "column", gap: "10px" }}>
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "6px" }}>
-                          <input
-                            type="text"
-                            value={item.name}
-                            onChange={e => {
-                              const updated = evidenceList.map(ev => ev.id === item.id ? { ...ev, name: e.target.value } : ev);
-                              setEvidenceList(updated);
-                            }}
-                            placeholder={`단서 ${idx + 1} 명칭 (예: 마호가니 만년필)`}
-                            style={{ flex: 1, padding: "8px 10px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.82rem", fontWeight: "800", outline: "none" }}
-                          />
-                          {evidenceList.length > 1 && (
-                            <button
-                              type="button"
-                              onClick={() => setEvidenceList(evidenceList.filter(ev => ev.id !== item.id))}
-                              style={{ background: "none", border: "none", color: theme.danger, cursor: "pointer", padding: "2px", fontSize: "0.8rem" }}
-                            >
-                              🗑
-                            </button>
-                          )}
-                        </div>
+            <input
+              type="text"
+              value={item.overview}
+              onChange={e => setEvidenceList(evidenceList.map(ev => ev.id === item.id ? { ...ev, overview: e.target.value } : ev))}
+              placeholder="발견 위치 및 겉모습 (현장 조사 시 드러나는 공개 정보)"
+              style={{ width: "100%", boxSizing: "border-box", padding: "8px 10px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.78rem", outline: "none" }}
+            />
 
-                        <input
-                          type="text"
-                          value={item.overview}
-                          onChange={e => {
-                            const updated = evidenceList.map(ev => ev.id === item.id ? { ...ev, overview: e.target.value } : ev);
-                            setEvidenceList(updated);
-                          }}
-                          placeholder="발견 위치 및 겉모습 (조사 시 드러나는 정보)"
-                          style={{ width: "100%", boxSizing: "border-box", padding: "8px 10px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.78rem", outline: "none" }}
-                        />
-
-                        {/* 감식 비밀 (항상 펼침) */}
-                        <div style={{ backgroundColor: isDarkMode ? "rgba(0,0,0,0.2)" : "rgba(255,255,255,0.6)", borderRadius: "8px", border: `1px solid ${theme.danger}`, padding: "10px 12px" }}>
-                          <div style={{ fontSize: "0.72rem", fontWeight: "800", color: theme.danger, marginBottom: "8px" }}>
-                            🔒 감식 진상 & 결정적 모순점
-                          </div>
-                          <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                            <input
-                              type="text"
-                              value={item.contradiction}
-                              onChange={e => {
-                                const updated = evidenceList.map(ev => ev.id === item.id ? { ...ev, contradiction: e.target.value } : ev);
-                                setEvidenceList(updated);
-                              }}
-                              placeholder="알리바이나 거짓말을 깰 결정적 모순..."
-                              style={{ width: "100%", boxSizing: "border-box", padding: "6px 10px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.78rem", outline: "none" }}
-                            />
-                            <input
-                              type="text"
-                              value={item.secret}
-                              onChange={e => {
-                                const updated = evidenceList.map(ev => ev.id === item.id ? { ...ev, secret: e.target.value } : ev);
-                                setEvidenceList(updated);
-                              }}
-                              placeholder="감식 성공 시 밝혀질 이면..."
-                              style={{ width: "100%", boxSizing: "border-box", padding: "6px 10px", borderRadius: "6px", border: `1px solid ${theme.danger}`, backgroundColor: theme.inputBg, color: theme.danger, fontSize: "0.78rem", outline: "none" }}
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </section>
-
-                {/* ── D. 사건 진상 기밀 봉투 (토글 삭제, 항상 펼침) ── */}
-                <section style={{ ...GLASS_STYLE, padding: "20px", backgroundColor: theme.panel, borderRadius: "18px", border: `1px solid ${theme.accent}`, display: "flex", flexDirection: "column", gap: "16px" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                    <span style={{ fontSize: "1.1rem" }}>✉️</span>
-                    <span style={{ fontWeight: "900", fontSize: "0.95rem", color: theme.accent }}>
-                      사건 진상 기밀 봉투 (진범 및 트릭)
-                    </span>
-                  </div>
-                  
-                  <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 2fr", gap: "10px" }}>
-                    <input
-                      type="text"
-                      value={culpritName}
-                      onChange={e => setCulpritName(e.target.value)}
-                      placeholder="진범 / 흑막 이름 (용의자 중 1명)"
-                      style={{ padding: "10px 12px", borderRadius: "8px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.85rem", outline: "none" }}
-                    />
-                    <input
-                      type="text"
-                      value={trickDetail}
-                      onChange={e => setTrickDetail(e.target.value)}
-                      placeholder="사용된 트릭 (예: 타이머와 에어컨을 이용한 사망 추정 시각 조작)"
-                      style={{ padding: "10px 12px", borderRadius: "8px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.85rem", outline: "none" }}
-                    />
-                  </div>
-                  <textarea
-                    rows={3}
-                    value={hiddenTruth}
-                    onChange={e => setHiddenTruth(e.target.value)}
-                    placeholder="사건의 전체 배후 내막 및 엔딩 분기 조건..."
-                    style={{ padding: "10px 12px", borderRadius: "8px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.83rem", outline: "none", resize: "vertical" }}
+            {/* 내부 2차 감식 진상 봉인 버튼 */}
+            <div style={{ borderRadius: "8px", border: `1px solid ${theme.danger}`, overflow: "hidden" }}>
+              <div 
+                onClick={() => setOpenedEvidenceSecretIds(isSecretOpen ? openedEvidenceSecretIds.filter(id => id !== item.id) : [...openedEvidenceSecretIds, item.id])}
+                style={{ padding: "7px 10px", backgroundColor: isSecretOpen ? "rgba(224, 99, 119, 0.12)" : "rgba(224, 99, 119, 0.05)", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer", userSelect: "none" }}
+              >
+                <span style={{ fontSize: "0.72rem", fontWeight: "800", color: theme.danger }}>🔒 감식 진상 & 결정적 모순점</span>
+                <span style={{ fontSize: "0.68rem", color: theme.danger }}>{isSecretOpen ? "봉인 닫기 ▲" : "확인하기 ▼"}</span>
+              </div>
+              {isSecretOpen && (
+                <div style={{ padding: "10px", display: "flex", flexDirection: "column", gap: "6px", backgroundColor: isDarkMode ? "rgba(0,0,0,0.25)" : "rgba(255,255,255,0.7)" }}>
+                  <input
+                    type="text"
+                    value={item.contradiction}
+                    onChange={e => setEvidenceList(evidenceList.map(ev => ev.id === item.id ? { ...ev, contradiction: e.target.value } : ev))}
+                    placeholder="알리바이나 거짓말을 깰 결정적 모순점..."
+                    style={{ width: "100%", boxSizing: "border-box", padding: "6px 10px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.78rem", outline: "none" }}
                   />
-                </section>
+                  <input
+                    type="text"
+                    value={item.secret}
+                    onChange={e => setEvidenceList(evidenceList.map(ev => ev.id === item.id ? { ...ev, secret: e.target.value } : ev))}
+                    placeholder="감식/정밀 수사 성공 시 밝혀질 숨겨진 이면..."
+                    style={{ width: "100%", boxSizing: "border-box", padding: "6px 10px", borderRadius: "6px", border: `1px solid ${theme.danger}`, backgroundColor: theme.inputBg, color: theme.danger, fontSize: "0.78rem", outline: "none" }}
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  )}
+</section>
+
+               {/* ── D. 사건 진상 기밀 봉투 (절대 기밀 봉인 토글 카드) ── */}
+<section style={{ ...GLASS_STYLE, backgroundColor: theme.panel, borderRadius: "18px", border: `1.5px solid ${theme.accent}`, overflow: "hidden", transition: "all 0.2s ease" }}>
+  {/* 기밀 봉투 헤더 바 */}
+  <div 
+    onClick={() => setIsTruthEnvelopeOpen(!isTruthEnvelopeOpen)}
+    style={{ padding: "16px 20px", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer", backgroundColor: isTruthEnvelopeOpen ? theme.panelAlt : "transparent", userSelect: "none" }}
+  >
+    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+      <span style={{ fontSize: "1.1rem" }}>✉️</span>
+      <span style={{ fontWeight: "900", fontSize: "0.95rem", color: theme.accent }}>
+        사건 진상 기밀 봉투 (진범 · 트릭 · 엔딩 분기)
+      </span>
+      <span style={{ fontSize: "0.72rem", color: theme.accent, fontWeight: "800", backgroundColor: theme.accentGlow, padding: "2px 8px", borderRadius: "10px" }}>
+        기밀 잠금
+      </span>
+    </div>
+    <span style={{ fontSize: "0.85rem", color: theme.accent, transform: isTruthEnvelopeOpen ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.2s ease" }}>
+      ▼
+    </span>
+  </div>
+
+  {/* 기밀 봉투 내용물: 열려 있을 때만 노출 */}
+  {isTruthEnvelopeOpen && (
+    <div style={{ padding: "16px 20px 20px 20px", display: "flex", flexDirection: "column", gap: "12px", borderTop: `1px solid ${theme.border}` }}>
+      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 2fr", gap: "10px" }}>
+        <input
+          type="text"
+          value={culpritName}
+          onChange={e => setCulpritName(e.target.value)}
+          placeholder="진범 / 흑막 지목 (용의자 중 1명)"
+          style={{ padding: "10px 12px", borderRadius: "8px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.85rem", fontWeight: "800", outline: "none" }}
+        />
+        <input
+          type="text"
+          value={trickDetail}
+          onChange={e => setTrickDetail(e.target.value)}
+          placeholder="사용된 핵심 트릭 (예: 타이머와 에어컨을 이용한 사망 추정 시각 조작)"
+          style={{ padding: "10px 12px", borderRadius: "8px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.85rem", outline: "none" }}
+        />
+      </div>
+      <textarea
+        rows={4}
+        value={hiddenTruth}
+        onChange={e => setHiddenTruth(e.target.value)}
+        placeholder="사건의 전체 배후 내막, 범행 동기, 모든 엔딩 분기 조건(트루/배드/노말 엔딩)..."
+        style={{ padding: "10px 12px", borderRadius: "8px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.83rem", outline: "none", resize: "vertical", lineHeight: "1.6" }}
+      />
+    </div>
+  )}
+</section>
               </>
             )}
 
