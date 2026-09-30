@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import SecretBoard from "@/components/SecretBoard";
 import { THEME_PALETTES, GLASS_STYLE } from "@/lib/themes";
 // 🌟 세련된 벡터 아이콘 라이브러리 임포트
 import { 
@@ -1126,50 +1127,6 @@ const [showEvidence, setShowEvidence] = useState(false);
               </footer>
             </div>
 
-            {/* ── 📌 증거보드 팝업 모달 (중앙에 띄움) ── */}
-            {activeSession.ruleMode === "freeform" && showEvidenceBoard && (
-              <div onClick={() => setShowEvidenceBoard(false)} style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0, 0, 0, 0.85)", backdropFilter: "blur(8px)", zIndex: 99999, display: "flex", alignItems: "center", justifyContent: "center", padding: isMobile ? "10px" : "20px", animation: "fadeIn 0.2s ease-out" }}>
-                <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: "760px", maxHeight: "88vh", backgroundColor: theme.panel, backgroundImage: isDarkMode ? "radial-gradient(rgba(255,255,255,0.05) 1.5px, transparent 1.5px)" : "radial-gradient(rgba(0,0,0,0.05) 1.5px, transparent 1.5px)", backgroundSize: "16px 16px", border: `2px solid ${theme.border}`, borderRadius: "18px", display: "flex", flexDirection: "column", overflow: "hidden", boxShadow: "0 25px 60px rgba(0, 0, 0, 0.85)" }}>
-                  <div style={{ padding: "14px 20px", backgroundColor: theme.panelAlt, borderBottom: `1.5px solid ${theme.border}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                      <span style={{ fontSize: "1.3rem" }}>📌</span>
-                      <div>
-                        <h3 style={{ margin: 0, fontSize: "1rem", fontWeight: "900", color: theme.accent }}>수사 본부 증거보드</h3>
-                        <div style={{ fontSize: "0.7rem", color: theme.textMuted, marginTop: "2px" }}>확보 단서 {(activeSession.sheet?.handouts || []).length}건 · 관련자 {(activeSession.sheet?.npcs || []).length}명</div>
-                      </div>
-                    </div>
-                    <button onClick={() => setShowEvidenceBoard(false)} style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.15)", color: theme.text, borderRadius: "50%", width: "32px", height: "32px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
-                  </div>
-                  <div style={{ flex: 1, overflowY: "auto", padding: "20px", display: "flex", flexDirection: "column", gap: "18px" }}>
-                    {activeSession.sheet?.currentObjective && (
-                      <div style={{ backgroundColor: isDarkMode ? "#451a03" : "#fef08a", color: isDarkMode ? "#fde047" : "#854d0e", padding: "12px 16px", borderRadius: "4px", boxShadow: "2px 4px 12px rgba(0,0,0,0.35)", transform: "rotate(-0.5deg)", borderLeft: `6px solid ${isDarkMode ? "#eab308" : "#ca8a04"}` }}>
-                        <div style={{ fontSize: "0.7rem", fontWeight: "900", letterSpacing: "1px", color: isDarkMode ? "#fef08a" : "#854d0e" }}>CURRENT OBJECTIVE</div>
-                        <div style={{ fontSize: "0.92rem", fontWeight: "800", marginTop: "2px" }}>{activeSession.sheet.currentObjective.main}</div>
-                        {activeSession.sheet.currentObjective.step && <div style={{ fontSize: "0.78rem", marginTop: "4px" }}>👉 {activeSession.sheet.currentObjective.step}</div>}
-                      </div>
-                    )}
-                    <div>
-                      <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "10px" }}><span style={{ color: theme.danger, fontSize: "0.9rem" }}>🔴</span><span style={{ fontSize: "0.84rem", fontWeight: "800", color: theme.text }}>용의자 수사망 ({(activeSession.sheet?.npcs || []).length}명)</span></div>
-                      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "repeat(2, 1fr)" : "repeat(3, 1fr)", gap: "10px" }}>
-                        {(activeSession.sheet?.npcs || []).map((npc, idx) => (
-                          <div key={idx} style={{ backgroundColor: theme.polaroidBg || (isDarkMode ? "#e7e5e4" : "#ffffff"), color: theme.polaroidText || "#1c1917", padding: "10px", borderRadius: "4px", boxShadow: "0 6px 14px rgba(0,0,0,0.4)", position: "relative", transform: idx % 2 === 0 ? "rotate(0.8deg)" : "rotate(-0.8deg)", display: "flex", flexDirection: "column", gap: "6px" }}>
-                            <div style={{ position: "absolute", top: "-6px", left: "50%", transform: "translateX(-50%)", fontSize: "0.9rem" }}>📍</div>
-                            <div style={{ width: "100%", aspectRatio: "1/1", backgroundColor: "#e7e5e4", borderRadius: "2px", overflow: "hidden", border: "1px solid #d6d3d1" }}>
-                              {npc.portraitUrl ? <img src={npc.portraitUrl} alt={npc.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.6rem" }}>👤</div>}
-                            </div>
-                            <div style={{ textAlign: "center", marginTop: "2px" }}>
-                              <div style={{ fontWeight: "900", fontSize: "0.85rem", color: "#1c1917" }}>{npc.name}</div>
-                              <div style={{ fontSize: "0.68rem", color: "#78716c" }}>{npc.job || "관계자"}</div>
-                            </div>
-                            {npc.behavior && <div style={{ fontSize: "0.65rem", color: "#44403c", backgroundColor: "#e7e5e4", padding: "4px 6px", borderRadius: "3px", lineHeight: "1.35", fontStyle: "italic" }}>"{npc.behavior}"</div>}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
 
             {/* ── 📋 우측 캐릭터 시트 오버레이 패널 ── */}
             <div style={{ position: "absolute", top: 0, right: 0, bottom: 0, width: isMobile ? "100%" : "360px", backgroundColor: theme.sidebar, borderLeft: `1px solid ${theme.border}`, zIndex: 90, transform: isSheetOpen ? "translateX(0)" : "translateX(100%)", transition: "transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)", display: "flex", flexDirection: "column", boxShadow: isSheetOpen ? "-10px 0 30px rgba(0,0,0,0.3)" : "none" }}>
