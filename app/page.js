@@ -703,7 +703,7 @@ const [showEvidence, setShowEvidence] = useState(false);
                   >
                     <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                       <FileSearch size={22} strokeWidth={2} color={theme.accent} />
-                      <span style={{ fontWeight: "900", fontSize: "0.95rem", color: theme.text }}>사건 단서 및 물증</span>
+                      <span style={{ fontWeight: "600", fontSize: "0.95rem", color: theme.text }}>사건 단서 및 물증</span>
                     </div>
                     {/* 우측 끝 화살표 */}
                     <span style={{ color: theme.text, fontSize: "0.85rem", fontWeight: "500" }}>
@@ -775,7 +775,7 @@ const [showEvidence, setShowEvidence] = useState(false);
                     <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                       {/* 아이콘만 포인트 색상을 유지하고 글씨는 일반 색상으로 뺍니다 */}
                       <Mailbox size={22} strokeWidth={2} color={theme.accent} />
-                      <span style={{ fontWeight: "900", fontSize: "0.95rem", color: theme.text }}>사건 진상 봉투</span>
+                      <span style={{ fontWeight: "600", fontSize: "0.95rem", color: theme.text }}>사건 진상 봉투</span>
                     </div>
                     {/* 화살표 역시 일반 텍스트 색상으로 변경 */}
                     <span style={{ color: theme.text, fontSize: "0.85rem", fontWeight: "500" }}>
