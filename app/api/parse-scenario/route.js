@@ -15,7 +15,7 @@ export async function POST(req) {
     const body = await req.json();
     const { rawText, imageData, pcName, kpcName, kpcDetail, ruleMode } = body;
 
-    const rawKeys = process.env.GEMINI_API_KEY || "";
+    const rawKeys = process.env.GEMINI_API_KEY || process.env.Gemini_API_Key || "";
     const apiKeys = rawKeys.split(",").map(k => k.trim()).filter(Boolean);
     
     if (apiKeys.length === 0) throw new Error("서버에 등록된 API 키가 없습니다.");
