@@ -1170,14 +1170,7 @@ const [showEvidence, setShowEvidence] = useState(false);
                     onChange={e => {
                       setInputMsg(e.target.value);
                       e.target.style.height = "auto";
-                      e.target.style.height = Math.min(e.target.scrollHeight, 120) + "px"; // 120px 한도 설정
-                    }} 
-                    onKeyDown={e => { 
-                      if (e.key === "Enter" && !e.shiftKey) { 
-                        e.preventDefault(); 
-                        handleSendMessage(); 
-                        e.target.style.height = "auto"; // 전송 후 크기 초기화
-                      } 
+                      e.target.style.height = Math.min(e.target.scrollHeight, 120) + "px"; 
                     }} 
                     placeholder="행동을 선언하거나 대사를 입력하세요..." 
                     rows={1}
@@ -1210,7 +1203,6 @@ const [showEvidence, setShowEvidence] = useState(false);
                         flexShrink: 0, marginBottom: "2px" 
                       }}
                     >
-                      {/* 🌟 사반이 요청한 위쪽 화살표(↑) 디자인 전송 버튼 */}
                       <ArrowUp size={20} strokeWidth={2.5} />
                     </button>
                   )}
