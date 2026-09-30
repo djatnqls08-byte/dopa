@@ -114,6 +114,14 @@ const [showEvidence, setShowEvidence] = useState(false);
   const [inputMsg, setInputMsg] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
+  // ── [9. 인게임 진행 상태 관리 (원본에서 이식)] ──
+  const [sessions, setSessions] = useState([]); // 진행 중인 전체 세션 목록
+  const [activeSessionId, setActiveSessionId] = useState(null); // 현재 띄워진 세션 ID
+  const [abortController, setAbortController] = useState(null); // AI 통신 강제 중단 컨트롤러
+  
+  // 현재 활성화된 세션의 전체 데이터를 쉽게 꺼내쓰기 위한 단축 변수
+  const activeSession = sessions.find((s) => s.id === activeSessionId) || null;
+
   // ── [8. 동적 조작 함수들] ──
   
   const handleAddSuspect = () => {
@@ -241,14 +249,180 @@ const [showEvidence, setShowEvidence] = useState(false);
   };
 
 
-  const handleStartGame = () => {
+  // ── [10. 코어 엔진: 세션 시작 및 통신 (원본에서 이식 및 추리 모드 최적화)] ──
+  
+  // 🚀 1. 이야기 시작하기 버튼을 눌렀을 때 작동하는 함수
+  const startNewSession = async () => {
+    // 필수 입력값 검사
     if (!scenarioTitle.trim()) {
       triggerToast("사건명 입력 필요", "이야기를 시작하려면 사건명을 입력해주세요.", "⚠️");
       return;
     }
-    setActiveSession({ title: scenarioTitle });
+
+    const pName = pcName.trim() || "주인공";
+    
+    // 로비 화면에 흩어져 있던 데이터들을 하나의 시트(Sheet)로 깔끔하게 묶습니다.
+    const initialSheet = {
+      name: pName,
+      job: pcJob || "조사원",
+      ageGender: pcAgeGender || "",
+      background: pcBackground || "",
+      portrait: pcPortraitUrl || "",
+      hp: 100, // 추리 모드 신뢰도 (100점 만점 기준)
+      maxHp: 100,
+      npcs: suspects.map(s => ({ ...s, secretRevealed: false })), // 용의자 데이터
+      handouts: evidenceList.map(e => ({ ...e, revealed: false })), // 단서 데이터
+      fatigue: 0 // 수사 피로도
+    };
+
+    const newId = Date.now();
+    const newSession = {
+      id: newId,
+      title: scenarioTitle,
+      ruleMode: selectedMode === "추리" ? "freeform" : selectedMode === "연애" ? "dating" : "insane",
+      preference: playPreference.trim(),
+      // AI 마스터에게 전달할 시나리오 전체 뼈대
+      scenarioText: `[시나리오 제목: ${scenarioTitle}]\n\n[공개 시놉시스]\n${publicSynopsis}\n\n[초기 배경/서막]\n${openingScene}\n\n[키퍼 전용 기밀/진상]\n${hiddenTruth}`,
+      sheet: initialSheet,
+      messages: [], // 채팅 내역이 쌓일 빈 배열
+      suggestedActions: [] // AI가 제안할 3지선다 버튼
+    };
+
+    // 화면을 인게임으로 전환하고 로딩을 켭니다.
+    setSessions([newSession, ...sessions]);
+    setActiveSessionId(newId);
+    setIsLoading(true);
+
+    const openingPrompt = `[세션 시작: 추리/수사 모드 사전 교류 서막 요청]
+시나리오의 [초기 배경/서막]에 참혹한 사건이나 본격적인 갈등이 적혀 있더라도, 1턴부터 바로 사건을 터뜨리지 마십시오.
+대신 사건이 발생하기 전, 인물들이 한 공간에 모여 일상적인 대화를 나누거나 묘한 긴장감이 흐르는 '폭풍전야'의 시점(명탐정 코난, 소년탐정 김전일의 에피소드 초반부처럼)으로 서막을 시작하십시오.
+
+[🚨 도입부 연출 수칙]
+1. [사건 발생 전 상황 조성]:
+- 본격적인 사건이 터지기 전, 인물들의 성격과 관계성을 엿볼 수 있는 상황을 4~5문장으로 서술하십시오.
+2. [인물과의 첫 대면 기회 제공]:
+- 주인공 '${pName}'이 자리에 합류하여 주변 용의자 중 한 명과 가볍게 눈인사를 나누거나 첫마디를 건넬 수 있는 타이밍에서 지문을 멈추십시오.
+3. [자연스러운 대화 유도 선택지]:
+<!-- SUGGESTIONS: ["가까이 있는 인물에게 다가가 가볍게 인사를 건넨다", "자리에 모인 인물들의 낯빛과 기류를 살핀다", "조용히 주변을 둘러보며 자리를 잡는다"] -->`;
+
+    const controller = new AbortController();
+    setAbortController(controller);
+
+    try {
+      // 🌟 백엔드(api/chat)로 데이터를 보냅니다.
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        signal: controller.signal,
+        body: JSON.stringify({
+          messages: [{ role: "user", text: openingPrompt }],
+          scenarioText: newSession.scenarioText,
+          playerSheet: initialSheet,
+          ruleMode: newSession.ruleMode,
+          playPreference: playPreference
+        })
+      });
+
+      if (!res.ok) throw new Error("서버 응답 오류");
+      const data = await res.json();
+      
+      let cleanText = data.text || "";
+      let suggActions = [];
+      
+      // AI가 보낸 제안(SUGGESTIONS) 태그를 추출하여 버튼으로 만듭니다.
+      const suggMatch = cleanText.match(/<!--\s*SUGGESTIONS:\s*(\[[\s\S]*?\])\s*-{1,3}>/i);
+      if (suggMatch) {
+        try { suggActions = JSON.parse(suggMatch[1]); } catch(e) {}
+        cleanText = cleanText.replace(suggMatch[0], "").trim();
+      }
+
+      // 받아온 서막 텍스트를 화면에 업데이트합니다.
+      setSessions(prev => prev.map(s => s.id === newId ? {
+        ...s,
+        messages: [{ role: "model", text: cleanText }],
+        suggestedActions: suggActions
+      } : s));
+
+    } catch (err) {
+      if (err.name === "AbortError") return;
+      triggerToast("시작 오류", "서막을 불러오는 중 문제가 발생했습니다.", "⚠️");
+    } finally {
+      setIsLoading(false);
+      setAbortController(null);
+    }
   };
 
+  // 🚀 2. 플레이어가 채팅을 칠 때마다 실행되는 함수
+  const executeMessage = async (textToSend) => {
+    if (!textToSend.trim() || !activeSession) return;
+
+    // 플레이어가 입력한 텍스트를 먼저 화면에 띄워줍니다.
+    const updatedMessages = [
+      ...(activeSession.messages || []),
+      { role: "user", text: textToSend }
+    ];
+
+    setSessions(prev => prev.map(s => s.id === activeSessionId ? { 
+      ...s, 
+      messages: updatedMessages,
+      suggestedActions: [] // 전송하는 순간 기존 제안 버튼 숨김
+    } : s));
+    
+    setIsLoading(true);
+    setInputMsg(""); // 입력창 비우기
+
+    const controller = new AbortController();
+    setAbortController(controller);
+
+    try {
+      // 최근 20개의 대화 내역만 추려서 AI에게 전송합니다.
+      const messagesForApi = updatedMessages.slice(-20).map(m => ({ role: m.role, text: m.text }));
+
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        signal: controller.signal,
+        body: JSON.stringify({
+          messages: messagesForApi,
+          scenarioText: activeSession.scenarioText,
+          playerSheet: activeSession.sheet,
+          ruleMode: activeSession.ruleMode,
+          playPreference: activeSession.preference
+        })
+      });
+
+      if (!res.ok) throw new Error("서버 응답 오류");
+      const data = await res.json();
+      
+      let cleanText = data.text || "";
+      let suggActions = [];
+      const suggMatch = cleanText.match(/<!--\s*SUGGESTIONS:\s*(\[[\s\S]*?\])\s*-{1,3}>/i);
+      if (suggMatch) {
+        try { suggActions = JSON.parse(suggMatch[1]); } catch(e) {}
+        cleanText = cleanText.replace(suggMatch[0], "").trim();
+      }
+
+      // AI의 답변을 말풍선 목록에 추가합니다.
+      setSessions(prev => prev.map(s => s.id === activeSessionId ? {
+        ...s,
+        messages: [...updatedMessages, { role: "model", text: cleanText }],
+        suggestedActions: suggActions
+      } : s));
+
+    } catch (err) {
+      if (err.name === "AbortError") return;
+      triggerToast("통신 오류", "메시지 전송 중 오류가 발생했습니다.", "⚠️");
+    } finally {
+      setIsLoading(false);
+      setAbortController(null);
+    }
+  };
+
+  const handleSendMessage = () => {
+    if (!inputMsg.trim() || isLoading) return;
+    executeMessage(inputMsg);
+  };
+  
   return (
     <div style={{ display: "flex", height: "100dvh", width: "100vw", backgroundColor: theme.bg, color: theme.text, overflow: "hidden", position: "relative" }}>
       
@@ -348,7 +522,7 @@ const [showEvidence, setShowEvidence] = useState(false);
           </div>
         </header>
 
-        {/* ── [A. 로비 뷰 (이전 '창작' 탭)] ── */}
+        {/* ── [A. 로비 뷰] ── */}
         {!activeSession ? (
           <main style={{ flex: 1, overflowY: "auto", padding: isMobile ? "16px 14px 140px 14px" : "20px 16px 160px 16px", maxWidth: "860px", margin: "0 auto", width: "100%", display: "flex", flexDirection: "column", gap: isMobile ? "14px" : "18px", boxSizing: "border-box" }}>
               
@@ -813,42 +987,188 @@ const [showEvidence, setShowEvidence] = useState(false);
               </div>
             )}
 
-            {/* 🌟 이야기 시작하기 버튼 */}
-           <button
-              onClick={handleStartGame}
-              style={{
-                width: "100%", padding: "16px", borderRadius: "14px",
-                backgroundColor: theme.accent, color: isDarkMode ? "#1a1817" : "#ffffff", border: "none",
-                fontWeight: "900", fontSize: "1.05rem", cursor: "pointer",
-                boxShadow: `0 4px 20px ${theme.accentGlow}`, marginTop: "6px",
-                display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" // 🌟 아이콘 정렬을 위한 스타일 추가
+            <button 
+              onClick={startNewSession} 
+              disabled={isLoading}
+              style={{ 
+                width: "100%", padding: "16px", borderRadius: "14px", marginTop: "12px",
+                backgroundColor: isLoading ? theme.panelAlt : theme.accent, 
+                color: isLoading ? theme.textMuted : (isDarkMode ? "#1a1817" : "#ffffff"), 
+                border: isLoading ? `1px solid ${theme.border}` : "none",
+                fontWeight: "900", fontSize: "1.05rem", cursor: isLoading ? "default" : "pointer",
+                boxShadow: isLoading ? "none" : `0 4px 20px rgba(0,0,0,0.2)`, 
+                transition: "all 0.2s", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" 
               }}
             >
-              <Play size={20} strokeWidth={2.5} fill="currentColor" /> 이야기 시작하기
+              {isLoading ? "서막을 여는 중..." : "▶ 이야기 시작하기"}
             </button>
-              <div style={{ height: "60px", flexShrink: 0 }} />
+            <div style={{ height: "60px", flexShrink: 0 }} />
           </main>
+
         ) : (
 
-          /* ── [B. 인게임 뷰: 소설 리더 본문] ── */
-          <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
-            <div style={{ flex: 1, overflowY: "auto", padding: "24px 20px 90px 20px", display: "flex", flexDirection: "column", gap: "18px", maxWidth: "760px", margin: "0 auto", width: "100%", boxSizing: "border-box", fontSize: "0.95rem", lineHeight: 2 }}>
-              {messages.map((m, idx) => (
-                <div key={idx} className="serif-text" style={{ color: m.role === "user" ? theme.accent : theme.text, fontWeight: m.role === "user" ? "700" : "400" }}>
-                  {m.text}
+         ) : (
+          /* ── [B. 인게임 뷰: 소설 리더 본문 및 우측 수사 상황판] ── */
+          <div style={{ flex: 1, display: "flex", overflow: "hidden", position: "relative", backgroundColor: theme.bg }}>
+            
+            {/* 📖 중앙: 소설형 텍스트 뷰어 (말풍선 제거, 전자책 스타일) */}
+            <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", position: "relative" }}>
+              <div 
+                className="serif-text" 
+                style={{ 
+                  flex: 1, overflowY: "auto", padding: isMobile ? "24px 16px 120px 16px" : "40px 40px 140px 40px", 
+                  display: "flex", flexDirection: "column", gap: "28px", 
+                  maxWidth: "760px", margin: "0 auto", width: "100%", boxSizing: "border-box", 
+                  fontSize: "1.05rem", lineHeight: 2.1, color: theme.text 
+                }}
+              >
+                {(activeSession.messages || []).map((m, idx) => {
+                  const isUser = m.role === "user";
+                  return (
+                    <div key={idx} style={{ 
+                      alignSelf: "stretch",
+                      color: isUser ? theme.accent : theme.text,
+                      fontWeight: isUser ? "700" : "400",
+                      opacity: 0.95,
+                      borderLeft: isUser ? `3px solid ${theme.accent}` : "none",
+                      paddingLeft: isUser ? "16px" : "0",
+                      fontStyle: isUser ? "italic" : "normal",
+                      wordBreak: "keep-all"
+                    }}>
+                      {m.text}
+                    </div>
+                  );
+                })}
+                {isLoading && (
+                  <div style={{ color: theme.textMuted, fontSize: "0.95rem", fontStyle: "italic", paddingTop: "10px", paddingLeft: "16px", borderLeft: `3px solid ${theme.border}` }}>
+                    (사건의 이면이 서술되는 중……)
+                  </div>
+                )}
+              </div>
+
+              {/* ⌨️ 하단: 입력창 및 제안 칩 */}
+              <footer style={{ 
+                position: "absolute", bottom: 0, left: 0, right: 0, 
+                padding: "16px max(16px, env(safe-area-inset-bottom))", 
+                background: `linear-gradient(to top, ${theme.bg} 80%, transparent)`, 
+                display: "flex", flexDirection: "column", alignItems: "center", gap: "10px" 
+              }}>
+                {/* AI 추천 행동 칩 */}
+                {activeSession?.suggestedActions?.length > 0 && (
+                  <div style={{ display: "flex", gap: "8px", overflowX: "auto", width: "100%", maxWidth: "680px", paddingBottom: "4px" }}>
+                    {activeSession.suggestedActions.map((sugg, idx) => (
+                      <button 
+                        key={idx} onClick={() => executeMessage(sugg)} 
+                        style={{ padding: "8px 14px", backgroundColor: theme.panel, border: `1px solid ${theme.border}`, borderRadius: "20px", color: theme.text, fontSize: "0.85rem", fontWeight: "700", whiteSpace: "nowrap", cursor: "pointer", flexShrink: 0, boxShadow: "0 4px 12px rgba(0,0,0,0.05)" }}
+                      >
+                        💡 {sugg}
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                {/* 텍스트 입력 폼 */}
+                <div style={{ width: "100%", maxWidth: "680px", display: "flex", gap: "8px" }}>
+                  <input 
+                    type="text" value={inputMsg} onChange={e => setInputMsg(e.target.value)} 
+                    onKeyDown={e => { if (e.key === "Enter") handleSendMessage(); }} 
+                    placeholder="행동을 선언하거나 대사를 입력하세요..." 
+                    style={{ flex: 1, padding: "14px 18px", borderRadius: "24px", border: `1.5px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.95rem", outline: "none", boxShadow: "0 4px 20px rgba(0,0,0,0.05)" }} 
+                  />
+                  {isLoading ? (
+                    <button onClick={() => { if(abortController) abortController.abort(); }} style={{ padding: "0 24px", borderRadius: "24px", backgroundColor: theme.danger, color: "#fff", border: "none", fontWeight: "800", cursor: "pointer" }}>중단</button>
+                  ) : (
+                    <button onClick={handleSendMessage} disabled={!inputMsg.trim()} style={{ padding: "0 24px", borderRadius: "24px", backgroundColor: inputMsg.trim() ? theme.accent : theme.border, color: "#fff", border: "none", fontWeight: "800", cursor: inputMsg.trim() ? "pointer" : "default", transition: "all 0.2s" }}>전송</button>
+                  )}
                 </div>
-              ))}
-              {isLoading && <div style={{ color: theme.textMuted, fontSize: "0.82rem", fontStyle: "italic" }}>서사가 이어지는 중……</div>}
+              </footer>
             </div>
 
-            <footer style={{ position: "sticky", bottom: 0, padding: "12px 16px max(16px, env(safe-area-inset-bottom))", backgroundColor: theme.sidebar, borderTop: `1px solid ${theme.border}`, display: "flex", justifyContent: "center" }}>
-              <div style={{ width: "100%", maxWidth: "600px", display: "flex", gap: "8px" }}>
-                <input type="text" value={inputMsg} onChange={e => setInputMsg(e.target.value)} onKeyDown={e => { if (e.key === "Enter") handleSendMessage(); }} placeholder="대사나 행동을 입력하세요..." style={{ flex: 1, padding: "10px 14px", borderRadius: "20px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, outline: "none" }} />
-                <button onClick={handleSendMessage} style={{ padding: "0 18px", borderRadius: "20px", backgroundColor: theme.accent, color: isDarkMode ? "#1a1817" : "#fff", border: "none", fontWeight: "800", cursor: "pointer" }}>전송</button>
-              </div>
-            </footer>
+            {/* 📊 우측 수사 상황판 (Right Panel) - 데스크탑 전용 */}
+            {!isMobile && (
+              <aside style={{ width: "340px", backgroundColor: theme.sidebar, borderLeft: `1px solid ${theme.border}`, display: "flex", flexDirection: "column", flexShrink: 0, zIndex: 10 }}>
+                <div style={{ padding: "18px 20px", borderBottom: `1px solid ${theme.border}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <span style={{ fontWeight: "900", fontSize: "0.95rem", color: theme.text }}>수사 상황판</span>
+                </div>
+                
+                <div style={{ flex: 1, overflowY: "auto", padding: "20px", display: "flex", flexDirection: "column", gap: "20px" }}>
+                  
+                  {/* 1. 수사 컨디션 (신뢰도 & 피로도) - HP 글자 완전 제거 */}
+                  <div style={{ ...GLASS_STYLE, backgroundColor: theme.panel, border: `1px solid ${theme.border}`, borderRadius: "14px", padding: "16px", display: "flex", flexDirection: "column", gap: "12px" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <span style={{ fontSize: "0.8rem", fontWeight: "800", color: theme.success }}>신뢰도</span>
+                      <strong style={{ color: theme.success, fontSize: "0.9rem" }}>{activeSession.sheet?.hp || 100} / 100</strong>
+                    </div>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <span style={{ fontSize: "0.8rem", fontWeight: "800", color: theme.warning }}>수사 피로도</span>
+                      <strong style={{ color: theme.warning, fontSize: "0.9rem" }}>{activeSession.sheet?.fatigue || 0}%</strong>
+                    </div>
+                  </div>
+
+                  {/* 2. 현재 당면 목표 (옵셔널) */}
+                  {activeSession.sheet?.currentObjective && (
+                    <div style={{ ...GLASS_STYLE, backgroundColor: theme.panelAlt, border: `1px solid ${theme.border}`, borderLeft: `4px solid ${theme.accent}`, borderRadius: "12px", padding: "14px" }}>
+                      <div style={{ fontSize: "0.72rem", color: theme.accent, fontWeight: "800", marginBottom: "4px" }}>당면한 목표</div>
+                      <div style={{ fontWeight: "800", fontSize: "0.85rem", color: theme.text, lineHeight: "1.4" }}>
+                        {activeSession.sheet.currentObjective.main}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 3. 용의자 수사망 (리스트 형태) */}
+                  <div>
+                    <div style={{ fontSize: "0.8rem", fontWeight: "800", color: theme.text, marginBottom: "10px", display: "flex", alignItems: "center", gap: "6px" }}>
+                      <UserRound size={16} strokeWidth={2.5} /> 용의자 수사망
+                    </div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                      {(activeSession.sheet?.npcs || []).map((npc, idx) => (
+                        <div key={idx} style={{ display: "flex", alignItems: "center", gap: "10px", padding: "10px 12px", backgroundColor: theme.panel, border: `1px solid ${theme.border}`, borderRadius: "10px" }}>
+                          <div style={{ width: "36px", height: "36px", borderRadius: "50%", backgroundColor: theme.inputBg, border: `1px solid ${theme.border}`, overflow: "hidden", flexShrink: 0 }}>
+                            {npc.portraitUrl ? <img src={npc.portraitUrl} alt={npc.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", color: theme.textMuted }}><ImageIcon size={16} /></div>}
+                          </div>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontWeight: "800", fontSize: "0.85rem", color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{npc.name || "신원 미상"}</div>
+                            <div style={{ fontSize: "0.7rem", color: theme.textMuted }}>{npc.job || "관계자"}</div>
+                          </div>
+                          {npc.secretRevealed ? <span style={{ fontSize: "0.8rem" }}>🔓</span> : <Lock size={14} color={theme.textMuted} style={{ opacity: 0.5 }} />}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* 4. 사건 단서 및 물증 (아코디언 토글 형태) */}
+                  <div>
+                    <div style={{ fontSize: "0.8rem", fontWeight: "800", color: theme.text, marginBottom: "10px", display: "flex", alignItems: "center", gap: "6px" }}>
+                      <FileSearch size={16} strokeWidth={2.5} /> 확보된 사건 단서 ({(activeSession.sheet?.handouts || []).length})
+                    </div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                      {(activeSession.sheet?.handouts || []).map((h, idx) => (
+                        <details key={idx} style={{ backgroundColor: theme.panel, border: `1px solid ${theme.border}`, borderRadius: "10px", overflow: "hidden" }}>
+                          <summary style={{ padding: "12px", fontSize: "0.8rem", fontWeight: "700", cursor: "pointer", outline: "none", color: h.revealed ? theme.success : theme.text, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                            <span>{h.name || h.title || `단서 ${idx + 1}`}</span>
+                            <span style={{ display: "flex", alignItems: "center" }}>
+                              {h.revealed ? "▼" : <Lock size={14} strokeWidth={2.5} color={theme.textMuted} />}
+                            </span>
+                          </summary>
+                          {h.revealed && (
+                            <div style={{ padding: "0 12px 12px 12px", fontSize: "0.75rem", color: theme.textMuted, lineHeight: "1.5", borderTop: `1px dashed ${theme.border}`, marginTop: "4px", paddingTop: "8px", whiteSpace: "pre-wrap" }}>
+                              {h.secret || h.overview}
+                            </div>
+                          )}
+                        </details>
+                      ))}
+                    </div>
+                  </div>
+
+                </div>
+              </aside>
+            )}
           </div>
         )}
+      </div>
+    </div>
+  );
+}
 
 {/* ── 📱 하단 세그먼트 글래스 탭바 ── */}
         {!activeSession && (
