@@ -79,6 +79,12 @@ export default function GamePlatform() {
   ];
 
   // ── [6. 추리 모드 로비 데이터] ──
+  const [pcName, setPcName] = useState("");
+  const [pcAgeGender, setPcAgeGender] = useState("");
+  const [pcJob, setPcJob] = useState("");
+  const [pcBackground, setPcBackground] = useState("");
+
+  const [scenarioTitle, setScenarioTitle] = useState("");
   const [scenarioTitle, setScenarioTitle] = useState("");
   const [victimName, setVictimName] = useState("");
   const [publicSynopsis, setPublicSynopsis] = useState("");
@@ -177,7 +183,7 @@ export default function GamePlatform() {
         body: JSON.stringify({
           rawText: pastedText,
           ruleMode: selectedMode,
-          pcName: "주인공", // 필요시 플레이어 이름 변수 연동
+          pcName: pcName || "주인공", // 🌟 주인공 칸에 입력한 이름이 AI에게 전달됩니다!
           kpcName: "파트너"
         })
       });
@@ -296,12 +302,12 @@ export default function GamePlatform() {
         {/* 상단 툴바 헤더 */}
         <header style={{ height: "54px", padding: isMobile ? "0 10px" : "0 16px", display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: `1px solid ${theme.border}`, backgroundColor: theme.sidebar, flexShrink: 0, zIndex: 40 }}>
           <div style={{ display: "flex", alignItems: "center", gap: isMobile ? "6px" : "10px", flexShrink: 0 }}>
-            {/* ☰ 대신 Menu 아이콘 */}
+            {/* ☰ 대신 Menu 아이콘 (두께 1.5로 수정) */}
             <button onClick={() => setIsDrawerOpen(true)} style={{ background: "none", border: "none", color: theme.text, cursor: "pointer", padding: "4px", display: "flex", alignItems: "center" }}>
-              <Menu size={22} strokeWidth={2} />
+              <Menu size={22} strokeWidth={1.5} />
             </button>
             
-           {activeSession && (
+            {activeSession && (
               <span style={{ fontWeight: "800", fontSize: "0.85rem", color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "200px" }}>
                 {activeSession.title}
               </span>
@@ -311,33 +317,32 @@ export default function GamePlatform() {
           <div style={{ display: "flex", alignItems: "center", gap: "2px" }}>
             {!activeSession && (
               <>
-                {/* 📄 불러오기 버튼 */}
+                {/* 📄 불러오기 버튼 (두께 1.5로 수정) */}
                 <button 
                   onClick={() => setShowPasteModal(true)} 
                   title="시나리오 불러오기"
                   style={{ background: "none", border: "none", cursor: "pointer", padding: "8px", color: theme.text, display: "flex", alignItems: "center" }}
                 >
-                  <FileUp size={20} strokeWidth={2} />
+                  <FileUp size={20} strokeWidth={1.5} />
                 </button>
-                {/* 💾 저장 버튼 */}
+                {/* 💾 저장 버튼 (두께 1.5로 수정) */}
                 <button 
-                onClick={() => triggerToast("세팅 저장", "현재 작성 중인 서류가 로컬에 저장되었습니다.", <Save size={20} color={theme.accent} />)} 
-                title="세팅 저장"
-                style={{ background: "none", border: "none", cursor: "pointer", padding: "8px", color: theme.text, display: "flex", alignItems: "center" }}
-              >
-                {/* 🌟 color={theme.text} 속성을 추가하여 주변 글씨 색상과 완벽하게 맞췄습니다! */}
-                <Save size={20} strokeWidth={2.5} color={theme.text} />
-              </button>
+                  onClick={() => triggerToast("세팅 저장", "현재 작성 중인 서류가 로컬에 저장되었습니다.", <Save size={20} color={theme.accent} strokeWidth={1.5} />)} 
+                  title="세팅 저장"
+                  style={{ background: "none", border: "none", cursor: "pointer", padding: "8px", color: theme.text, display: "flex", alignItems: "center" }}
+                >
+                  <Save size={20} strokeWidth={1.5} color={theme.text} />
+                </button>
               </>
             )}
             
-            {/* 다크모드 토글 버튼 */}
+            {/* 다크모드 토글 버튼 (두께 1.5로 수정) */}
             <button 
               onClick={() => setIsDarkMode(!isDarkMode)} 
               title={isDarkMode ? "라이트 모드로 전환" : "다크 모드로 전환"}
               style={{ background: "none", border: "none", cursor: "pointer", padding: "8px", color: theme.text, display: "flex", alignItems: "center" }}
             >
-              {isDarkMode ? <Sun size={20} strokeWidth={2} /> : <Moon size={20} strokeWidth={2} />}
+              {isDarkMode ? <Sun size={20} strokeWidth={1.5} /> : <Moon size={20} strokeWidth={1.5} />}
             </button>
           </div>
         </header>
@@ -356,9 +361,10 @@ export default function GamePlatform() {
               {/* 🌟 룰 시스템 3열 가로 배치 (SVG 아이콘 적용 및 여백 최적화) */}
               <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "10px" }}>
                 {[
-                  { key: "추리", icon: <Search size={32} strokeWidth={1.5} />, title: "추리", desc: "진상을 파헤치는 수사" },
-                  { key: "연애", icon: <Heart size={32} strokeWidth={1.5} />, title: "연애", desc: "선택지와 감정선 중심의 서사" },
-                  { key: "괴담", icon: <Flame size={32} strokeWidth={1.5} />, title: "괴담", desc: "이면을 밝히는 호러" }
+                  // 🌟 수정됨: strokeWidth를 1.5에서 2.5로 올려 상단 아이콘들과 굵기를 맞췄습니다!
+                  { key: "추리", icon: <Search size={32} strokeWidth={2.5} />, title: "추리", desc: "진상을 파헤치는 수사" },
+                  { key: "연애", icon: <Heart size={32} strokeWidth={2.5} />, title: "연애", desc: "선택지와 감정선 중심의 서사" },
+                  { key: "괴담", icon: <Flame size={32} strokeWidth={2.5} />, title: "괴담", desc: "이면을 밝히는 호러" }
                 ].map(m => {
                   const isSel = selectedMode === m.key;
                   return (
@@ -456,10 +462,90 @@ export default function GamePlatform() {
               />
             </section>
 
-            {/* ── 🕵 [추리 모드 전용 수사본부 서류철] ── */}
+           {/* ── 🕵 [추리 모드 전용 수사본부 서류철] ── */}
             {selectedMode === "추리" && (
               <>
-                {/* A. 사건 개요서 */}
+                {/* 🌟 0. 주인공(수사관) 프로필: 폴라로이드 + 서류철 디자인 톤 통일 */}
+                <section style={{ ...GLASS_STYLE, padding: isMobile ? "16px" : "20px", backgroundColor: theme.panel, borderRadius: "18px", border: `1px solid ${theme.border}`, display: "flex", flexDirection: "column", gap: "16px", marginBottom: "16px" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                    <UserRound size={22} strokeWidth={2} color={theme.accent} />
+                    <span style={{ fontWeight: "900", fontSize: "0.95rem", color: theme.text }}>주인공 (수사관) 프로필</span>
+                  </div>
+
+                  <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", gap: "16px" }}>
+                    {/* A. 주인공 사진 (폴라로이드 형태) */}
+                    <div
+                      title="사진 등록 및 변경 (클릭)"
+                      style={{
+                        flex: isMobile ? "none" : "0 0 135px",
+                        width: isMobile ? "135px" : "auto",
+                        margin: isMobile ? "0 auto" : "0",
+                        backgroundColor: theme.polaroidBg || "#ded7cb", borderRadius: "6px", padding: "8px 8px 12px 8px", color: theme.polaroidText || "#292524",
+                        boxShadow: "0 3px 10px rgba(0,0,0,0.18)", display: "flex", flexDirection: "column", alignItems: "center", position: "relative"
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: "100%", aspectRatio: "1/1", backgroundColor: isDarkMode ? "#332d2a" : "#eae4db", borderRadius: "3px", overflow: "hidden",
+                          display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", position: "relative"
+                        }}
+                      >
+                        {pcPortraitUrl ? (
+                          <img src={pcPortraitUrl} alt="주인공" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                        ) : (
+                          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "4px", color: isDarkMode ? "#b3aaa0" : "#8c8278", fontSize: "0.68rem" }}>
+                            <ImageIcon size={24} strokeWidth={1} />
+                            <span style={{ fontWeight: "700" }}>수사관 사진</span>
+                          </div>
+                        )}
+                        {/* 연필 아이콘 (업로드 버튼) */}
+                        <label
+                          style={{
+                            position: "absolute", bottom: "6px", right: "6px", width: "24px", height: "24px", borderRadius: "50%",
+                            backgroundColor: "rgba(0,0,0,0.7)", color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 5
+                          }}
+                        >
+                          <PenTool size={12} strokeWidth={2.5} />
+                          <input type="file" accept="image/*" style={{ display: "none" }} onChange={(e) => {
+                            const file = e.target.files[0];
+                            if (!file) return;
+                            const reader = new FileReader();
+                            reader.onload = (ev) => setPcPortraitUrl(ev.target.result);
+                            reader.readAsDataURL(file);
+                            e.target.value = null;
+                          }} />
+                        </label>
+                      </div>
+                      <div style={{ marginTop: "6px", textAlign: "center", width: "100%" }}>
+                        <div style={{ fontWeight: "900", fontSize: "0.82rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{pcName || "이름 미상"}</div>
+                      </div>
+                    </div>
+
+                    {/* B. 주인공 수사 서류철 (정보 입력란) */}
+                    <div style={{ flex: 1, padding: "14px", backgroundColor: theme.panelAlt, borderRadius: "12px", border: `1.5px solid ${theme.borderHighlight || theme.border}`, display: "flex", flexDirection: "column", gap: "10px" }}>
+                      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1.2fr 1fr 1fr", gap: "8px" }}>
+                        <div>
+                          <label style={{ fontSize: "0.7rem", color: theme.textMuted, fontWeight: "700", display: "block", marginBottom: "3px" }}>이름</label>
+                          <input type="text" value={pcName} onChange={e => setPcName(e.target.value)} placeholder="예: 엄수빈" style={{ width: "100%", boxSizing: "border-box", padding: "8px 10px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.82rem", outline: "none" }} />
+                        </div>
+                        <div>
+                          <label style={{ fontSize: "0.7rem", color: theme.textMuted, fontWeight: "700", display: "block", marginBottom: "3px" }}>나이/성별</label>
+                          <input type="text" value={pcAgeGender} onChange={e => setPcAgeGender(e.target.value)} placeholder="예: 26세 여성" style={{ width: "100%", boxSizing: "border-box", padding: "8px 10px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.82rem", outline: "none" }} />
+                        </div>
+                        <div>
+                          <label style={{ fontSize: "0.7rem", color: theme.textMuted, fontWeight: "700", display: "block", marginBottom: "3px" }}>직업/역할</label>
+                          <input type="text" value={pcJob} onChange={e => setPcJob(e.target.value)} placeholder="예: 탐정, 프리랜서" style={{ width: "100%", boxSizing: "border-box", padding: "8px 10px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.82rem", outline: "none" }} />
+                        </div>
+                      </div>
+                      <div>
+                        <label style={{ fontSize: "0.7rem", color: theme.textMuted, fontWeight: "700", display: "block", marginBottom: "3px" }}>수사관의 배경 및 특징 (성격, 약점 등)</label>
+                        <textarea rows={2} value={pcBackground} onChange={e => setPcBackground(e.target.value)} placeholder="사건에 휘말리게 된 계기나 평소 성격..." style={{ width: "100%", boxSizing: "border-box", padding: "8px 10px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.82rem", outline: "none", resize: "vertical" }} />
+                      </div>
+                    </div>
+                  </div>
+                </section>
+
+                {/* A. 사건 개요서 (이하 기존 코드 유지) */}
                 <section style={{ ...GLASS_STYLE, padding: isMobile ? "16px" : "20px", backgroundColor: theme.panel, borderRadius: "18px", border: `1px solid ${theme.border}`, display: "flex", flexDirection: "column", gap: "12px" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                     <ClipboardList size={22} strokeWidth={2} color={theme.accent} />
@@ -510,9 +596,6 @@ export default function GamePlatform() {
                             position: "relative", cursor: "pointer", transform: isSelected ? "scale(1.03)" : "scale(1)", transition: "all 0.15s ease", display: "flex", flexDirection: "column", alignItems: "center"
                           }}
                         >
-                          {/* 붉은 압정 핀 */}
-                          <div style={{ position: "absolute", top: "-6px", left: "50%", transform: "translateX(-50%)", width: "10px", height: "10px", borderRadius: "50%", backgroundColor: theme.danger, boxShadow: "0 2px 4px rgba(0,0,0,0.3)", zIndex: 2 }} />
-                          
                           {/* 카드 삭제 [X] 버튼 */}
                           {suspects.length > 1 && (
                             <button
