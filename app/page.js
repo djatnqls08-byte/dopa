@@ -417,35 +417,72 @@ export default function GamePlatform() {
                         >
                           <div style={{ position: "absolute", top: "-6px", left: "50%", transform: "translateX(-50%)", width: "10px", height: "10px", borderRadius: "50%", backgroundColor: theme.danger, boxShadow: "0 2px 4px rgba(0,0,0,0.3)", zIndex: 2 }} />
                           
-                          {/* 🌟 카드 우측 상단 인물 삭제 [X] 버튼 (선택 안 해도 바로 지울 수 있게) */}
-                          {suspects.length > 1 && (
-                            <button
-                              type="button"
-                              onClick={(e) => handleDeleteSuspect(e, s.id)}
-                              title="인물 삭제"
-                              style={{
-                                position: "absolute", top: "-8px", right: "-8px", width: "22px", height: "22px", borderRadius: "50%",
-                                backgroundColor: theme.danger || "#ef4444", color: "#fff", border: "none", cursor: "pointer", 
-                                display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.7rem", fontWeight: "bold", zIndex: 10,
-                                boxShadow: "0 2px 4px rgba(0,0,0,0.3)"
-                              }}
-                            >✕</button>
-                          )}
+                         {/* 🌟 카드 우측 상단 인물 삭제 [X] 버튼 (선택 안 해도 바로 지울 수 있게) */}
+            {suspects.length > 1 && (
+              <button
+                type="button"
+                onClick={(e) => handleDeleteSuspect(e, s.id)}
+                title="인물 삭제"
+                style={{
+                  position: "absolute", top: "-8px", right: "-8px", width: "22px", height: "22px", borderRadius: "50%",
+                  backgroundColor: theme.danger || "#ef4444", color: "#fff", border: "none", cursor: "pointer", 
+                  display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.7rem", fontWeight: "bold", zIndex: 10,
+                  boxShadow: "0 2px 4px rgba(0,0,0,0.3)"
+                }}
+              >✕</button>
+            )}
 
-                          <div
-                            style={{
-                              width: "100%", aspectRatio: "1/1", backgroundColor: isDarkMode ? "#332d2a" : "#eae4db", borderRadius: "3px", overflow: "hidden",
-                              display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", position: "relative"
-                            }}
-                          >
-                            {s.portraitUrl ? (
-                              <img src={s.portraitUrl} alt="용의자" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                            ) : (
-                              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "4px", color: isDarkMode ? "#b3aaa0" : "#8c8278", fontSize: "0.68rem" }}>
-                                <span style={{ fontSize: "1.3rem" }}>📷</span>
-                                <span style={{ fontWeight: "700" }}>사진 없음</span>
-                              </div>
-                            )}
+            {/* 🌟 사진 영역 (클릭 시 크게 보기) 및 연필 아이콘 */}
+            <div
+              onClick={(e) => {
+                e.stopPropagation(); // 다른 버튼 클릭과 겹치지 않게 방어
+                setActivePortraitSuspectId(s.id); // 클릭한 인물의 ID 기억
+                setShowPortraitModal(true); // 사진 크게 보기 창 열기
+              }}
+              title="사진 크게 보기"
+              style={{
+                width: "100%", aspectRatio: "1/1", backgroundColor: isDarkMode ? "#332d2a" : "#eae4db",
+                borderRadius: "3px", overflow: "hidden",
+                display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", position: "relative",
+                cursor: "zoom-in" // 마우스를 올렸을 때 돋보기 모양으로 커서 변경
+              }}
+            >
+              {s.portraitUrl ? (
+                <img src={s.portraitUrl} alt="용의자" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "4px", color: isDarkMode ? "#b3aaa0" : "#8c8278", fontSize: "0.68rem" }}>
+                  <span style={{ fontSize: "1.3rem" }}>📷</span>
+                  <span style={{ fontWeight: "700" }}>사진 없음</span>
+                </div>
+              )}
+
+              {/* ✏️ 연필 아이콘 (직접 파일 업로드 버튼) */}
+              <label
+                onClick={(e) => e.stopPropagation()} // 연필을 누를 때는 '사진 크게 보기'가 실행되지 않도록 막음
+                title="사진 업로드"
+                style={{
+                  position: "absolute", bottom: "4px", right: "4px", // 카드의 우측 하단에 고정
+                  width: "24px", height: "24px", borderRadius: "50%",
+                  backgroundColor: "rgba(0,0,0,0.65)", color: "#fff", border: "1px solid rgba(255,255,255,0.4)", 
+                  cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.75rem", zIndex: 5
+                }}
+              >
+                ✏️
+                <input 
+                  type="file" 
+                  accept="image/*" 
+                  style={{ display: "none" }} // 투박한 기본 HTML 파일 선택 버튼 숨기기
+                  onChange={(e) => {
+                    const file = e.target.files[0];
+                    if (!file) return;
+                    const reader = new FileReader();
+                    reader.onload = (ev) => handleUpdateSuspect(s.id, "portraitUrl", ev.target.result); // 선택한 사진 저장
+                    reader.readAsDataURL(file);
+                    e.target.value = null; // 똑같은 사진을 지우고 다시 올릴 수 있도록 입력값 초기화
+                  }} 
+                />
+              </label>
+            </div>
                             
                             {/* 🌟 초상화 변경 다이렉트 업로드 버튼 (연필 아이콘) */}
                             <label
