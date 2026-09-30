@@ -83,8 +83,10 @@ export default function GamePlatform() {
     { id: 1, name: "", ageGender: "", job: "", behavior: "", secret: "", portraitUrl: "", showSecret: false }
   ]);
   const [selectedSuspectId, setSelectedSuspectId] = useState(1);
-
-  // 🌟 초상화 모달 상태 삭제 (연필 버튼으로 직접 업로드하게 변경됨)
+  
+// 🌟 초상화 모달 스위치 복구 완료!
+  const [showPortraitModal, setShowPortraitModal] = useState(false);
+  const [activePortraitSuspectId, setActivePortraitSuspectId] = useState(null);
 
   const [evidenceList, setEvidenceList] = useState([
     { id: 1, name: "", overview: "", contradiction: "", secret: "", showSecret: false }
