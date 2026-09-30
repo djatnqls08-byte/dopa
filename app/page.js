@@ -434,7 +434,7 @@ export default function GamePlatform() {
                           )}
 
                           {/* 🌟 사진 영역 (클릭 시 크게 보기) 및 연필 아이콘 */}
-                          <div
+                         <div
                             onClick={(e) => {
                               e.stopPropagation();
                               setActivePortraitSuspectId(s.id);
@@ -456,32 +456,6 @@ export default function GamePlatform() {
                                 <span style={{ fontWeight: "700" }}>사진 없음</span>
                               </div>
                             )}
-
-                            {/* ✏️ 연필 아이콘 (직접 파일 업로드 버튼) */}
-                            <label
-                              onClick={(e) => e.stopPropagation()} 
-                              title="사진 업로드"
-                              style={{
-                                position: "absolute", bottom: "4px", right: "4px", width: "24px", height: "24px", borderRadius: "50%",
-                                backgroundColor: "rgba(0,0,0,0.65)", color: "#fff", border: "1px solid rgba(255,255,255,0.4)", 
-                                cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.75rem", zIndex: 5
-                              }}
-                            >
-                              ✏️
-                              <input 
-                                type="file" 
-                                accept="image/*" 
-                                style={{ display: "none" }} 
-                                onChange={(e) => {
-                                  const file = e.target.files[0];
-                                  if (!file) return;
-                                  const reader = new FileReader();
-                                  reader.onload = (ev) => handleUpdateSuspect(s.id, "portraitUrl", ev.target.result);
-                                  reader.readAsDataURL(file);
-                                  e.target.value = null;
-                                }} 
-                              />
-                            </label>
                           </div>
 
                           {/* 이름표 영역 */}
@@ -679,6 +653,82 @@ export default function GamePlatform() {
           </nav>
         )}
       </div>
+
+{/* ── 🖼️ 초상화 모달 (크게 보기 + 연필 아이콘 업로드) ── */}
+      {showPortraitModal && (() => {
+        const target = suspects.find(s => s.id === activePortraitSuspectId) || suspects[0];
+        if (!target) return null;
+
+        return (
+          <div
+            onClick={() => setShowPortraitModal(false)}
+            style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0, 0, 0, 0.8)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 99999, padding: "16px", animation: "fadeIn 0.2s ease-out" }}
+          >
+            <div
+              onClick={e => e.stopPropagation()}
+              className="glass-card"
+              style={{ width: "100%", maxWidth: "380px", backgroundColor: theme.panel, border: `1.5px solid ${theme.border}`, borderRadius: "18px", padding: "20px", color: theme.text, display: "flex", flexDirection: "column", gap: "14px", boxShadow: "0 20px 50px rgba(0,0,0,0.5)" }}
+            >
+              {/* 상단 이름 및 닫기 버튼 */}
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: `1px solid ${theme.border}`, paddingBottom: "10px" }}>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: "1rem", fontWeight: "900", color: theme.accent }}>
+                    {target.name || "신원 미상"}
+                  </h3>
+                  <div style={{ fontSize: "0.74rem", color: theme.textMuted, marginTop: "2px" }}>
+                    {target.job ? `${target.job} · ` : ""}{target.ageGender || "인적사항 미기재"}
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowPortraitModal(false)}
+                  style={{ background: "none", border: "none", color: theme.textMuted, fontSize: "1.2rem", cursor: "pointer", lineHeight: 1 }}
+                >
+                  ✕
+                </button>
+              </div>
+
+              {/* 사진 영역 & 연필 아이콘 (하단 버튼 없음) */}
+              <div style={{ width: "100%", aspectRatio: "1/1", borderRadius: "14px", overflow: "hidden", border: `1.5px solid ${theme.border}`, backgroundColor: isDarkMode ? "rgba(0, 0, 0, 0.25)" : "#f0ece4", display: "flex", alignItems: "center", justifyContent: "center", position: "relative" }}>
+                {target.portraitUrl ? (
+                  <img src={target.portraitUrl} alt="용의자 초상화" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                ) : (
+                  <div style={{ textAlign: "center", color: theme.textMuted, fontSize: "0.85rem", lineHeight: "1.6" }}>
+                    <div style={{ fontSize: "2.4rem", marginBottom: "6px" }}>👤</div>
+                    등록된 사진이 없습니다.
+                  </div>
+                )}
+
+                {/* ✏️ 우측 하단 연필 아이콘 (클릭 시 갤러리 오픈) */}
+                <label
+                  title="사진 변경/등록"
+                  style={{
+                    position: "absolute", bottom: "12px", right: "12px", width: "38px", height: "38px", borderRadius: "50%",
+                    backgroundColor: "rgba(0,0,0,0.7)", color: "#fff", border: "1.5px solid rgba(255,255,255,0.4)", 
+                    cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.1rem", zIndex: 5,
+                    boxShadow: "0 4px 10px rgba(0,0,0,0.5)"
+                  }}
+                >
+                  ✏️
+                  <input 
+                    type="file" 
+                    accept="image/*" 
+                    style={{ display: "none" }} 
+                    onChange={(e) => {
+                      const file = e.target.files[0];
+                      if (!file) return;
+                      const reader = new FileReader();
+                      reader.onload = (ev) => handleUpdateSuspect(target.id, "portraitUrl", ev.target.result);
+                      reader.readAsDataURL(file);
+                      e.target.value = null; // 같은 파일도 다시 선택 가능하게 초기화
+                    }} 
+                  />
+                </label>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* ── 📄 시나리오 텍스트 붙여넣기 모달 ── */}
       {showPasteModal && (
