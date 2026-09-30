@@ -1,9 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-// 🚨 테마와 스타일은 별도 파일(lib/themes.js)에서 가져온다고 가정합니다.
 import { THEME_PALETTES, GLASS_STYLE } from "@/lib/themes";
-// 🌟 세련된 벡터 아이콘 라이브러리 임포트
 import { 
   Search, Heart, Flame, LayoutGrid, LibraryBig, PenTool, UserRound, 
   Menu, Moon, Sun, Save, FileUp, HelpCircle, X, ChevronDown, ChevronUp, Image as ImageIcon
@@ -723,8 +721,7 @@ export default function GamePlatform() {
           >
             <div
               onClick={e => e.stopPropagation()}
-              className="glass-card"
-              style={{ width: "100%", maxWidth: "380px", backgroundColor: theme.panel, border: `1.5px solid ${theme.border}`, borderRadius: "18px", padding: "20px", color: theme.text, display: "flex", flexDirection: "column", gap: "14px", boxShadow: "0 20px 50px rgba(0,0,0,0.5)" }}
+              style={{ ...GLASS_STYLE, width: "100%", maxWidth: "380px", backgroundColor: theme.panel, border: `1.5px solid ${theme.border}`, borderRadius: "18px", padding: "20px", color: theme.text, display: "flex", flexDirection: "column", gap: "14px", boxShadow: "0 20px 50px rgba(0,0,0,0.5)" }}
             >
               {/* 상단 이름 및 닫기 버튼 */}
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: `1px solid ${theme.border}`, paddingBottom: "10px" }}>
@@ -745,13 +742,15 @@ export default function GamePlatform() {
                 </button>
               </div>
 
-              {/* 사진 영역 & 연필 아이콘 (하단 버튼 없음) */}
+              {/* 사진 영역 & 연필 아이콘 */}
               <div style={{ width: "100%", aspectRatio: "1/1", borderRadius: "14px", overflow: "hidden", border: `1.5px solid ${theme.border}`, backgroundColor: isDarkMode ? "rgba(0, 0, 0, 0.25)" : "#f0ece4", display: "flex", alignItems: "center", justifyContent: "center", position: "relative" }}>
                 {target.portraitUrl ? (
                   <img src={target.portraitUrl} alt="용의자 초상화" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                 ) : (
                   <div style={{ textAlign: "center", color: theme.textMuted, fontSize: "0.85rem", lineHeight: "1.6" }}>
-                    <div style={{ fontSize: "2.4rem", marginBottom: "6px" }}>👤</div>
+                    <div style={{ fontSize: "2.4rem", marginBottom: "6px", display: "flex", justifyContent: "center" }}>
+                      <ImageIcon size={48} strokeWidth={1} color={theme.textMuted} />
+                    </div>
                     등록된 사진이 없습니다.
                   </div>
                 )}
@@ -762,11 +761,11 @@ export default function GamePlatform() {
                   style={{
                     position: "absolute", bottom: "12px", right: "12px", width: "38px", height: "38px", borderRadius: "50%",
                     backgroundColor: "rgba(0,0,0,0.7)", color: "#fff", border: "1.5px solid rgba(255,255,255,0.4)", 
-                    cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.1rem", zIndex: 5,
+                    cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 5,
                     boxShadow: "0 4px 10px rgba(0,0,0,0.5)"
                   }}
                 >
-                  ✏️
+                  <PenTool size={18} strokeWidth={2.5} />
                   <input 
                     type="file" 
                     accept="image/*" 
@@ -793,7 +792,7 @@ export default function GamePlatform() {
           <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: "520px", backgroundColor: theme.panel, border: `1px solid ${theme.border}`, borderRadius: "16px", padding: "20px", display: "flex", flexDirection: "column", gap: "12px", boxShadow: "0 20px 40px rgba(0,0,0,0.5)" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <span style={{ fontWeight: "800", fontSize: "0.95rem" }}>📄 시나리오 텍스트 붙여넣기</span>
-              <button onClick={() => setShowPasteModal(false)} style={{ background: "none", border: "none", color: theme.text, fontSize: "1.2rem", cursor: "pointer" }}>✕</button>
+              <button onClick={() => setShowPasteModal(false)} style={{ background: "none", border: "none", color: theme.text, fontSize: "1.2rem", cursor: "pointer" }}><X size={20}/></button>
             </div>
             <textarea rows={8} value={pastedText} onChange={e => setPastedText(e.target.value)} placeholder="스튜디오에서 작성된 시나리오 전체 글을 여기에 붙여넣으세요..." style={{ width: "100%", boxSizing: "border-box", padding: "12px", backgroundColor: theme.inputBg, border: `1px solid ${theme.border}`, borderRadius: "8px", color: theme.text, fontSize: "0.82rem", outline: "none", resize: "none" }} />
             <div style={{ display: "flex", gap: "8px" }}>
@@ -810,13 +809,13 @@ export default function GamePlatform() {
           <div onClick={e => e.stopPropagation()} className="glass-card" style={{ width: "100%", maxWidth: "440px", padding: "22px", borderRadius: "16px", backgroundColor: theme.panel, color: theme.text, display: "flex", flexDirection: "column", gap: "12px", boxShadow: "0 16px 40px rgba(0,0,0,0.3)" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: `1px solid ${theme.border}`, paddingBottom: "10px" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                <span style={{ fontSize: "1.2rem" }}>{ruleHelpModal.icon}</span>
+                <span style={{ fontSize: "1.2rem", color: theme.accent }}>{ruleHelpModal.icon}</span>
                 <div>
                   <h3 style={{ margin: 0, fontSize: "0.95rem", fontWeight: "800" }}>{ruleHelpModal.title}</h3>
                   <div style={{ fontSize: "0.72rem", color: theme.textMuted }}>{ruleHelpModal.desc}</div>
                 </div>
               </div>
-              <button type="button" onClick={() => setRuleHelpModal(null)} style={{ background: "none", border: "none", color: theme.text, fontSize: "1.2rem", cursor: "pointer", lineHeight: 1 }}>✕</button>
+              <button type="button" onClick={() => setRuleHelpModal(null)} style={{ background: "none", border: "none", color: theme.text, fontSize: "1.2rem", cursor: "pointer", lineHeight: 1 }}><X size={20}/></button>
             </div>
 
             <div style={{ display: "flex", flexDirection: "column", gap: "8px", overflowY: "auto", paddingRight: "4px" }}>
@@ -837,6 +836,7 @@ export default function GamePlatform() {
         </div>
       )}
 
+      </div>
     </div>
   );
 }
