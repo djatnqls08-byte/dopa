@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import SecretBoard from "@/components/SecretBoard";
 import CharacterSheet from "@/components/CharacterSheet";
-import { THEME_PALETTES, GLASS_STYLE } from "@/lib/themes";
+import { ArrowUp } from "lucide-react"; // Emoĩ avei kóva (ArrowUp)
 // 🌟 세련된 벡터 아이콘 라이브러리 임포트
 import { 
   Search, Heart, Flame, LayoutGrid, LibraryBig, PenTool, UserRound, 
@@ -32,7 +32,6 @@ export default function GamePlatform() {
       ::-webkit-scrollbar-thumb { background: rgba(120, 120, 120, 0.4); border-radius: 10px; }
       textarea::-webkit-scrollbar { width: 4px; }
       textarea::-webkit-scrollbar-thumb { background: rgba(150, 150, 150, 0.4); border-radius: 4px; }
-      
     `;
     document.head.appendChild(style);
     return () => document.head.removeChild(style);
@@ -1138,77 +1137,85 @@ const [showEvidence, setShowEvidence] = useState(false);
                 )}
               </div>
 
-              {/* ⌨️ 하단: 늘어나는 캡슐형 입력창 및 제안 칩 */}
-              <footer style={{ 
-                position: "absolute", bottom: 0, left: 0, right: 0, 
-                padding: "20px max(20px, env(safe-area-inset-bottom))", 
-                background: `linear-gradient(to top, ${theme.bg} 85%, transparent)`, 
-                display: "flex", flexDirection: "column", alignItems: "center", gap: "12px" 
-              }}>
-                {/* AI 추천 행동 칩 */}
-                {activeSession?.suggestedActions?.length > 0 && (
-                  <div style={{ display: "flex", gap: "8px", overflowX: "auto", width: "100%", maxWidth: "680px", paddingBottom: "4px" }}>
-                    {activeSession.suggestedActions.map((sugg, idx) => (
-                      <button 
-                        key={idx} onClick={() => executeMessage(sugg)} 
-                        style={{ padding: "10px 16px", backgroundColor: theme.panelAlt, border: `1px solid ${theme.border}`, borderRadius: "20px", color: theme.text, fontSize: "0.85rem", fontWeight: "700", whiteSpace: "nowrap", cursor: "pointer", flexShrink: 0, boxShadow: "0 4px 12px rgba(0,0,0,0.05)", transition: "all 0.2s" }}
-                      >
-                        💡 {sugg}
-                      </button>
-                    ))}
-                  </div>
-                )}
+             {/* ⌨️ 하단: 늘어나는 캡슐형 입력창 및 제안 칩 */}
+        <footer style={{
+          position: "absolute", bottom: 0, left: 0, right: 0,
+          padding: "20px max(20px, env(safe-area-inset-bottom))",
+          background: `linear-gradient(to top, ${theme.bg} 85%, transparent)`,
+          display: "flex", flexDirection: "column", alignItems: "center", gap: "12px"
+        }}>
+          {/* AI 추천 행동 칩 */}
+          {activeSession?.suggestedActions?.length > 0 && (
+            <div style={{ display: "flex", gap: "8px", overflowX: "auto", width: "100%", maxWidth: "680px", paddingBottom: "4px" }}>
+              {activeSession.suggestedActions.map((sugg, idx) => (
+                <button
+                  key={idx} onClick={() => executeMessage(sugg)}
+                  style={{ padding: "10px 16px", backgroundColor: theme.panelAlt, border: `1px solid ${theme.border}`, borderRadius: "20px", color: theme.text, fontSize: "0.85rem", fontWeight: "700", whiteSpace: "nowrap", cursor: "pointer", flexShrink: 0, boxShadow: "0 4px 12px rgba(0,0,0,0.05)", transition: "all 0.2s" }}
+                >
+                  💡 {sugg}
+                </button>
+              ))}
+            </div>
+          )}
 
-                {/* 🌟 캡슐형 텍스트 입력 폼 (+ 버튼 삭제됨) */}
-                <div style={{ 
-                  width: "100%", maxWidth: "680px", display: "flex", alignItems: "flex-end", gap: "8px", 
-                  backgroundColor: theme.inputBg, border: `1.5px solid ${theme.border}`, borderRadius: "28px", 
-                  padding: "6px 8px 6px 20px", boxShadow: "0 8px 24px rgba(0,0,0,0.08)" 
-                }}>
-                  {/* 🌟 글을 칠 때마다 자동으로 늘어나는 textarea */}
-                  <textarea 
-                    value={inputMsg} 
-                    onChange={e => {
-                      setInputMsg(e.target.value);
-                      e.target.style.height = "auto";
-                      e.target.style.height = Math.min(e.target.scrollHeight, 120) + "px"; 
-                    }} 
-                    placeholder="행동을 선언하거나 대사를 입력하세요..." 
-                    rows={1}
-                    style={{ 
-                      flex: 1, border: "none", backgroundColor: "transparent", color: theme.text, 
-                      fontSize: "0.95rem", outline: "none", resize: "none", overflowY: "auto",
-                      maxHeight: "120px", padding: "10px 0", margin: 0, fontFamily: "inherit", lineHeight: "1.5"
-                    }} 
-                  />
-                  
-                  {isLoading ? (
-                    <button onClick={() => { if(abortController) abortController.abort(); }} title="중단" style={{ width: "40px", height: "40px", borderRadius: "50%", backgroundColor: theme.danger, color: "#fff", border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0, marginBottom: "2px" }}>
-                      <X size={20} strokeWidth={2.5} />
-                    </button>
-                  ) : (
-                    <button 
-                      onClick={() => { 
-                        handleSendMessage(); 
-                        const el = document.querySelector('textarea[placeholder*="행동을 선언"]'); 
-                        if(el) el.style.height = "auto"; 
-                      }} 
-                      disabled={!inputMsg.trim()} 
-                      title="전송" 
-                      style={{ 
-                        width: "40px", height: "40px", borderRadius: "50%", 
-                        backgroundColor: inputMsg.trim() ? theme.accent : theme.panelAlt, 
-                        color: inputMsg.trim() ? "#fff" : theme.textMuted, 
-                        border: "none", display: "flex", alignItems: "center", justifyContent: "center", 
-                        cursor: inputMsg.trim() ? "pointer" : "default", transition: "all 0.2s", 
-                        flexShrink: 0, marginBottom: "2px" 
-                      }}
-                    >
-                      <ArrowUp size={20} strokeWidth={2.5} />
-                    </button>
-                  )}
-                </div>
-</footer>
+          {/* 🌟 캡슐형 텍스트 입력 폼 */}
+          <div style={{
+            width: "100%", maxWidth: "680px", display: "flex", alignItems: "flex-end", gap: "8px",
+            backgroundColor: theme.inputBg, border: `1.5px solid ${theme.border}`, borderRadius: "28px",
+            padding: "6px 8px 6px 20px", boxShadow: "0 8px 24px rgba(0,0,0,0.08)"
+          }}>
+            <textarea
+              value={inputMsg}
+              onChange={e => {
+                setInputMsg(e.target.value);
+                e.target.style.height = "auto";
+                e.target.style.height = Math.min(e.target.scrollHeight, 120) + "px";
+              }}
+              onKeyDown={e => {
+                // 🌟 Shift+Enter g̃uarã añoite omondo ñe'ẽ (Only send on Shift+Enter)
+                if (e.key === "Enter") {
+                  if (e.shiftKey) {
+                    e.preventDefault();
+                    handleSendMessage();
+                    e.target.style.height = "auto";
+                  }
+                }
+              }}
+              placeholder="행동을 선언하거나 대사를 입력하세요... (Shift+Enter 전송)"
+              rows={1}
+              style={{
+                flex: 1, border: "none", backgroundColor: "transparent", color: theme.text,
+                fontSize: "0.95rem", outline: "none", resize: "none", overflowY: "auto",
+                maxHeight: "120px", padding: "10px 0", margin: 0, fontFamily: "inherit", lineHeight: "1.5"
+              }}
+            />
+            {isLoading ? (
+              <button onClick={() => { if(abortController) abortController.abort(); }} title="중단" style={{ width: "40px", height: "40px", borderRadius: "50%", backgroundColor: theme.danger, color: "#fff", border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0, marginBottom: "2px" }}>
+                <X size={20} strokeWidth={2.5} />
+              </button>
+            ) : (
+              <button
+                onClick={() => {
+                  handleSendMessage();
+                  const el = document.querySelector('textarea[placeholder*="행동을 선언"]');
+                  if(el) el.style.height = "auto";
+                }}
+                disabled={!inputMsg.trim()}
+                title="전송"
+                style={{
+                  width: "40px", height: "40px", borderRadius: "50%",
+                  backgroundColor: inputMsg.trim() ? theme.accent : theme.panelAlt,
+                  color: inputMsg.trim() ? "#fff" : theme.textMuted,
+                  border: "none", display: "flex", alignItems: "center", justifyContent: "center",
+                  cursor: inputMsg.trim() ? "pointer" : "default", transition: "all 0.2s",
+                  flexShrink: 0, marginBottom: "2px"
+                }}
+              >
+                <ArrowUp size={20} strokeWidth={2.5} />
+              </button>
+            )}
+          </div>
+        </footer>
             </div>
 
             {/* ── 📌 1. 수사 증거보드 (분리 완료!) ── */}
@@ -1243,52 +1250,51 @@ const [showEvidence, setShowEvidence] = useState(false);
         )}
 
                 
-      {/* ── 📱 하단 세그먼트 글래스 탭바 ── */}
-      {!activeSession && (
-        <nav
-          style={{
-            position: "fixed", bottom: "16px", left: "50%", transform: "translateX(-50%)",
-            width: "calc(100% - 32px)", maxWidth: "440px", height: "62px",
-            backgroundColor: isDarkMode ? "rgba(35, 30, 28, 0.75)" : "rgba(240, 236, 228, 0.85)",
-            backdropFilter: "blur(18px)", WebkitBackdropFilter: "blur(18px)",
-            border: `1px solid ${theme.border}`, borderRadius: "20px",
-            display: "flex", overflow: "hidden", zIndex: 50,
-            boxShadow: isDarkMode ? "0 12px 36px rgba(0, 0, 0, 0.45)" : "0 10px 30px rgba(0, 0, 0, 0.08)",
-            transition: "background-color 0.25s ease, border-color 0.25s ease"
-          }}
-        >
-          {[
-            { key: "lounge", icon: <LayoutGrid size={20} strokeWidth={2.5} />, label: "탐색" },
-            { key: "library", icon: <LibraryBig size={20} strokeWidth={2.5} />, label: "서재" },
-            { key: "lobby", icon: <PenTool size={20} strokeWidth={2.5} />, label: "창작" },
-            { key: "profile", icon: <UserRound size={20} strokeWidth={2.5} />, label: "내정보" }
-          ].map((tab, idx, arr) => {
-            const isSelected = activeTab === tab.key;
-            const isLast = idx === arr.length - 1;
+{/* ── 📱 하단 세그먼트 글래스 탭바 ── */}
+        {!activeSession && (
+          <nav
+            style={{
+              position: "fixed", bottom: "16px", left: "50%", transform: "translateX(-50%)",
+              width: "calc(100% - 32px)", maxWidth: "440px", height: "62px",
+              backgroundColor: isDarkMode ? "rgba(35, 30, 28, 0.75)" : "rgba(240, 236, 228, 0.85)",
+              backdropFilter: "blur(18px)", WebkitBackdropFilter: "blur(18px)",
+              border: `1px solid ${theme.border}`, borderRadius: "20px",
+              display: "flex", overflow: "hidden", zIndex: 50,
+              boxShadow: isDarkMode ? "0 12px 36px rgba(0, 0, 0, 0.45)" : "0 10px 30px rgba(0, 0, 0, 0.08)",
+              transition: "background-color 0.25s ease, border-color 0.25s ease"
+            }}
+          >
+            {[
+              { key: "explore", icon: <Search size={20} strokeWidth={2.5} />, label: "탐색" },
+              { key: "library", icon: <LibraryBig size={20} strokeWidth={2.5} />, label: "서재" },
+              { key: "lobby", icon: <PenTool size={20} strokeWidth={2.5} />, label: "창작" },
+              { key: "profile", icon: <UserRound size={20} strokeWidth={2.5} />, label: "내정보" }
+            ].map((tab, idx, arr) => {
+              const isSelected = activeTab === tab.key;
+              const isLast = idx === arr.length - 1;
 
-            return (
-              <div
-                key={tab.key}
-                onClick={() => setActiveTab(tab.key)}
-                style={{
-                  flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-                  cursor: "pointer", gap: "4px", // gap 증가
-                  borderRight: isLast ? "none" : `1px solid ${theme.border}`,
-                  backgroundColor: isSelected ? (isDarkMode ? "rgba(235, 227, 218, 0.12)" : "rgba(120, 105, 90, 0.12)") : "transparent",
-                  color: isSelected ? theme.accent : theme.textMuted,
-                  transition: "all 0.2s"
-                }}
-              >
-                {/* SVG 아이콘 적용 */}
-                <div style={{ transform: isSelected ? "scale(1.15)" : "scale(1)", transition: "transform 0.2s", display: "flex", alignItems: "center" }}>
-                  {tab.icon}
+              return (
+                <div
+                  key={tab.key}
+                  onClick={() => setActiveTab(tab.key)}
+                  style={{
+                    flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+                    cursor: "pointer", gap: "4px",
+                    borderRight: isLast ? "none" : `1px solid ${theme.border}`,
+                    backgroundColor: isSelected ? (isDarkMode ? "rgba(235, 227, 218, 0.12)" : "rgba(120, 105, 90, 0.12)") : "transparent",
+                    color: isSelected ? theme.accent : theme.textMuted,
+                    transition: "all 0.2s"
+                  }}
+                >
+                  <div style={{ transform: isSelected ? "scale(1.15)" : "scale(1)", transition: "transform 0.2s", display: "flex", alignItems: "center" }}>
+                    {tab.icon}
+                  </div>
+                  <span style={{ fontSize: "0.65rem", fontWeight: isSelected ? "800" : "600" }}>{tab.label}</span>
                 </div>
-                <span style={{ fontSize: "0.65rem", fontWeight: isSelected ? "800" : "600" }}>{tab.label}</span>
-              </div>
-            );
-          })}
-        </nav>
-      )}
+              );
+            })}
+          </nav>
+        )}
 
       {/* ── 🖼️ 초상화 모달 (크게 보기 + 연필 아이콘 업로드) ── */}
       {showPortraitModal && (() => {
