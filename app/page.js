@@ -227,28 +227,177 @@ export default function GameApp() {
               </div>
             </section>
 
-            {/* 2. 장르 톤 태그 (기존 것 보존) */}
-            <section style={{ ...GLASS_STYLE, padding: "18px", backgroundColor: theme.panel, borderRadius: "16px", border: `1px solid ${theme.border}` }}>
-              <div style={{ fontSize: "0.9rem", fontWeight: "800", marginBottom: "8px" }}>2. 장르 톤 (해시태그)</div>
-              <input type="text" value={playPreference} onChange={e => setPlayPreference(e.target.value)} style={{ width: "100%", boxSizing: "border-box", padding: "10px 12px", borderRadius: "8px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.85rem" }} />
-            </section>
+            {/* 2. 장르 톤 (서사 지향 태그) */}
+<section style={{ ...GLASS_STYLE, padding: "18px", backgroundColor: theme.panel, borderRadius: "16px", border: `1px solid ${theme.border}`, display: "flex", flexDirection: "column", gap: "10px" }}>
+  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+    <span style={{ fontSize: "0.9rem", fontWeight: "800", color: theme.text }}>2. 장르 톤 (서사 지향 태그)</span>
+    <span style={{ fontSize: "0.72rem", color: theme.textMuted }}>터치하여 켜고 끄기</span>
+  </div>
 
-            {/* 3. 프로필 입력 카드 (기존 것 보존) */}
-            <section style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: "14px" }}>
-              <div style={{ ...GLASS_STYLE, padding: "16px", backgroundColor: theme.panel, borderRadius: "14px", border: `1px solid ${theme.border}`, display: "flex", flexDirection: "column", gap: "10px" }}>
-                <div style={{ fontWeight: "800", fontSize: "0.85rem", color: theme.accent }}>내 프로필</div>
-                <input type="text" value={charName} onChange={e => setCharName(e.target.value)} placeholder="이름" style={{ padding: "8px 10px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.82rem" }} />
-                <input type="text" value={charJob} onChange={e => setCharJob(e.target.value)} placeholder="직업 / 역할" style={{ padding: "8px 10px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.82rem" }} />
-                <textarea rows={2} value={charBackground} onChange={e => setCharBackground(e.target.value)} placeholder="성격 및 특징" style={{ padding: "8px 10px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.82rem", resize: "none" }} />
-              </div>
+  {/* 태그 칩 그리드 */}
+  <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
+    {[
+      "#GL", "#BL", "#HL", "#논로맨스",
+      "#집착", "#혐관", "#쌍방구원", "#우정",
+      "#R19", "#피폐", "#애증", "#신분차",
+      "#배틀", "#계약", "#착각", "#구원",
+      "#짝사랑", "#달달", "#일상", "#오컬트", "#이능력"
+    ].map(tag => {
+      const isSelected = playPreference.includes(tag);
+      return (
+        <button
+          key={tag}
+          type="button"
+          onClick={() => {
+            const list = playPreference.split(/\s+/).filter(Boolean);
+            const next = isSelected ? list.filter(t => t !== tag).join(" ") : [...list, tag].join(" ");
+            setPlayPreference(next);
+            triggerToast("태그 변경", isSelected ? `[${tag}] 해제` : `[${tag}] 추가`, "🏷️");
+          }}
+          style={{
+            padding: "5px 11px",
+            borderRadius: "16px",
+            fontSize: "0.76rem",
+            fontWeight: isSelected ? "800" : "500",
+            backgroundColor: isSelected ? theme.accent : (isDarkMode ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)"),
+            color: isSelected ? "#ffffff" : theme.text,
+            border: `1px solid ${isSelected ? theme.accent : theme.border}`,
+            cursor: "pointer",
+            transition: "all 0.15s ease"
+          }}
+        >
+          {tag}
+        </button>
+      );
+    })}
+  </div>
 
-              <div style={{ ...GLASS_STYLE, padding: "16px", backgroundColor: theme.panel, borderRadius: "14px", border: `1px solid ${theme.border}`, display: "flex", flexDirection: "column", gap: "10px" }}>
-                <div style={{ fontWeight: "800", fontSize: "0.85rem", color: theme.accent }}>상대방 (등장인물)</div>
-                <input type="text" value={partnerName} onChange={e => setPartnerName(e.target.value)} placeholder="상대 이름" style={{ padding: "8px 10px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.82rem" }} />
-                <input type="text" value={partnerJob} onChange={e => setPartnerJob(e.target.value)} placeholder="상대 직업 / 역할" style={{ padding: "8px 10px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.82rem" }} />
-                <textarea rows={2} value={partnerDetail} onChange={e => setPartnerDetail(e.target.value)} placeholder="외모 및 나와의 관계성" style={{ padding: "8px 10px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.82rem", resize: "none" }} />
-              </div>
-            </section>
+  {/* 직접 입력 및 현재 선택된 태그 목록 */}
+  <input 
+    type="text" 
+    value={playPreference} 
+    onChange={e => setPlayPreference(e.target.value)} 
+    placeholder="원하는 태그를 직접 입력할 수도 있습니다..."
+    style={{ 
+      width: "100%", boxSizing: "border-box", padding: "10px 12px", 
+      borderRadius: "8px", border: `1px solid ${theme.border}`, 
+      backgroundColor: isDarkMode ? "rgba(0,0,0,0.3)" : "rgba(255,255,255,0.7)", 
+      color: theme.text, fontSize: "0.84rem", outline: "none" 
+    }} 
+  />
+</section>
+
+            {/* 3. 추리 모드 전용 수사 본부 사건철 */}
+<section style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+  
+  {/* A. 사건 기본 개요서 */}
+  <div style={{ ...GLASS_STYLE, padding: "18px", backgroundColor: theme.panel, borderRadius: "16px", border: `1px solid ${theme.border}`, display: "flex", flexDirection: "column", gap: "12px" }}>
+    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+      <span style={{ fontSize: "1.1rem" }}>📋</span>
+      <span style={{ fontWeight: "900", fontSize: "0.92rem", color: theme.text }}>사건 개요서</span>
+    </div>
+    <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "2fr 1fr", gap: "10px" }}>
+      <input 
+        type="text" 
+        value={scenarioTitle} 
+        onChange={e => setScenarioTitle(e.target.value)} 
+        placeholder="사건명 (예: 지하 주차장의 밀실 살인)" 
+        style={{ padding: "10px 12px", borderRadius: "8px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.85rem", outline: "none" }} 
+      />
+      <input 
+        type="text" 
+        placeholder="피해자 (예: 고진태 대표, 52세)" 
+        style={{ padding: "10px 12px", borderRadius: "8px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.85rem", outline: "none" }} 
+      />
+    </div>
+    <textarea 
+      rows={2} 
+      value={publicSynopsis} 
+      onChange={e => setPublicSynopsis(e.target.value)} 
+      placeholder="사건 발생 개요 및 고립된 현장 상황..." 
+      style={{ padding: "10px 12px", borderRadius: "8px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.83rem", resize: "none", outline: "none" }} 
+    />
+  </div>
+
+  {/* B. 용의자 서류철 (알리바이 + 숨겨진 비밀) */}
+  <div style={{ ...GLASS_STYLE, padding: "18px", backgroundColor: theme.panel, borderRadius: "16px", border: `1px solid ${theme.border}`, display: "flex", flexDirection: "column", gap: "12px" }}>
+    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+        <span style={{ fontSize: "1.1rem" }}>📁</span>
+        <span style={{ fontWeight: "900", fontSize: "0.92rem", color: theme.text }}>용의자 서류철</span>
+      </div>
+      <button 
+        type="button" 
+        onClick={() => triggerToast("용의자 추가", "새로운 용의자 서류철이 열립니다.", "＋")} 
+        style={{ padding: "4px 10px", backgroundColor: theme.panelAlt, border: `1px solid ${theme.accent}`, borderRadius: "12px", color: theme.accent, fontSize: "0.74rem", fontWeight: "800", cursor: "pointer" }}
+      >
+        ＋ 용의자 추가
+      </button>
+    </div>
+
+    {/* 용의자 1 상세 카드 */}
+    <div style={{ padding: "14px", borderRadius: "12px", backgroundColor: isDarkMode ? "rgba(0,0,0,0.25)" : "rgba(255,255,255,0.4)", border: `1px dashed ${theme.border}`, display: "flex", flexDirection: "column", gap: "10px" }}>
+      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr 1fr", gap: "8px" }}>
+        <input type="text" value={partnerName} onChange={e => setPartnerName(e.target.value)} placeholder="용의자 이름" style={{ padding: "8px 10px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.82rem", outline: "none" }} />
+        <input type="text" value={partnerJob} onChange={e => setPartnerJob(e.target.value)} placeholder="직업 / 신분" style={{ padding: "8px 10px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.82rem", outline: "none" }} />
+        <input type="text" placeholder="살해/범행 동기" style={{ padding: "8px 10px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.82rem", outline: "none" }} />
+      </div>
+      <textarea rows={2} placeholder="주장하는 알리바이 (예: 20시경 기획실에서 혼자 잔업 중이었음)" style={{ padding: "8px 10px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.82rem", resize: "none", outline: "none" }} />
+      
+      {/* 🔒 비밀 필드 */}
+      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+        <span style={{ fontSize: "0.8rem", color: theme.accent, fontWeight: "800", flexShrink: 0 }}>🔒 숨겨진 비밀</span>
+        <input 
+          type="text" 
+          placeholder="알리바이의 허점이나 숨기고 있는 치부 (심문 성공 시 폭로)" 
+          style={{ flex: 1, padding: "8px 10px", borderRadius: "6px", border: `1px solid ${theme.accent}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.82rem", outline: "none" }} 
+        />
+      </div>
+    </div>
+  </div>
+
+  {/* C. 진범 무너뜨릴 결정적 물증 후보함 (복수 등록) */}
+  <div style={{ ...GLASS_STYLE, padding: "18px", backgroundColor: theme.panel, borderRadius: "16px", border: `1px solid ${theme.border}`, display: "flex", flexDirection: "column", gap: "10px" }}>
+    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+        <span style={{ fontSize: "1.1rem" }}>🔍</span>
+        <span style={{ fontWeight: "900", fontSize: "0.92rem", color: theme.text }}>결정적 물증 후보 (복수 등록)</span>
+      </div>
+      <span style={{ fontSize: "0.72rem", color: theme.textMuted }}>이 중 하나만 포착해도 진상 격파 가능</span>
+    </div>
+
+    <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+      <span style={{ padding: "6px 12px", borderRadius: "14px", backgroundColor: theme.panelAlt, border: `1.5px solid ${theme.accent}`, color: theme.text, fontSize: "0.78rem", fontWeight: "700", display: "flex", alignItems: "center", gap: "6px" }}>
+        📌 #18시_주차장_블랙박스
+        <span style={{ cursor: "pointer", color: theme.textMuted }}>✕</span>
+      </span>
+      <span style={{ padding: "6px 12px", borderRadius: "14px", backgroundColor: theme.panelAlt, border: `1.5px solid ${theme.accent}`, color: theme.text, fontSize: "0.78rem", fontWeight: "700", display: "flex", alignItems: "center", gap: "6px" }}>
+        📌 #서재_금고_혈흔_지운_타월
+        <span style={{ cursor: "pointer", color: theme.textMuted }}>✕</span>
+      </span>
+      <button 
+        type="button" 
+        onClick={() => triggerToast("물증 슬롯", "새로운 결정적 물증을 추가합니다.", "📌")} 
+        style={{ padding: "6px 12px", borderRadius: "14px", border: `1px dashed ${theme.border}`, backgroundColor: "transparent", color: theme.textMuted, fontSize: "0.78rem", fontWeight: "700", cursor: "pointer" }}
+      >
+        ＋ 물증 추가
+      </button>
+    </div>
+  </div>
+
+  {/* D. 진상 기밀 봉투 (진범 및 트릭) */}
+  <div style={{ ...GLASS_STYLE, padding: "18px", backgroundColor: isDarkMode ? "rgba(35, 20, 22, 0.4)" : "rgba(255, 235, 238, 0.5)", borderRadius: "16px", border: `1.5px solid ${theme.accent}`, display: "flex", flexDirection: "column", gap: "10px" }}>
+    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+      <span style={{ fontSize: "1.1rem" }}>✉️</span>
+      <span style={{ fontWeight: "900", fontSize: "0.92rem", color: theme.accent }}>사건 진상 기밀 봉투 (AI 마스터 전용)</span>
+    </div>
+    <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 2fr", gap: "10px" }}>
+      <input type="text" placeholder="진범 지목 (예: 백서원 팀장)" style={{ padding: "10px 12px", borderRadius: "8px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.85rem", outline: "none" }} />
+      <input type="text" placeholder="사용된 트릭 (예: 타이머와 에어컨 리모컨을 이용한 사망 추정 시각 조작)" style={{ padding: "10px 12px", borderRadius: "8px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.85rem", outline: "none" }} />
+    </div>
+  </div>
+
+</section>
 
             {/* 4. 시나리오 시작 버튼 (기존 동작 100% 보존) */}
             <button
