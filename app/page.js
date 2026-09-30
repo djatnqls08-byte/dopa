@@ -1211,7 +1211,7 @@ const [showEvidence, setShowEvidence] = useState(false);
 </footer>
             </div>
 
-            {/* ── 📌 1. 수사 증거보드 (새로 만든 컴포넌트 스위치 달기!) ── */}
+            {/* ── 📌 1. 수사 증거보드 (분리 완료!) ── */}
             {showEvidenceBoard && activeSession && activeSession.ruleMode === "freeform" && (
               <SecretBoard
                 activeSession={activeSession}
@@ -1225,7 +1225,7 @@ const [showEvidence, setShowEvidence] = useState(false);
               />
             )}
 
-            {/* ── 📋 2. 캐릭터 시트 (새로 만든 컴포넌트 스위치 달기!) ── */}
+            {/* ── 📋 2. 캐릭터 시트 (분리 완료!) ── */}
             <CharacterSheet 
               activeSession={activeSession}
               theme={theme}
@@ -1241,10 +1241,6 @@ const [showEvidence, setShowEvidence] = useState(false);
 
           </div>
         )}
-      </div>
-    </div>
-  );
-}
 
                 
       {/* ── 📱 하단 세그먼트 글래스 탭바 ── */}
