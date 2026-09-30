@@ -132,7 +132,7 @@ export default function GamePlatform() {
       const prevTarget = filtered[deletedIndex - 1] || filtered[0];
       setSelectedSuspectId(prevTarget.id);
     }
-    triggerToast("용의자 삭제", "수사망에서 제외되었습니다.", "🗑️");
+    triggerToast("인물 삭제", "수사망에서 제외되었습니다.", "🗑️");
   };
 
   const handleUpdateSuspect = (id, field, value) => {
