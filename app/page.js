@@ -68,6 +68,12 @@ export default function GamePlatform() {
   ]);
   const [selectedSuspectId, setSelectedSuspectId] = useState(1);
 
+  // ── 🖼️ 초상화 대형 뷰어 & 수정 모달 상태 ──
+  const [showPortraitModal, setShowPortraitModal] = useState(false);
+  const [isEditingPortrait, setIsEditingPortrait] = useState(false);
+  const [activePortraitSuspectId, setActivePortraitSuspectId] = useState(null);
+  const [customPortraitInput, setCustomPortraitInput] = useState("");
+
   // C. 결정적 물증 후보함 (🌟 누락되었던 핵심 상태 변수 복구)
   const [evidenceList, setEvidenceList] = useState([
     {
@@ -128,6 +134,35 @@ export default function GamePlatform() {
     setSuspects(suspects.map(s => s.id === id ? { ...s, [field]: value } : s));
   };
 
+  // 📷 초상화 파일 업로드 처리
+  const handlePortraitFileUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file || !activePortraitSuspectId) return;
+
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      handleUpdateSuspect(activePortraitSuspectId, "portraitUrl", ev.target.result);
+      const target = suspects.find(s => s.id === activePortraitSuspectId);
+      triggerToast("초상화 등록 완료", `[${target?.name || "용의자"}]의 사진이 등록되었습니다.`, "📷");
+      setIsEditingPortrait(false);
+      setShowPortraitModal(false);
+    };
+    reader.readAsDataURL(file);
+    e.target.value = null;
+  };
+
+  // 🔗 초상화 웹 링크 URL 적용 처리
+  const handleApplyPortraitUrl = () => {
+    if (!customPortraitInput.trim() || !activePortraitSuspectId) return;
+    handleUpdateSuspect(activePortraitSuspectId, "portraitUrl", customPortraitInput.trim());
+    const target = suspects.find(s => s.id === activePortraitSuspectId);
+    triggerToast("초상화 링크 적용", `[${target?.name || "용의자"}]의 사진이 변경되었습니다.`, "✨");
+    setCustomPortraitInput("");
+    setIsEditingPortrait(false);
+    setShowPortraitModal(false);
+  };
+
+  
   // 텍스트/시나리오 붙여넣기 파싱
   const handleApplyPastedScenario = () => {
     if (!pastedText.trim()) return;
@@ -867,7 +902,219 @@ export default function GamePlatform() {
           </div>
         </div>
       )}
+{/* ── 🖼️ 초상화 대형 뷰어 & 인라인 수정 팝업 ── */}
+      {showPortraitModal && (() => {
+        const target = suspects.find(s => s.id === activePortraitSuspectId) || suspects[0];
+        if (!target) return null;
 
+        return (
+          <div
+            onClick={() => {
+              setIsEditingPortrait(false);
+              setShowPortraitModal(false);
+            }}
+            style={{
+              position: "fixed",
+              inset: 0,
+              backgroundColor: "rgba(0, 0, 0, 0.8)",
+              backdropFilter: "blur(8px)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              zIndex: 99999,
+              padding: "16px",
+              animation: "fadeIn 0.2s ease-out"
+            }}
+          >
+            <div
+              onClick={e => e.stopPropagation()}
+              className="glass-card"
+              style={{
+                width: "100%",
+                maxWidth: "380px",
+                backgroundColor: theme.panel,
+                border: `1.5px solid ${theme.border}`,
+                borderRadius: "18px",
+                padding: "20px",
+                color: theme.text,
+                display: "flex",
+                flexDirection: "column",
+                gap: "14px",
+                boxShadow: "0 20px 50px rgba(0,0,0,0.6)",
+                maxHeight: "90vh",
+                overflowY: "auto"
+              }}
+            >
+              {/* 상단 헤더 바 */}
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: `1px solid ${theme.border}`, paddingBottom: "10px" }}>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: "1rem", fontWeight: "900", color: theme.accent }}>
+                    {target.name || "신원 미상의 용의자"}
+                  </h3>
+                  <div style={{ fontSize: "0.74rem", color: theme.textMuted, marginTop: "2px" }}>
+                    {target.job ? `${target.job} · ` : ""}{target.ageGender || "인적사항 미기재"}
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsEditingPortrait(false);
+                    setShowPortraitModal(false);
+                  }}
+                  style={{ background: "none", border: "none", color: theme.textMuted, fontSize: "1.2rem", cursor: "pointer", lineHeight: 1 }}
+                >
+                  ✕
+                </button>
+              </div>
+
+              {/* 1. 대형 초상화 뷰어 박스 (aspectRatio 1:1) */}
+              <div
+                style={{
+                  width: "100%",
+                  aspectRatio: "1/1",
+                  borderRadius: "14px",
+                  overflow: "hidden",
+                  border: `1.5px solid ${theme.border}`,
+                  backgroundColor: "rgba(0, 0, 0, 0.3)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  boxShadow: "inset 0 0 20px rgba(0,0,0,0.4)"
+                }}
+              >
+                {target.portraitUrl ? (
+                  <img src={target.portraitUrl} alt="용의자 대형 초상화" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                ) : (
+                  <div style={{ textAlign: "center", color: theme.textMuted, fontSize: "0.85rem", lineHeight: "1.6" }}>
+                    <div style={{ fontSize: "2.4rem", marginBottom: "6px" }}>👤</div>
+                    등록된 사진이 없습니다.
+                  </div>
+                )}
+              </div>
+
+              {/* 2. 하단 컨트롤러: 수정하기 버튼 or 업로드 폼 */}
+              {!isEditingPortrait ? (
+                <button
+                  type="button"
+                  onClick={() => setIsEditingPortrait(true)}
+                  style={{
+                    width: "100%",
+                    padding: "12px",
+                    backgroundColor: theme.panelAlt,
+                    border: `1.5px solid ${theme.accent}`,
+                    color: theme.accent,
+                    borderRadius: "10px",
+                    fontWeight: "800",
+                    fontSize: "0.84rem",
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: "6px"
+                  }}
+                >
+                  <span>✏️</span>
+                  <span>초상화 이미지 변경 / 업로드</span>
+                </button>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: "10px", borderTop: `1px dashed ${theme.border}`, paddingTop: "12px" }}>
+                  {/* 파일 업로드 버튼 */}
+                  <label
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: "8px",
+                      width: "100%",
+                      padding: "12px",
+                      backgroundColor: theme.panelAlt,
+                      border: `1.5px dashed ${theme.accent}`,
+                      borderRadius: "10px",
+                      textAlign: "center",
+                      cursor: "pointer",
+                      fontSize: "0.82rem",
+                      fontWeight: "800",
+                      color: theme.accent,
+                      boxSizing: "border-box"
+                    }}
+                  >
+                    <span>📁</span>
+                    <span>컴퓨터 / 갤러리에서 파일 선택</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handlePortraitFileUpload}
+                      style={{ display: "none" }}
+                    />
+                  </label>
+
+                  <div style={{ textAlign: "center", fontSize: "0.7rem", color: theme.textMuted }}>
+                    또는 이미지 웹 링크 URL 직접 입력
+                  </div>
+
+                  {/* URL 입력창 */}
+                  <input
+                    type="text"
+                    value={customPortraitInput}
+                    onChange={e => setCustomPortraitInput(e.target.value)}
+                    onKeyDown={e => { if (e.key === "Enter") handleApplyPortraitUrl(); }}
+                    placeholder="https://... 이미지 링크 주소"
+                    style={{
+                      width: "100%",
+                      boxSizing: "border-box",
+                      padding: "9px 12px",
+                      backgroundColor: theme.inputBg,
+                      border: `1px solid ${theme.border}`,
+                      borderRadius: "8px",
+                      color: theme.text,
+                      fontSize: "0.82rem",
+                      outline: "none"
+                    }}
+                  />
+
+                  {/* 취소 / 적용 버튼 */}
+                  <div style={{ display: "flex", gap: "8px" }}>
+                    <button
+                      type="button"
+                      onClick={() => setIsEditingPortrait(false)}
+                      style={{
+                        flex: 1,
+                        padding: "9px",
+                        backgroundColor: theme.panelAlt,
+                        border: `1px solid ${theme.border}`,
+                        color: theme.textMuted,
+                        borderRadius: "8px",
+                        cursor: "pointer",
+                        fontSize: "0.78rem",
+                        fontWeight: "700"
+                      }}
+                    >
+                      취소
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleApplyPortraitUrl}
+                      style={{
+                        flex: 2,
+                        padding: "9px",
+                        backgroundColor: theme.accent,
+                        color: "#fff",
+                        border: "none",
+                        borderRadius: "8px",
+                        cursor: "pointer",
+                        fontWeight: "800",
+                        fontSize: "0.78rem"
+                      }}
+                    >
+                      URL 적용하기 ➔
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }
