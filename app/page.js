@@ -476,14 +476,20 @@ export default function GamePlatform() {
                   <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", gap: "16px", width: "100%" }}>
                     {/* A. 주인공 사진 (폴라로이드 형태) */}
                     <div
-                      title="사진 등록 및 변경 (클릭)"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setActivePortraitSuspectId("pc"); // 🌟 주인공을 식별하는 특수 ID "pc" 전달
+                        setShowPortraitModal(true); // 🌟 모달 창 열기!
+                      }}
+                      title="사진 등록 및 확인 (클릭)"
                       style={{
                         flex: isMobile ? "none" : "0 0 135px",
-                        width: isMobile ? "100%" : "auto", // 🌟 모바일에서 가로를 꽉 채우도록 수정!
-                        maxWidth: isMobile ? "180px" : "none", // 🌟 너무 커지지 않게 제한
+                        width: isMobile ? "100%" : "auto",
+                        maxWidth: isMobile ? "180px" : "none",
                         margin: isMobile ? "0 auto" : "0",
                         backgroundColor: theme.polaroidBg || "#ded7cb", borderRadius: "6px", padding: "8px 8px 12px 8px", color: theme.polaroidText || "#292524",
-                        boxShadow: "0 3px 10px rgba(0,0,0,0.18)", display: "flex", flexDirection: "column", alignItems: "center", position: "relative"
+                        boxShadow: "0 3px 10px rgba(0,0,0,0.18)", display: "flex", flexDirection: "column", alignItems: "center", position: "relative",
+                        cursor: "pointer" // 🌟 마우스 커서를 클릭 모양으로 변경
                       }}
                     >
                       <div
@@ -500,27 +506,6 @@ export default function GamePlatform() {
                             <span style={{ fontWeight: "700" }}>수사관 사진</span>
                           </div>
                         )}
-                        {/* 연필 아이콘 (업로드 버튼 + 토스트 알림 추가) */}
-                        <label
-                          style={{
-                            position: "absolute", bottom: "6px", right: "6px", width: "24px", height: "24px", borderRadius: "50%",
-                            backgroundColor: "rgba(0,0,0,0.7)", color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 5
-                          }}
-                        >
-                          <PenTool size={12} strokeWidth={2.5} />
-                          <input type="file" accept="image/*" style={{ display: "none" }} onChange={(e) => {
-                            const file = e.target.files[0];
-                            if (!file) return;
-                            const reader = new FileReader();
-                            reader.onload = (ev) => {
-                              setPcPortraitUrl(ev.target.result);
-                              // 🌟 사진 등록 시 토스트 피드백 추가!
-                              triggerToast("사진 등록", "수사관의 프로필 사진이 업데이트되었습니다.", "📸");
-                            };
-                            reader.readAsDataURL(file);
-                            e.target.value = null;
-                          }} />
-                        </label>
                       </div>
                       <div style={{ marginTop: "6px", textAlign: "center", width: "100%" }}>
                         <div style={{ fontWeight: "900", fontSize: "0.82rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{pcName || "이름 미상"}</div>
@@ -872,7 +857,23 @@ export default function GamePlatform() {
 
 {/* ── 🖼️ 초상화 모달 (크게 보기 + 연필 아이콘 업로드) ── */}
       {showPortraitModal && (() => {
-        const target = suspects.find(s => s.id === activePortraitSuspectId) || suspects[0];
+        // 🌟 클릭한 사람이 주인공(pc)인지 확인합니다.
+        const isPc = activePortraitSuspectId === "pc";
+        let target;
+
+        // 주인공일 경우와 용의자일 경우 정보를 각각 다르게 불러옵니다.
+        if (isPc) {
+          target = {
+            id: "pc",
+            name: pcName || "주인공 (수사관)",
+            job: pcJob,
+            ageGender: pcAgeGender,
+            portraitUrl: pcPortraitUrl
+          };
+        } else {
+          target = suspects.find(s => s.id === activePortraitSuspectId) || suspects[0];
+        }
+
         if (!target) return null;
 
         return (
@@ -884,7 +885,6 @@ export default function GamePlatform() {
               onClick={e => e.stopPropagation()}
               style={{ ...GLASS_STYLE, width: "100%", maxWidth: "380px", backgroundColor: theme.panel, border: `1.5px solid ${theme.border}`, borderRadius: "18px", padding: "20px", color: theme.text, display: "flex", flexDirection: "column", gap: "14px", boxShadow: "0 20px 50px rgba(0,0,0,0.5)" }}
             >
-              {/* 상단 이름 및 닫기 버튼 */}
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: `1px solid ${theme.border}`, paddingBottom: "10px" }}>
                 <div>
                   <h3 style={{ margin: 0, fontSize: "1rem", fontWeight: "900", color: theme.accent }}>
@@ -903,10 +903,9 @@ export default function GamePlatform() {
                 </button>
               </div>
 
-              {/* 사진 영역 & 연필 아이콘 */}
               <div style={{ width: "100%", aspectRatio: "1/1", borderRadius: "14px", overflow: "hidden", border: `1.5px solid ${theme.border}`, backgroundColor: isDarkMode ? "rgba(0, 0, 0, 0.25)" : "#f0ece4", display: "flex", alignItems: "center", justifyContent: "center", position: "relative" }}>
                 {target.portraitUrl ? (
-                  <img src={target.portraitUrl} alt="용의자 초상화" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                  <img src={target.portraitUrl} alt="초상화" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                 ) : (
                   <div style={{ textAlign: "center", color: theme.textMuted, fontSize: "0.85rem", lineHeight: "1.6" }}>
                     <div style={{ fontSize: "2.4rem", marginBottom: "6px", display: "flex", justifyContent: "center" }}>
@@ -916,7 +915,6 @@ export default function GamePlatform() {
                   </div>
                 )}
 
-                {/* ✏️ 우측 하단 연필 아이콘 (클릭 시 갤러리 오픈) */}
                 <label
                   title="사진 변경/등록"
                   style={{
@@ -935,9 +933,16 @@ export default function GamePlatform() {
                       const file = e.target.files[0];
                       if (!file) return;
                       const reader = new FileReader();
-                      reader.onload = (ev) => handleUpdateSuspect(target.id, "portraitUrl", ev.target.result);
+                      reader.onload = (ev) => {
+                        // 🌟 누구의 사진을 바꾸는 것인지 판별하여 올바른 곳에 저장합니다.
+                        if (isPc) {
+                          setPcPortraitUrl(ev.target.result);
+                        } else {
+                          handleUpdateSuspect(target.id, "portraitUrl", ev.target.result);
+                        }
+                      };
                       reader.readAsDataURL(file);
-                      e.target.value = null; // 같은 파일도 다시 선택 가능하게 초기화
+                      e.target.value = null; 
                     }} 
                   />
                 </label>
