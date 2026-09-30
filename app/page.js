@@ -318,7 +318,6 @@ export default function GameApp() {
       style={{ padding: "10px 12px", borderRadius: "8px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.83rem", resize: "none", outline: "none" }} 
     />
   </div>
-
 {/* B. 용의자 및 인물 수사망 (폴라로이드 증거보드) */}
 <section style={{ ...GLASS_STYLE, padding: "20px", backgroundColor: theme.panel, borderRadius: "18px", border: `1px solid ${theme.border}`, display: "flex", flexDirection: "column", gap: "14px" }}>
   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
