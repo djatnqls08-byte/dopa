@@ -7,7 +7,7 @@ import {
   Search, Heart, Flame, LayoutGrid, LibraryBig, PenTool, UserRound, 
   Menu, Moon, Sun, Save, FileUp, HelpCircle, X, ChevronDown, ChevronUp, Image as ImageIcon,
   ClipboardList, Pin, FileSearch, Mailbox, Play,
-  FolderOpen, Lock, Settings, Database, ClipboardPaste
+  FolderOpen, Lock, Settings, Database, ClipboardPaste, LogOut
 } from "lucide-react";
 
 export default function GamePlatform() {
@@ -65,7 +65,6 @@ export default function GamePlatform() {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [showPasteModal, setShowPasteModal] = useState(false);
   const [pastedText, setPastedText] = useState("");
-  const [activeSession, setActiveSession] = useState(null);
   const [ruleHelpModal, setRuleHelpModal] = useState(null);
 
   // ── [4. 룰 모드 & 태그] ──
@@ -452,11 +451,16 @@ const [showEvidence, setShowEvidence] = useState(false);
 
         <div style={{ padding: "14px", borderTop: `1px solid ${theme.border}`, display: "flex", gap: "8px" }}>
           {activeSession ? (
-            <button 
-              onClick={() => { setActiveSession(null); setIsDrawerOpen(false); }} 
-              style={{ flex: 1, padding: "12px", backgroundColor: theme.danger || "#ef4444", border: "none", borderRadius: "8px", color: "#fff", fontSize: "0.85rem", fontWeight: "800", cursor: "pointer", boxShadow: "0 4px 12px rgba(239, 68, 68, 0.3)" }}
+           <button 
+              onClick={() => { setActiveSessionId(null); setIsDrawerOpen(false); }} 
+              style={{ 
+                flex: 1, padding: "12px", backgroundColor: theme.danger || "#ef4444", 
+                border: "none", borderRadius: "8px", color: "#fff", fontSize: "0.85rem", 
+                fontWeight: "800", cursor: "pointer", boxShadow: "0 4px 12px rgba(239, 68, 68, 0.3)",
+                display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" // 🌟 아이콘 정렬을 위한 설정 추가
+              }}
             >
-              🚪 게임 종료하고 로비로 나가기
+              <LogOut size={18} strokeWidth={2.5} /> 로비로 나가기
             </button>
           ) : (
             <>
@@ -1099,7 +1103,7 @@ const [showEvidence, setShowEvidence] = useState(false);
                     <Pin size={18} strokeWidth={2.5} color={theme.danger} style={{ transform: "rotate(45deg)" }} />
                     <div>
                       <div style={{ fontWeight: "900", fontSize: "0.95rem", color: theme.text, letterSpacing: "-0.5px" }}>
-                        수사 본부 증거보드
+                        증거보드
                       </div>
                       <div style={{ fontSize: "0.68rem", color: theme.textMuted, marginTop: "2px", fontWeight: "600" }}>
                         EVIDENCE BOARD
