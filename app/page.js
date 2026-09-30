@@ -694,57 +694,71 @@ const [showEvidence, setShowEvidence] = useState(false);
 
                {/* C. 사건 단서 및 물증 보관소 */}
                 <section style={{ ...GLASS_STYLE, padding: isMobile ? "16px" : "20px", backgroundColor: theme.panel, borderRadius: "18px", border: `1px solid ${theme.border}`, display: "flex", flexDirection: "column", gap: "12px" }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "8px" }}>
-                    
-                    {/* 🌟 1. 제목을 클릭해서 열고 닫는 토글 버튼으로 업그레이드! */}
-                    <button 
-                      type="button" 
-                      onClick={() => setShowEvidence(!showEvidence)}
-                      style={{ background: "none", border: "none", display: "flex", alignItems: "center", gap: "8px", cursor: "pointer", padding: 0, textAlign: "left" }}
-                    >
+                  
+                  {/* 🌟 1. 깔끔해진 아코디언 헤더 (우측 끝에 화살표만 배치) */}
+                  <button 
+                    type="button" 
+                    onClick={() => setShowEvidence(!showEvidence)}
+                    style={{ width: "100%", textAlign: "left", background: "none", border: "none", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer", padding: 0 }}
+                  >
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                       <FileSearch size={22} strokeWidth={2} color={theme.accent} />
-                      <span style={{ fontSize: "0.95rem", color: theme.text }}>
-                        <strong style={{ fontWeight: "900" }}>사건 단서 및 물증</strong>
-                        <span style={{ fontWeight: "500", color: theme.textMuted, marginLeft: "4px" }}>({evidenceList.length}건 / 최대 15개)</span>
-                      </span>
-                      {/* 열림/닫힘 화살표 아이콘 */}
-                      <span style={{ color: theme.accent, fontSize: "0.85rem", fontWeight: "500", marginLeft: "4px" }}>
-                        {showEvidence ? "▲" : "▼"}
-                      </span>
-                    </button>
+                      <span style={{ fontWeight: "900", fontSize: "0.95rem", color: theme.text }}>사건 단서 및 물증</span>
+                    </div>
+                    {/* 우측 끝 화살표 */}
+                    <span style={{ color: theme.text, fontSize: "0.85rem", fontWeight: "500" }}>
+                      {showEvidence ? "▲" : "▼"}
+                    </span>
+                  </button>
 
-                    {/* 단서 추가 버튼 */}
-                    <button type="button" onClick={handleAddEvidence} style={{ padding: "6px 14px", backgroundColor: theme.panelAlt, border: `1.5px solid ${theme.accent}`, borderRadius: "16px", color: theme.accent, fontSize: "0.76rem", fontWeight: "600", cursor: "pointer" }}>＋ 단서 추가</button>
-                  </div>
-
-                  {/* 🌟 2. showEvidence 스위치가 켜졌을(true) 때만 아래 리스트를 렌더링합니다. */}
+                  {/* 🌟 2. 열렸을 때만 보이는 단서 리스트 및 추가 버튼 */}
                   {showEvidence && (
-                    <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: "12px", marginTop: "4px" }}>
-                      {evidenceList.map((item, idx) => (
-                        <div key={item.id} style={{ backgroundColor: theme.panelAlt, border: `1px solid ${theme.border}`, borderRadius: "12px", padding: "14px", display: "flex", flexDirection: "column", gap: "10px" }}>
-                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "6px" }}>
-                            <input type="text" value={item.name} onChange={e => handleUpdateEvidence(item.id, "name", e.target.value)} placeholder={`단서 ${idx + 1} 명칭`} style={{ flex: 1, padding: "8px 10px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.82rem", fontWeight: "800", outline: "none" }} />
-                            {evidenceList.length > 1 && (
-                              <button type="button" onClick={(e) => handleDeleteEvidence(e, item.id)} style={{ background: "none", border: "none", color: theme.danger, cursor: "pointer", padding: "2px", fontSize: "0.8rem" }}>🗑</button>
-                            )}
+                    <div style={{ display: "flex", flexDirection: "column", gap: "12px", marginTop: "4px" }}>
+                      
+                      {/* 기존 단서 그리드 */}
+                      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: "12px" }}>
+                        {evidenceList.map((item, idx) => (
+                          <div key={item.id} style={{ backgroundColor: theme.panelAlt, border: `1px solid ${theme.border}`, borderRadius: "12px", padding: "14px", display: "flex", flexDirection: "column", gap: "10px" }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "6px" }}>
+                              <input type="text" value={item.name} onChange={e => handleUpdateEvidence(item.id, "name", e.target.value)} placeholder={`단서 ${idx + 1} 명칭`} style={{ flex: 1, padding: "8px 10px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.82rem", fontWeight: "800", outline: "none" }} />
+                              {evidenceList.length > 1 && (
+                                <button type="button" onClick={(e) => handleDeleteEvidence(e, item.id)} style={{ background: "none", border: "none", color: theme.danger, cursor: "pointer", padding: "2px", fontSize: "0.8rem" }}>🗑</button>
+                              )}
+                            </div>
+                            <input type="text" value={item.overview} onChange={e => handleUpdateEvidence(item.id, "overview", e.target.value)} placeholder="발견 위치 및 겉모습..." style={{ width: "100%", boxSizing: "border-box", padding: "8px 10px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.78rem", outline: "none" }} />
+                            <div style={{ backgroundColor: isDarkMode ? "rgba(0,0,0,0.2)" : "rgba(255,255,255,0.6)", borderRadius: "8px", border: `1px solid ${theme.danger}`, padding: "10px 12px" }}>
+                              <button type="button" onClick={() => handleUpdateEvidence(item.id, "showSecret", !item.showSecret)} style={{ width: "100%", textAlign: "left", background: "none", border: "none", fontSize: "0.72rem", color: theme.danger, cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                                <span style={{ fontWeight: "800", display: "flex", alignItems: "center", gap: "6px" }}>
+                                  <Lock size={15} strokeWidth={2.5} /> 감식 진상 / 모순
+                                </span>
+                                <span style={{ fontWeight: "500", fontSize: "0.85rem" }}>{item.showSecret ? "▲" : "▼"}</span>
+                              </button>
+                              {item.showSecret && (
+                                <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginTop: "8px" }}>
+                                  <input type="text" value={item.contradiction} onChange={e => handleUpdateEvidence(item.id, "contradiction", e.target.value)} placeholder="알리바이를 깰 모순점..." style={{ width: "100%", boxSizing: "border-box", padding: "6px 10px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.78rem", outline: "none" }} />
+                                  <input type="text" value={item.secret} onChange={e => handleUpdateEvidence(item.id, "secret", e.target.value)} placeholder="감식 성공 시 밝혀질 이면..." style={{ width: "100%", boxSizing: "border-box", padding: "6px 10px", borderRadius: "6px", border: `1px solid ${theme.danger}`, backgroundColor: theme.inputBg, color: theme.danger, fontSize: "0.78rem", outline: "none" }} />
+                                </div>
+                              )}
+                            </div>
                           </div>
-                          <input type="text" value={item.overview} onChange={e => handleUpdateEvidence(item.id, "overview", e.target.value)} placeholder="발견 위치 및 겉모습..." style={{ width: "100%", boxSizing: "border-box", padding: "8px 10px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.78rem", outline: "none" }} />
-                          <div style={{ backgroundColor: isDarkMode ? "rgba(0,0,0,0.2)" : "rgba(255,255,255,0.6)", borderRadius: "8px", border: `1px solid ${theme.danger}`, padding: "10px 12px" }}>
-                            <button type="button" onClick={() => handleUpdateEvidence(item.id, "showSecret", !item.showSecret)} style={{ width: "100%", textAlign: "left", background: "none", border: "none", fontSize: "0.72rem", color: theme.danger, cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                              <span style={{ fontWeight: "800", display: "flex", alignItems: "center", gap: "6px" }}>
-                                <Lock size={15} strokeWidth={2.5} /> 감식 진상 / 모순
-                              </span>
-                              <span style={{ fontWeight: "500", fontSize: "0.85rem" }}>{item.showSecret ? "▲" : "▼"}</span>
-                            </button>
-                            {item.showSecret && (
-                              <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginTop: "8px" }}>
-                                <input type="text" value={item.contradiction} onChange={e => handleUpdateEvidence(item.id, "contradiction", e.target.value)} placeholder="알리바이를 깰 모순점..." style={{ width: "100%", boxSizing: "border-box", padding: "6px 10px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.78rem", outline: "none" }} />
-                                <input type="text" value={item.secret} onChange={e => handleUpdateEvidence(item.id, "secret", e.target.value)} placeholder="감식 성공 시 밝혀질 이면..." style={{ width: "100%", boxSizing: "border-box", padding: "6px 10px", borderRadius: "6px", border: `1px solid ${theme.danger}`, backgroundColor: theme.inputBg, color: theme.danger, fontSize: "0.78rem", outline: "none" }} />
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      ))}
+                        ))}
+                      </div>
+
+                      {/* 🌟 3. 새로운 위치: 리스트 맨 아래의 '단서 추가' 넓은 버튼 */}
+                      <button 
+                        type="button" 
+                        onClick={handleAddEvidence} 
+                        style={{ 
+                          width: "100%", padding: "12px", 
+                          backgroundColor: isDarkMode ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.02)", 
+                          border: `1.5px dashed ${theme.borderHighlight || theme.border}`, 
+                          borderRadius: "12px", color: theme.accent, fontSize: "0.82rem", fontWeight: "800", 
+                          cursor: "pointer", transition: "all 0.2s"
+                        }}
+                      >
+                        ＋ 새로운 단서 추가 ({evidenceList.length} / 15)
+                      </button>
+
                     </div>
                   )}
                 </section>
