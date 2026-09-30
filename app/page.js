@@ -5,7 +5,8 @@ import { useState, useEffect } from "react";
 import { THEME_PALETTES, GLASS_STYLE } from "@/lib/themes";
 
 export default function GamePlatform() {
-  // ── [0. 폰트 강제 로드 및 모바일 스크롤 최적화] ──
+  // ── [0. 폰트 강제 로드] ──
+  // 🌟 에러를 유발했던 모바일 스크롤 방지 코드(overscroll)를 삭제하고 폰트만 남겼습니다!
   useEffect(() => {
     const style = document.createElement("style");
     style.innerHTML = `
@@ -18,17 +19,9 @@ export default function GamePlatform() {
       }
       * { font-family: 'Pretendard', sans-serif; }
       .serif-text { font-family: 'RIDIBatang', serif !important; }
-      
-      /* 🌟 미니멀 스크롤바 */
       ::-webkit-scrollbar { width: 5px; height: 5px; }
       ::-webkit-scrollbar-track { background: transparent; }
       ::-webkit-scrollbar-thumb { background: rgba(120, 120, 120, 0.4); border-radius: 10px; }
-      
-      /* 🌟 모바일 크롬/사파리 당겨서 새로고침(Pull-to-refresh) 완벽 차단! */
-      body {
-        overscroll-behavior-y: none;
-        overscroll-behavior-x: none;
-      }
     `;
     document.head.appendChild(style);
     return () => document.head.removeChild(style);
@@ -62,7 +55,7 @@ export default function GamePlatform() {
     setTimeout(() => setToast(null), 2500);
   };
 
-  // ── [3. 상태 관리 (로비, 모달, 세션)] ──
+  // ── [3. 상태 관리] ──
   const [activeTab, setActiveTab] = useState("lobby");
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [showPasteModal, setShowPasteModal] = useState(false);
@@ -91,8 +84,7 @@ export default function GamePlatform() {
   ]);
   const [selectedSuspectId, setSelectedSuspectId] = useState(1);
 
-  const [showPortraitModal, setShowPortraitModal] = useState(false);
-  const [activePortraitSuspectId, setActivePortraitSuspectId] = useState(null);
+  // 🌟 초상화 모달 상태 삭제 (연필 버튼으로 직접 업로드하게 변경됨)
 
   const [evidenceList, setEvidenceList] = useState([
     { id: 1, name: "", overview: "", contradiction: "", secret: "", showSecret: false }
@@ -103,6 +95,11 @@ export default function GamePlatform() {
   const [hiddenTruth, setHiddenTruth] = useState("");
   const [showHiddenTruth, setShowHiddenTruth] = useState(false);
 
+  // 인게임 상태
+  const [messages, setMessages] = useState([]);
+  const [inputMsg, setInputMsg] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+
   // ── [8. 동적 조작 함수들] ──
   
   const handleAddSuspect = () => {
@@ -112,26 +109,29 @@ export default function GamePlatform() {
     }
     const nextId = Date.now();
     setSuspects([...suspects, { id: nextId, name: "", ageGender: "", job: "", behavior: "", secret: "", portraitUrl: "", showSecret: false }]);
+    // 추가 후 자동으로 포커스 이동
     setSelectedSuspectId(nextId);
   };
 
-  // 🌟 [핵심 개선] 모바일에서 터치 이벤트가 위로 튀지 않도록 stopPropagation 추가!
+  // 🌟 [핵심 개선] 모바일에서 화면이 튀지 않고 연속 삭제 가능하게 변경
   const handleDeleteSuspect = (e, id) => {
-    e.stopPropagation(); // 👈 여기서 이벤트 확산을 완벽 차단!
+    e.stopPropagation(); // 👈 카드가 클릭되는 것을 방지
     
     if (suspects.length <= 1) {
       triggerToast("삭제 불가", "최소 1명의 인물 카드는 유지되어야 합니다.", "⚠️");
       return;
     }
+    
     const filtered = suspects.filter(s => s.id !== id);
     setSuspects(filtered);
     
-    // 삭제 시 부드럽게 이전 인물(또는 첫 번째 인물)로 포커스 이동
+    // 만약 현재 보고 있던 카드를 지웠다면, 바로 앞의 카드를 보여줌
     if (selectedSuspectId === id) {
       const deletedIndex = suspects.findIndex(s => s.id === id);
       const prevTarget = filtered[deletedIndex - 1] || filtered[0];
       setSelectedSuspectId(prevTarget.id);
     }
+    triggerToast("용의자 삭제", "수사망에서 제외되었습니다.", "🗑️");
   };
 
   const handleUpdateSuspect = (id, field, value) => {
@@ -147,25 +147,12 @@ export default function GamePlatform() {
   };
 
   const handleDeleteEvidence = (e, id) => {
-    e.stopPropagation(); // 👈 단서 삭제 시에도 튐 현상 방지
+    e.stopPropagation(); 
     setEvidenceList(evidenceList.filter(ev => ev.id !== id));
   };
 
   const handleUpdateEvidence = (id, field, value) => {
     setEvidenceList(evidenceList.map(ev => ev.id === id ? { ...ev, [field]: value } : ev));
-  };
-
-  const handlePortraitFileUpload = (e) => {
-    const file = e.target.files[0];
-    if (!file || !activePortraitSuspectId) return;
-
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      handleUpdateSuspect(activePortraitSuspectId, "portraitUrl", ev.target.result);
-      setShowPortraitModal(false);
-    };
-    reader.readAsDataURL(file);
-    e.target.value = null; // 초기화
   };
 
   const handleApplyPastedScenario = () => {
@@ -194,8 +181,7 @@ export default function GamePlatform() {
   };
 
   return (
-    // 🌟 모바일 당겨서 새로고침 방지를 위해 껍데기에 명시적 오버스크롤 속성 추가
-    <div style={{ display: "flex", height: "100dvh", width: "100vw", backgroundColor: theme.bg, color: theme.text, overflow: "hidden", position: "relative", overscrollBehavior: "none" }}>
+    <div style={{ display: "flex", height: "100dvh", width: "100vw", backgroundColor: theme.bg, color: theme.text, overflow: "hidden", position: "relative" }}>
       
       {/* 🍞 글로벌 토스트 */}
       {toast && (
@@ -255,28 +241,21 @@ export default function GamePlatform() {
             )}
           </div>
 
-          <div style={{ display: "flex", alignItems: "center", gap: isMobile ? "8px" : "12px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "2px" }}>
             {!activeSession && (
               <>
-                {/* 🌟 3. 버튼 디자인 및 여백 최적화 (버튼들이 예쁘게 정렬됨) */}
+                {/* 🌟 불러오기 버튼 디자인 및 아이콘 변경 (글씨 없이 깔끔하게 통일) */}
                 <button 
                   onClick={() => setShowPasteModal(true)} 
                   title="시나리오 불러오기"
-                  style={{ 
-                    display: "flex", alignItems: "center", gap: "4px", 
-                    padding: isMobile ? "4px 8px" : "4px 10px", 
-                    backgroundColor: "transparent", border: `1px solid ${theme.border}`, 
-                    borderRadius: "14px", color: theme.text, fontSize: "1.05rem", 
-                    cursor: "pointer", transition: "all 0.2s" 
-                  }}
+                  style={{ background: "none", border: "none", cursor: "pointer", fontSize: "1.1rem", padding: "8px", color: theme.text }}
                 >
-                  📤
-                  {!isMobile && <span style={{ fontSize: "0.75rem", fontWeight: "800", color: theme.text }}>불러오기</span>}
+                  📄
                 </button>
                 <button 
                   onClick={() => triggerToast("세팅 저장", "현재 작성 중인 서류가 로컬에 저장되었습니다.", "💾")} 
                   title="세팅 저장"
-                  style={{ background: "none", border: "none", cursor: "pointer", fontSize: "1.1rem", padding: "4px" }}
+                  style={{ background: "none", border: "none", cursor: "pointer", fontSize: "1.1rem", padding: "8px" }}
                 >
                   💾
                 </button>
@@ -286,14 +265,14 @@ export default function GamePlatform() {
             <button 
               onClick={() => setIsDarkMode(!isDarkMode)} 
               title={isDarkMode ? "라이트 모드로 전환" : "다크 모드로 전환"}
-              style={{ background: "none", border: "none", cursor: "pointer", fontSize: "1.15rem", padding: "4px" }}
+              style={{ background: "none", border: "none", cursor: "pointer", fontSize: "1.1rem", padding: "8px" }}
             >
               {isDarkMode ? "☀️" : "🌙"}
             </button>
           </div>
         </header>
 
-        {/* ── [A. 로비 뷰] ── */}
+        {/* ── [A. 로비 뷰 (이전 '창작' 탭)] ── */}
         {!activeSession ? (
           <main style={{ flex: 1, overflowY: "auto", padding: isMobile ? "16px 14px 140px 14px" : "20px 16px 160px 16px", maxWidth: "860px", margin: "0 auto", width: "100%", display: "flex", flexDirection: "column", gap: isMobile ? "14px" : "18px", boxSizing: "border-box" }}>
             
@@ -394,6 +373,7 @@ export default function GamePlatform() {
             {/* ── 🕵 [추리 모드 전용 수사본부 서류철] ── */}
             {selectedMode === "추리" && (
               <>
+                {/* A. 사건 개요서 */}
                 <section style={{ ...GLASS_STYLE, padding: isMobile ? "16px" : "20px", backgroundColor: theme.panel, borderRadius: "18px", border: `1px solid ${theme.border}`, display: "flex", flexDirection: "column", gap: "12px" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                     <span style={{ fontSize: "1.1rem" }}>📋</span>
@@ -407,17 +387,21 @@ export default function GamePlatform() {
                   <textarea rows={2} value={openingScene} onChange={e => setOpeningScene(e.target.value)} placeholder="첫 오프닝/서막 지문..." style={{ padding: "10px 12px", borderRadius: "8px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.83rem", resize: "none", outline: "none" }} />
                 </section>
 
+                {/* B. 용의자 수사망 */}
                 <section style={{ ...GLASS_STYLE, padding: isMobile ? "16px" : "20px", backgroundColor: theme.panel, borderRadius: "18px", border: `1px solid ${theme.border}`, display: "flex", flexDirection: "column", gap: "16px" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "10px" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                       <span style={{ fontSize: "1.1rem" }}>📌</span>
-                      <span style={{ fontWeight: "900", fontSize: "0.95rem", color: theme.text }}>용의자 수사망 ({suspects.length}명 / 최대 15명)</span>
+                      <span style={{ fontWeight: "900", fontSize: "0.95rem", color: theme.text }}>
+                        용의자 수사망 ({suspects.length}명 / 최대 15명)
+                      </span>
                     </div>
                     <button type="button" onClick={handleAddSuspect} style={{ padding: "6px 14px", backgroundColor: theme.panelAlt, border: `1.5px solid ${theme.accent}`, borderRadius: "16px", color: theme.accent, fontSize: "0.76rem", fontWeight: "800", cursor: "pointer" }}>
                       ＋ 인물 추가
                     </button>
                   </div>
 
+                  {/* 폴라로이드 핀 보드 */}
                   <div style={{ display: "grid", gridTemplateColumns: isMobile ? "repeat(2, 1fr)" : "repeat(auto-fill, minmax(135px, 1fr))", gap: isMobile ? "8px" : "12px" }}>
                     {suspects.map((s, idx) => {
                       const isSelected = (selectedSuspectId || suspects[0]?.id) === s.id;
@@ -433,6 +417,21 @@ export default function GamePlatform() {
                         >
                           <div style={{ position: "absolute", top: "-6px", left: "50%", transform: "translateX(-50%)", width: "10px", height: "10px", borderRadius: "50%", backgroundColor: theme.danger, boxShadow: "0 2px 4px rgba(0,0,0,0.3)", zIndex: 2 }} />
                           
+                          {/* 🌟 카드 우측 상단 인물 삭제 [X] 버튼 (선택 안 해도 바로 지울 수 있게) */}
+                          {suspects.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={(e) => handleDeleteSuspect(e, s.id)}
+                              title="인물 삭제"
+                              style={{
+                                position: "absolute", top: "-8px", right: "-8px", width: "22px", height: "22px", borderRadius: "50%",
+                                backgroundColor: theme.danger || "#ef4444", color: "#fff", border: "none", cursor: "pointer", 
+                                display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.7rem", fontWeight: "bold", zIndex: 10,
+                                boxShadow: "0 2px 4px rgba(0,0,0,0.3)"
+                              }}
+                            >✕</button>
+                          )}
+
                           <div
                             style={{
                               width: "100%", aspectRatio: "1/1", backgroundColor: isDarkMode ? "#332d2a" : "#eae4db", borderRadius: "3px", overflow: "hidden",
@@ -448,17 +447,31 @@ export default function GamePlatform() {
                               </div>
                             )}
                             
-                            {/* 🌟 2. 초상화 변경 버튼 (아담한 펜슬 아이콘) */}
-                            <button
-                              onClick={(e) => { e.stopPropagation(); setActivePortraitSuspectId(s.id); setShowPortraitModal(true); }}
-                              title="사진 변경하기"
+                            {/* 🌟 초상화 변경 다이렉트 업로드 버튼 (연필 아이콘) */}
+                            <label
+                              onClick={(e) => e.stopPropagation()} // 클릭 튐 방지
+                              title="사진 변경/등록"
                               style={{
                                 position: "absolute", bottom: "4px", right: "4px", width: "24px", height: "24px", borderRadius: "50%",
-                                backgroundColor: "rgba(0,0,0,0.6)", color: "#fff", border: "1px solid rgba(255,255,255,0.3)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.75rem"
+                                backgroundColor: "rgba(0,0,0,0.65)", color: "#fff", border: "1px solid rgba(255,255,255,0.4)", 
+                                cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.75rem", zIndex: 5
                               }}
                             >
                               ✏️
-                            </button>
+                              <input 
+                                type="file" 
+                                accept="image/*" 
+                                style={{ display: "none" }} 
+                                onChange={(e) => {
+                                  const file = e.target.files[0];
+                                  if (!file) return;
+                                  const reader = new FileReader();
+                                  reader.onload = (ev) => handleUpdateSuspect(s.id, "portraitUrl", ev.target.result);
+                                  reader.readAsDataURL(file);
+                                  e.target.value = null;
+                                }} 
+                              />
+                            </label>
                           </div>
 
                           <div style={{ marginTop: "6px", textAlign: "center", width: "100%" }}>
@@ -470,20 +483,16 @@ export default function GamePlatform() {
                     })}
                   </div>
 
+                  {/* 선택된 인물 수사 서류철 */}
                   {(() => {
                     const curId = selectedSuspectId || suspects[0]?.id;
                     const cur = suspects.find(s => s.id === curId) || suspects[0];
                     if (!cur) return null;
 
                     return (
-                      <div style={{ padding: isMobile ? "14px" : "16px", backgroundColor: theme.panelAlt, borderRadius: "12px", border: `1.5px solid ${theme.borderHighlight || theme.border}`, display: "flex", flexDirection: "column", gap: "12px" }}>
+                      <div style={{ padding: isMobile ? "14px" : "16px", backgroundColor: theme.panelAlt, borderRadius: "12px", border: `1px solid ${theme.borderHighlight || theme.border}`, display: "flex", flexDirection: "column", gap: "12px" }}>
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: `1px dashed ${theme.border}`, paddingBottom: "8px", flexWrap: "wrap", gap: "8px" }}>
                           <span style={{ fontSize: "0.88rem", fontWeight: "900", color: theme.accent }}>📂 수사 서류: [{cur.name || "신원 미상"}]</span>
-                          {suspects.length > 1 && (
-                            <button type="button" onClick={(e) => handleDeleteSuspect(e, cur.id)} style={{ background: "none", border: "none", color: theme.danger, cursor: "pointer", fontSize: "0.78rem", fontWeight: "700" }}>
-                              🗑 삭제
-                            </button>
-                          )}
                         </div>
                         <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1.2fr 1fr 1fr", gap: "8px" }}>
                           <div><label style={{ fontSize: "0.7rem", color: theme.textMuted, fontWeight: "700", display: "block", marginBottom: "3px" }}>이름</label><input type="text" value={cur.name} onChange={e => handleUpdateSuspect(cur.id, "name", e.target.value)} placeholder="예: 강이솔" style={{ width: "100%", boxSizing: "border-box", padding: "8px 10px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.82rem", outline: "none" }} /></div>
@@ -506,11 +515,12 @@ export default function GamePlatform() {
                   })()}
                 </section>
 
+                {/* C. 사건 단서 및 물증 보관소 */}
                 <section style={{ ...GLASS_STYLE, padding: isMobile ? "16px" : "20px", backgroundColor: theme.panel, borderRadius: "18px", border: `1px solid ${theme.border}`, display: "flex", flexDirection: "column", gap: "16px" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "8px" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                       <span style={{ fontSize: "1.1rem" }}>🔍</span>
-                      <span style={{ fontWeight: "900", fontSize: "0.95rem", color: theme.text }}>사건 단서 및 물증 ({evidenceList.length}건)</span>
+                      <span style={{ fontWeight: "900", fontSize: "0.95rem", color: theme.text }}>사건 단서 및 물증 ({evidenceList.length}건 / 최대 15개)</span>
                     </div>
                     <button type="button" onClick={handleAddEvidence} style={{ padding: "6px 14px", backgroundColor: theme.panelAlt, border: `1.5px solid ${theme.accent}`, borderRadius: "16px", color: theme.accent, fontSize: "0.76rem", fontWeight: "800", cursor: "pointer" }}>＋ 단서 추가</button>
                   </div>
@@ -519,7 +529,9 @@ export default function GamePlatform() {
                       <div key={item.id} style={{ backgroundColor: theme.panelAlt, border: `1px solid ${theme.border}`, borderRadius: "12px", padding: "14px", display: "flex", flexDirection: "column", gap: "10px" }}>
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "6px" }}>
                           <input type="text" value={item.name} onChange={e => handleUpdateEvidence(item.id, "name", e.target.value)} placeholder={`단서 ${idx + 1} 명칭`} style={{ flex: 1, padding: "8px 10px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.82rem", fontWeight: "800", outline: "none" }} />
-                          {evidenceList.length > 1 && <button type="button" onClick={(e) => handleDeleteEvidence(e, item.id)} style={{ background: "none", border: "none", color: theme.danger, cursor: "pointer", padding: "2px", fontSize: "0.8rem" }}>🗑</button>}
+                          {evidenceList.length > 1 && (
+                            <button type="button" onClick={(e) => handleDeleteEvidence(e, item.id)} style={{ background: "none", border: "none", color: theme.danger, cursor: "pointer", padding: "2px", fontSize: "0.8rem" }}>🗑</button>
+                          )}
                         </div>
                         <input type="text" value={item.overview} onChange={e => handleUpdateEvidence(item.id, "overview", e.target.value)} placeholder="발견 위치 및 겉모습..." style={{ width: "100%", boxSizing: "border-box", padding: "8px 10px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.78rem", outline: "none" }} />
                         <div style={{ backgroundColor: isDarkMode ? "rgba(0,0,0,0.2)" : "rgba(255,255,255,0.6)", borderRadius: "8px", border: `1px solid ${theme.danger}`, padding: "10px 12px" }}>
@@ -539,6 +551,7 @@ export default function GamePlatform() {
                   </div>
                 </section>
 
+                {/* D. 사건 진상 기밀 봉투 */}
                 <section style={{ ...GLASS_STYLE, padding: isMobile ? "16px" : "20px", backgroundColor: theme.panel, borderRadius: "18px", border: `1px solid ${theme.accent}`, display: "flex", flexDirection: "column", gap: "12px" }}>
                   <button type="button" onClick={() => setShowHiddenTruth(!showHiddenTruth)} style={{ width: "100%", textAlign: "left", background: "none", border: "none", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: "8px" }}><span style={{ fontSize: "1.1rem" }}>✉️</span><span style={{ fontWeight: "900", fontSize: "0.95rem", color: theme.accent }}>사건 진상 봉투</span></div>
@@ -573,7 +586,7 @@ export default function GamePlatform() {
               </div>
             )}
 
-            {/* 🌟 이야기 시작하기 버튼 (괄호 제거) */}
+            {/* 🌟 이야기 시작하기 버튼 */}
             <button
               onClick={handleStartGame}
               style={{
@@ -652,45 +665,6 @@ export default function GamePlatform() {
         )}
       </div>
 
-      {/* ── 🖼️ 2. 초상화 변경 모달 (초상화 대형 뷰어 없애고 컴퓨터 업로드 & 웹 링크 다이렉트 폼) ── */}
-      {showPortraitModal && (() => {
-        const target = suspects.find(s => s.id === activePortraitSuspectId) || suspects[0];
-        if (!target) return null;
-
-        return (
-          <div
-            onClick={() => setShowPortraitModal(false)}
-            style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0, 0, 0, 0.65)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 99999, padding: "16px", animation: "fadeIn 0.2s ease-out" }}
-          >
-            <div
-              onClick={e => e.stopPropagation()}
-              className="glass-card"
-              style={{ width: "100%", maxWidth: "320px", backgroundColor: theme.panel, border: `1.5px solid ${theme.border}`, borderRadius: "18px", padding: "20px", color: theme.text, display: "flex", flexDirection: "column", gap: "14px", boxShadow: "0 20px 50px rgba(0,0,0,0.4)" }}
-            >
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <h3 style={{ margin: 0, fontSize: "0.95rem", fontWeight: "900", color: theme.text }}>
-                  [{target.name || "신원 미상"}] 사진 변경
-                </h3>
-                <button type="button" onClick={() => setShowPortraitModal(false)} style={{ background: "none", border: "none", color: theme.textMuted, fontSize: "1.2rem", cursor: "pointer", lineHeight: 1 }}>✕</button>
-              </div>
-
-              <div style={{ display: "flex", flexDirection: "column", gap: "10px", borderTop: `1px dashed ${theme.border}`, paddingTop: "12px" }}>
-                <label style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", width: "100%", padding: "12px", backgroundColor: theme.panelAlt, border: `1.5px dashed ${theme.accent}`, borderRadius: "10px", textAlign: "center", cursor: "pointer", fontSize: "0.82rem", fontWeight: "800", color: theme.accent, boxSizing: "border-box" }}>
-                  <span>📁</span><span>컴퓨터(갤러리)에서 파일 선택</span>
-                  <input type="file" accept="image/*" onChange={handlePortraitFileUpload} style={{ display: "none" }} />
-                </label>
-                <div style={{ textAlign: "center", fontSize: "0.7rem", color: theme.textMuted }}>또는 웹 링크 URL 직접 입력</div>
-                <input type="text" value={customPortraitInput} onChange={e => setCustomPortraitInput(e.target.value)} onKeyDown={e => { if (e.key === "Enter") handleApplyPortraitUrl(); }} placeholder="https://... 이미지 링크 주소" style={{ width: "100%", boxSizing: "border-box", padding: "9px 12px", backgroundColor: theme.inputBg, border: `1px solid ${theme.border}`, borderRadius: "8px", color: theme.text, fontSize: "0.82rem", outline: "none" }} />
-                <div style={{ display: "flex", gap: "8px" }}>
-                  <button type="button" onClick={() => setShowPortraitModal(false)} style={{ flex: 1, padding: "9px", backgroundColor: theme.panelAlt, border: `1px solid ${theme.border}`, color: theme.textMuted, borderRadius: "8px", cursor: "pointer", fontSize: "0.78rem", fontWeight: "700" }}>취소</button>
-                  <button type="button" onClick={handleApplyPortraitUrl} style={{ flex: 2, padding: "9px", backgroundColor: theme.accent, color: isDarkMode ? "#1a1817" : "#ffffff", border: "none", borderRadius: "8px", cursor: "pointer", fontWeight: "800", fontSize: "0.78rem" }}>URL 적용하기 ➔</button>
-                </div>
-              </div>
-            </div>
-          </div>
-        );
-      })()}
-
       {/* ── 📄 시나리오 텍스트 붙여넣기 모달 ── */}
       {showPasteModal && (
         <div onClick={() => setShowPasteModal(false)} style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 200, padding: "20px" }}>
@@ -708,7 +682,7 @@ export default function GamePlatform() {
         </div>
       )}
 
-      {/* 🌟 4. 룰 모드 가이드 모달 (복구 완료) */}
+      {/* 🌟 4. 룰 모드 가이드 모달 */}
       {ruleHelpModal && (
         <div onClick={() => setRuleHelpModal(null)} style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 160, padding: "20px" }}>
           <div onClick={e => e.stopPropagation()} className="glass-card" style={{ width: "100%", maxWidth: "440px", padding: "22px", borderRadius: "16px", backgroundColor: theme.panel, color: theme.text, display: "flex", flexDirection: "column", gap: "12px", boxShadow: "0 16px 40px rgba(0,0,0,0.3)" }}>
