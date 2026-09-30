@@ -1,8 +1,13 @@
-// app/layout.js
 export const metadata = {
   title: "시크릿 노벨",
-  description: "인터랙티브 추리 & 미연시 플랫폼",
-  viewport: "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"
+  description: "인터랙티브 추리 & 미연시 플랫폼"
+};
+
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false
 };
 
 export default function RootLayout({ children }) {
