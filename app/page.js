@@ -3,6 +3,11 @@
 import { useState, useEffect } from "react";
 // 🚨 테마와 스타일은 별도 파일(lib/themes.js)에서 가져온다고 가정합니다.
 import { THEME_PALETTES, GLASS_STYLE } from "@/lib/themes";
+// 🌟 세련된 벡터 아이콘 라이브러리 임포트
+import { 
+  Search, Heart, Flame, LayoutGrid, LibraryBig, PenTool, UserRound, 
+  Menu, Moon, Sun, Save, FileUp, HelpCircle, X, ChevronDown, ChevronUp, Image as ImageIcon
+} from "lucide-react";
 
 export default function GamePlatform() {
   // ── [0. 폰트 강제 로드] ──
@@ -231,7 +236,10 @@ export default function GamePlatform() {
         {/* 상단 툴바 헤더 */}
         <header style={{ height: "54px", padding: isMobile ? "0 10px" : "0 16px", display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: `1px solid ${theme.border}`, backgroundColor: theme.sidebar, flexShrink: 0, zIndex: 40 }}>
           <div style={{ display: "flex", alignItems: "center", gap: isMobile ? "6px" : "10px", flexShrink: 0 }}>
-            <button onClick={() => setIsDrawerOpen(true)} style={{ background: "none", border: "none", color: theme.text, fontSize: "1.3rem", cursor: "pointer", padding: "4px" }}>☰</button>
+            {/* ☰ 대신 Menu 아이콘 */}
+            <button onClick={() => setIsDrawerOpen(true)} style={{ background: "none", border: "none", color: theme.text, cursor: "pointer", padding: "4px", display: "flex", alignItems: "center" }}>
+              <Menu size={22} strokeWidth={2} />
+            </button>
             
             {activeSession ? (
               <span style={{ fontWeight: "800", fontSize: "0.85rem", color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "200px" }}>
@@ -245,30 +253,32 @@ export default function GamePlatform() {
           <div style={{ display: "flex", alignItems: "center", gap: "2px" }}>
             {!activeSession && (
               <>
-                {/* 🌟 불러오기 버튼 디자인 및 아이콘 변경 (글씨 없이 깔끔하게 통일) */}
+                {/* 📄 불러오기 버튼 */}
                 <button 
                   onClick={() => setShowPasteModal(true)} 
                   title="시나리오 불러오기"
-                  style={{ background: "none", border: "none", cursor: "pointer", fontSize: "1.1rem", padding: "8px", color: theme.text }}
+                  style={{ background: "none", border: "none", cursor: "pointer", padding: "8px", color: theme.text, display: "flex", alignItems: "center" }}
                 >
-                  📄
+                  <FileUp size={20} strokeWidth={2} />
                 </button>
+                {/* 💾 저장 버튼 */}
                 <button 
                   onClick={() => triggerToast("세팅 저장", "현재 작성 중인 서류가 로컬에 저장되었습니다.", "💾")} 
                   title="세팅 저장"
-                  style={{ background: "none", border: "none", cursor: "pointer", fontSize: "1.1rem", padding: "8px" }}
+                  style={{ background: "none", border: "none", cursor: "pointer", padding: "8px", color: theme.text, display: "flex", alignItems: "center" }}
                 >
-                  💾
+                  <Save size={20} strokeWidth={2} />
                 </button>
               </>
             )}
             
+            {/* 다크모드 토글 버튼 */}
             <button 
               onClick={() => setIsDarkMode(!isDarkMode)} 
               title={isDarkMode ? "라이트 모드로 전환" : "다크 모드로 전환"}
-              style={{ background: "none", border: "none", cursor: "pointer", fontSize: "1.1rem", padding: "8px" }}
+              style={{ background: "none", border: "none", cursor: "pointer", padding: "8px", color: theme.text, display: "flex", alignItems: "center" }}
             >
-              {isDarkMode ? "☀️" : "🌙"}
+              {isDarkMode ? <Sun size={20} strokeWidth={2} /> : <Moon size={20} strokeWidth={2} />}
             </button>
           </div>
         </header>
@@ -284,12 +294,12 @@ export default function GamePlatform() {
                 1. 룰 시스템 선택
               </div>
               
-              {/* 🌟 룰 시스템 3열 가로 배치 (모바일/PC 공통) */}
+              {/* 🌟 룰 시스템 3열 가로 배치 (SVG 아이콘 적용 및 여백 최적화) */}
               <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "10px" }}>
                 {[
-                  { key: "추리", icon: "🕵️‍♂️", title: "추리", desc: "진상을 파헤치는 수사" },
-                  { key: "연애", icon: "🌸", title: "연애", desc: "선택지와 감정선 중심의 서사" },
-                  { key: "괴담", icon: "🕯️", title: "괴담", desc: "이면을 밝히는 호러" }
+                  { key: "추리", icon: <Search size={32} strokeWidth={1.5} />, title: "추리", desc: "진상을 파헤치는 수사" },
+                  { key: "연애", icon: <Heart size={32} strokeWidth={1.5} />, title: "연애", desc: "선택지와 감정선 중심의 서사" },
+                  { key: "괴담", icon: <Flame size={32} strokeWidth={1.5} />, title: "괴담", desc: "이면을 밝히는 호러" }
                 ].map(m => {
                   const isSel = selectedMode === m.key;
                   return (
@@ -298,13 +308,13 @@ export default function GamePlatform() {
                       onClick={() => setSelectedMode(m.key)}
                       style={{
                         position: "relative",
-                        padding: isMobile ? "16px 8px" : "18px 12px", 
+                        padding: isMobile ? "20px 8px" : "24px 12px", // 🌟 패딩을 늘려 숨쉴 공간 확보
                         borderRadius: "14px", cursor: "pointer",
                         backgroundColor: isSel ? theme.panelAlt : "transparent",
                         border: `1.5px solid ${isSel ? theme.accent : theme.border}`,
-                        display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "6px",
-                        boxShadow: isSel ? `0 0 16px ${theme.accentGlow}` : "none",
-                        transition: "all 0.2s"
+                        display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "10px",
+                        boxShadow: isSel ? `0 6px 20px ${theme.accentGlow}` : "none", // 🌟 그림자 부드럽게
+                        transition: "all 0.2s ease"
                       }}
                     >
                       {/* 우측 상단 물음표 버튼 */}
@@ -312,7 +322,7 @@ export default function GamePlatform() {
                         onClick={(e) => { e.stopPropagation(); setRuleHelpModal(m); }}
                         title={`${m.title} 규칙 설명 보기`}
                         style={{
-                          position: "absolute", top: "8px", right: "8px",
+                          position: "absolute", top: "10px", right: "10px", // 우측 여백 미세 조정
                           width: "22px", height: "22px", borderRadius: "50%",
                           border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg,
                           color: theme.textMuted, fontSize: "0.75rem", fontWeight: "800",
@@ -320,17 +330,19 @@ export default function GamePlatform() {
                           cursor: "pointer"
                         }}
                       >
-                        ?
+                        <HelpCircle size={14} strokeWidth={2.5} />
                       </button>
 
-                      {/* 중앙 아이콘 */}
-                      <span style={{ fontSize: isMobile ? "2rem" : "2.2rem" }}>{m.icon}</span>
+                      {/* 🌟 중앙 SVG 아이콘 (크기 고정 및 색상 연동) */}
+                      <div style={{ color: isSel ? theme.accent : theme.text, transition: "color 0.2s ease" }}>
+                        {m.icon}
+                      </div>
                       
                       {/* 하단 텍스트 영역 */}
                       <div style={{ textAlign: "center", width: "100%" }}>
                         <div style={{ fontWeight: "900", fontSize: "0.95rem", color: isSel ? theme.accent : theme.text }}>{m.title}</div>
                         {!isMobile && (
-                          <div style={{ fontSize: "0.72rem", color: theme.textMuted, marginTop: "4px", wordBreak: "keep-all" }}>
+                          <div style={{ fontSize: "0.72rem", color: theme.textMuted, marginTop: "6px", wordBreak: "keep-all" }}>
                             {m.desc}
                           </div>
                         )}
@@ -652,7 +664,7 @@ export default function GamePlatform() {
           </div>
         )}
 
-        {/* ── 📱 하단 세그먼트 글래스 탭바 ── */}
+{/* ── 📱 하단 세그먼트 글래스 탭바 ── */}
         {!activeSession && (
           <nav
             style={{
@@ -667,10 +679,10 @@ export default function GamePlatform() {
             }}
           >
             {[
-              { key: "lounge", icon: "🧭", label: "탐색" },
-              { key: "library", icon: "📚", label: "서재" },
-              { key: "lobby", icon: "🏠", label: "로비" },
-              { key: "profile", icon: "👤", label: "내정보" }
+              { key: "lounge", icon: <LayoutGrid size={20} strokeWidth={2.5} />, label: "탐색" },
+              { key: "library", icon: <LibraryBig size={20} strokeWidth={2.5} />, label: "서재" },
+              { key: "lobby", icon: <PenTool size={20} strokeWidth={2.5} />, label: "창작" },
+              { key: "profile", icon: <UserRound size={20} strokeWidth={2.5} />, label: "내정보" }
             ].map((tab, idx, arr) => {
               const isSelected = activeTab === tab.key;
               const isLast = idx === arr.length - 1;
@@ -678,24 +690,26 @@ export default function GamePlatform() {
               return (
                 <div
                   key={tab.key}
-                  onClick={() => { setActiveTab(tab.key); triggerToast(`[${tab.label}] 탭 전환`, "", tab.icon); }}
+                  onClick={() => { setActiveTab(tab.key); triggerToast(`[${tab.label}] 탭 전환`); }}
                   style={{
                     flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-                    cursor: "pointer", gap: "2px",
+                    cursor: "pointer", gap: "4px", // gap 증가
                     borderRight: isLast ? "none" : `1px solid ${theme.border}`,
                     backgroundColor: isSelected ? (isDarkMode ? "rgba(235, 227, 218, 0.12)" : "rgba(120, 105, 90, 0.12)") : "transparent",
                     color: isSelected ? theme.accent : theme.textMuted,
                     transition: "all 0.2s"
                   }}
                 >
-                  <span style={{ fontSize: "1.15rem", transform: isSelected ? "scale(1.12)" : "scale(1)", transition: "transform 0.2s" }}>{tab.icon}</span>
+                  {/* SVG 아이콘 적용 */}
+                  <div style={{ transform: isSelected ? "scale(1.15)" : "scale(1)", transition: "transform 0.2s", display: "flex", alignItems: "center" }}>
+                    {tab.icon}
+                  </div>
                   <span style={{ fontSize: "0.65rem", fontWeight: isSelected ? "800" : "600" }}>{tab.label}</span>
                 </div>
               );
             })}
           </nav>
         )}
-      </div>
 
 {/* ── 🖼️ 초상화 모달 (크게 보기 + 연필 아이콘 업로드) ── */}
       {showPortraitModal && (() => {
