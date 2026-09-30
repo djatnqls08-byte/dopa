@@ -8,7 +8,8 @@ import {
   Search, Heart, Flame, LayoutGrid, LibraryBig, PenTool, UserRound, 
   Menu, Moon, Sun, Save, FileUp, HelpCircle, X, ChevronDown, ChevronUp, Image as ImageIcon,
   ClipboardList, Pin, FileSearch, Mailbox, Play,
-  FolderOpen, Lock, Settings, Database, ClipboardPaste, LogOut
+  FolderOpen, Lock, Settings, Database, ClipboardPaste, LogOut,
+  Smartphone, Dices, BookOpen
 } from "lucide-react";
 
 export default function GamePlatform() {
