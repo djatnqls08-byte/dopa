@@ -401,8 +401,8 @@ export default function GamePlatform() {
                     </button>
                   </div>
 
-                  {{/* 폴라로이드 핀 보드 */}
-                  <div style={{ display: "grid", gridTemplateColumns: isMobile ? "repeat(2, 1fr)" : "repeat(auto-fill, minmax(135px, 1fr))", gap: isMobile ? "8px" : "12px" }}>
+                 {/* 폴라로이드 핀 보드 */}
+                    <div style={{ display: "grid", gridTemplateColumns: isMobile ? "repeat(2, 1fr)" : "repeat(auto-fill, minmax(135px, 1fr))", gap: isMobile ? "8px" : "12px" }}>
                     {suspects.map((s, idx) => {
                       const isSelected = (selectedSuspectId || suspects[0]?.id) === s.id;
                       return (
