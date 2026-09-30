@@ -450,12 +450,12 @@ export default function GamePlatform() {
                               setActivePortraitSuspectId(s.id);
                               setShowPortraitModal(true);
                             }}
-                            title="사진 크게 보기"
+                            title="사진 등록 및 확인"
                             style={{
                               width: "100%", aspectRatio: "1/1", backgroundColor: isDarkMode ? "#332d2a" : "#eae4db",
                               borderRadius: "3px", overflow: "hidden",
                               display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", position: "relative",
-                              cursor: "zoom-in"
+                              cursor: "pointer" // 🌟 돋보기 대신 일반 클릭 커서로 변경
                             }}
                           >
                             {s.portraitUrl ? (
@@ -466,32 +466,6 @@ export default function GamePlatform() {
                                 <span style={{ fontWeight: "700" }}>사진 없음</span>
                               </div>
                             )}
-
-                            {/* 연필 아이콘 */}
-                            <label
-                              onClick={(e) => e.stopPropagation()} 
-                              title="사진 업로드"
-                              style={{
-                                position: "absolute", bottom: "4px", right: "4px", width: "24px", height: "24px", borderRadius: "50%",
-                                backgroundColor: "rgba(0,0,0,0.65)", color: "#fff", border: "1px solid rgba(255,255,255,0.4)", 
-                                cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.75rem", zIndex: 5
-                              }}
-                            >
-                              ✏️
-                              <input 
-                                type="file" 
-                                accept="image/*" 
-                                style={{ display: "none" }} 
-                                onChange={(e) => {
-                                  const file = e.target.files[0];
-                                  if (!file) return;
-                                  const reader = new FileReader();
-                                  reader.onload = (ev) => handleUpdateSuspect(s.id, "portraitUrl", ev.target.result);
-                                  reader.readAsDataURL(file);
-                                  e.target.value = null;
-                                }} 
-                              />
-                            </label>
                           </div>
 
                           <div style={{ marginTop: "6px", textAlign: "center", width: "100%" }}>
