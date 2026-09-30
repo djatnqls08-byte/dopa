@@ -1099,114 +1099,58 @@ const [showEvidence, setShowEvidence] = useState(false);
             <div style={{ height: "60px", flexShrink: 0 }} />
           </main>
 
-        ) : (
-          /* ── [B. 인게임 뷰: 소설 리더 본문] ── */
-          <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", position: "relative", backgroundColor: theme.bg }}>
+) : (
+          /* ── [B. 인게임 뷰: 소설 리더 본문 및 팝업/오버레이] ── */
+          <div style={{ flex: 1, display: "flex", overflow: "hidden", position: "relative", backgroundColor: theme.bg }}>
             
-            {/* 중앙 소설형 텍스트 뷰어 */}
-            <div 
-              className="serif-text" 
-              style={{ 
-                flex: 1, overflowY: "auto", padding: isMobile ? "24px 16px 120px 16px" : "40px 40px 140px 40px", 
-                display: "flex", flexDirection: "column", gap: "28px", 
-                maxWidth: "760px", margin: "0 auto", width: "100%", boxSizing: "border-box", 
-                fontSize: "1.08rem", lineHeight: 2.1, color: theme.text 
-              }}
-            >
-              {(activeSession.messages || []).map((m, idx) => {
-                const isUser = m.role === "user";
-                return (
-                  <div key={idx} style={{ 
-                    alignSelf: "stretch",
-                    color: isUser ? theme.accent : theme.text,
-                    fontWeight: isUser ? "700" : "400",
-                    opacity: 0.95,
-                    borderLeft: isUser ? `3px solid ${theme.accent}` : "none",
-                    paddingLeft: isUser ? "16px" : "0",
-                    fontStyle: isUser ? "italic" : "normal",
-                    wordBreak: "keep-all"
-                  }}>
-                    {m.text}
-                  </div>
-                );
-              })}
-              {isLoading && (
-                <div style={{ color: theme.textMuted, fontSize: "0.95rem", fontStyle: "italic", paddingTop: "10px", paddingLeft: "16px", borderLeft: `3px solid ${theme.border}` }}>
-                  (사건의 이면이 서술되는 중……)
-                </div>
-              )}
-            </div>
-
-            {/* 하단 입력 폼 및 제안 칩 */}
-            <footer style={{ 
-              position: "absolute", bottom: 0, left: 0, right: 0, 
-              padding: "16px max(16px, env(safe-area-inset-bottom))", 
-              background: `linear-gradient(to top, ${theme.bg} 80%, transparent)`, 
-              display: "flex", flexDirection: "column", alignItems: "center", gap: "10px" 
-            }}>
-              {activeSession?.suggestedActions?.length > 0 && (
-                <div style={{ display: "flex", gap: "8px", overflowX: "auto", width: "100%", maxWidth: "680px", paddingBottom: "4px" }}>
-                  {activeSession.suggestedActions.map((sugg, idx) => (
-                    <button 
-                      key={idx} onClick={() => executeMessage(sugg)} 
-                      style={{ padding: "8px 14px", backgroundColor: theme.panel, border: `1px solid ${theme.border}`, borderRadius: "20px", color: theme.text, fontSize: "0.85rem", fontWeight: "700", whiteSpace: "nowrap", cursor: "pointer", flexShrink: 0, boxShadow: "0 4px 12px rgba(0,0,0,0.05)" }}
-                    >
-                      💡 {sugg}
-                    </button>
-                  ))}
-                </div>
-              )}
-
-              <div style={{ width: "100%", maxWidth: "680px", display: "flex", gap: "8px" }}>
-                <input 
-                  type="text" value={inputMsg} onChange={e => setInputMsg(e.target.value)} 
-                  onKeyDown={e => { if (e.key === "Enter") handleSendMessage(); }} 
-                  placeholder="행동을 선언하거나 대사를 입력하세요..." 
-                  style={{ flex: 1, padding: "14px 18px", borderRadius: "24px", border: `1.5px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.95rem", outline: "none", boxShadow: "0 4px 20px rgba(0,0,0,0.05)" }} 
-                />
-                {isLoading ? (
-                  <button onClick={() => { if(abortController) abortController.abort(); }} style={{ padding: "0 24px", borderRadius: "24px", backgroundColor: theme.danger, color: "#fff", border: "none", fontWeight: "800", cursor: "pointer" }}>중단</button>
-                ) : (
-                  <button onClick={handleSendMessage} disabled={!inputMsg.trim()} style={{ padding: "0 24px", borderRadius: "24px", backgroundColor: inputMsg.trim() ? theme.accent : theme.border, color: "#fff", border: "none", fontWeight: "800", cursor: inputMsg.trim() ? "pointer" : "default", transition: "all 0.2s" }}>전송</button>
-                )}
+            {/* 📖 중앙: 소설형 텍스트 뷰어 */}
+            <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", position: "relative" }}>
+              <div className="serif-text" style={{ flex: 1, overflowY: "auto", padding: isMobile ? "24px 16px 120px 16px" : "40px 40px 140px 40px", display: "flex", flexDirection: "column", gap: "28px", maxWidth: "760px", margin: "0 auto", width: "100%", boxSizing: "border-box", fontSize: "1.08rem", lineHeight: 2.1, color: theme.text }}>
+                {(activeSession.messages || []).map((m, idx) => {
+                  const isUser = m.role === "user";
+                  return (
+                    <div key={idx} style={{ alignSelf: "stretch", color: isUser ? theme.accent : theme.text, fontWeight: isUser ? "700" : "400", opacity: 0.95, borderLeft: isUser ? `3px solid ${theme.accent}` : "none", paddingLeft: isUser ? "16px" : "0", fontStyle: isUser ? "italic" : "normal", wordBreak: "keep-all" }}>
+                      {m.text}
+                    </div>
+                  );
+                })}
+                {isLoading && <div style={{ color: theme.textMuted, fontSize: "0.95rem", fontStyle: "italic", paddingTop: "10px", paddingLeft: "16px", borderLeft: `3px solid ${theme.border}` }}>(사건의 이면이 서술되는 중……)</div>}
               </div>
-</footer>
+
+              <footer style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "16px max(16px, env(safe-area-inset-bottom))", background: `linear-gradient(to top, ${theme.bg} 80%, transparent)`, display: "flex", flexDirection: "column", alignItems: "center", gap: "10px" }}>
+                {activeSession?.suggestedActions?.length > 0 && (
+                  <div style={{ display: "flex", gap: "8px", overflowX: "auto", width: "100%", maxWidth: "680px", paddingBottom: "4px" }}>
+                    {activeSession.suggestedActions.map((sugg, idx) => (
+                      <button key={idx} onClick={() => executeMessage(sugg)} style={{ padding: "8px 14px", backgroundColor: theme.panel, border: `1px solid ${theme.border}`, borderRadius: "20px", color: theme.text, fontSize: "0.85rem", fontWeight: "700", whiteSpace: "nowrap", cursor: "pointer", flexShrink: 0, boxShadow: "0 4px 12px rgba(0,0,0,0.05)" }}>💡 {sugg}</button>
+                    ))}
+                  </div>
+                )}
+                <div style={{ width: "100%", maxWidth: "680px", display: "flex", gap: "8px" }}>
+                  <input type="text" value={inputMsg} onChange={e => setInputMsg(e.target.value)} onKeyDown={e => { if (e.key === "Enter") handleSendMessage(); }} placeholder="행동을 선언하거나 대사를 입력하세요..." style={{ flex: 1, padding: "14px 18px", borderRadius: "24px", border: `1.5px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.95rem", outline: "none", boxShadow: "0 4px 20px rgba(0,0,0,0.05)" }} />
+                  {isLoading ? (
+                    <button onClick={() => { if(abortController) abortController.abort(); }} style={{ padding: "0 24px", borderRadius: "24px", backgroundColor: theme.danger, color: "#fff", border: "none", fontWeight: "800", cursor: "pointer" }}>중단</button>
+                  ) : (
+                    <button onClick={handleSendMessage} disabled={!inputMsg.trim()} style={{ padding: "0 24px", borderRadius: "24px", backgroundColor: inputMsg.trim() ? theme.accent : theme.border, color: "#fff", border: "none", fontWeight: "800", cursor: inputMsg.trim() ? "pointer" : "default", transition: "all 0.2s" }}>전송</button>
+                  )}
+                </div>
+              </footer>
             </div>
 
             {/* ── 📌 증거보드 팝업 모달 (중앙에 띄움) ── */}
             {activeSession.ruleMode === "freeform" && showEvidenceBoard && (
-              <div
-                onClick={() => setShowEvidenceBoard(false)}
-                style={{
-                  position: "fixed", inset: 0, backgroundColor: "rgba(0, 0, 0, 0.85)", backdropFilter: "blur(8px)",
-                  zIndex: 99999, display: "flex", alignItems: "center", justifyContent: "center", padding: isMobile ? "10px" : "20px",
-                  animation: "fadeIn 0.2s ease-out"
-                }}
-              >
-                <div
-                  onClick={e => e.stopPropagation()}
-                  style={{
-                    width: "100%", maxWidth: "760px", maxHeight: "88vh", backgroundColor: theme.panel,
-                    backgroundImage: isDarkMode ? "radial-gradient(rgba(255,255,255,0.05) 1.5px, transparent 1.5px)" : "radial-gradient(rgba(0,0,0,0.05) 1.5px, transparent 1.5px)",
-                    backgroundSize: "16px 16px", border: `2px solid ${theme.border}`, borderRadius: "18px",
-                    display: "flex", flexDirection: "column", overflow: "hidden", boxShadow: "0 25px 60px rgba(0, 0, 0, 0.85)"
-                  }}
-                >
+              <div onClick={() => setShowEvidenceBoard(false)} style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0, 0, 0, 0.85)", backdropFilter: "blur(8px)", zIndex: 99999, display: "flex", alignItems: "center", justifyContent: "center", padding: isMobile ? "10px" : "20px", animation: "fadeIn 0.2s ease-out" }}>
+                <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: "760px", maxHeight: "88vh", backgroundColor: theme.panel, backgroundImage: isDarkMode ? "radial-gradient(rgba(255,255,255,0.05) 1.5px, transparent 1.5px)" : "radial-gradient(rgba(0,0,0,0.05) 1.5px, transparent 1.5px)", backgroundSize: "16px 16px", border: `2px solid ${theme.border}`, borderRadius: "18px", display: "flex", flexDirection: "column", overflow: "hidden", boxShadow: "0 25px 60px rgba(0, 0, 0, 0.85)" }}>
                   <div style={{ padding: "14px 20px", backgroundColor: theme.panelAlt, borderBottom: `1.5px solid ${theme.border}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                       <span style={{ fontSize: "1.3rem" }}>📌</span>
                       <div>
                         <h3 style={{ margin: 0, fontSize: "1rem", fontWeight: "900", color: theme.accent }}>수사 본부 증거보드</h3>
-                        <div style={{ fontSize: "0.7rem", color: theme.textMuted, marginTop: "2px" }}>
-                          확보 단서 {(activeSession.sheet?.handouts || []).length}건 · 관련자 {(activeSession.sheet?.npcs || []).length}명
-                        </div>
+                        <div style={{ fontSize: "0.7rem", color: theme.textMuted, marginTop: "2px" }}>확보 단서 {(activeSession.sheet?.handouts || []).length}건 · 관련자 {(activeSession.sheet?.npcs || []).length}명</div>
                       </div>
                     </div>
                     <button onClick={() => setShowEvidenceBoard(false)} style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.15)", color: theme.text, borderRadius: "50%", width: "32px", height: "32px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
                   </div>
                   <div style={{ flex: 1, overflowY: "auto", padding: "20px", display: "flex", flexDirection: "column", gap: "18px" }}>
-                    
-                    {/* 당면 목표 표시 */}
                     {activeSession.sheet?.currentObjective && (
                       <div style={{ backgroundColor: isDarkMode ? "#451a03" : "#fef08a", color: isDarkMode ? "#fde047" : "#854d0e", padding: "12px 16px", borderRadius: "4px", boxShadow: "2px 4px 12px rgba(0,0,0,0.35)", transform: "rotate(-0.5deg)", borderLeft: `6px solid ${isDarkMode ? "#eab308" : "#ca8a04"}` }}>
                         <div style={{ fontSize: "0.7rem", fontWeight: "900", letterSpacing: "1px", color: isDarkMode ? "#fef08a" : "#854d0e" }}>CURRENT OBJECTIVE</div>
@@ -1214,8 +1158,6 @@ const [showEvidence, setShowEvidence] = useState(false);
                         {activeSession.sheet.currentObjective.step && <div style={{ fontSize: "0.78rem", marginTop: "4px" }}>👉 {activeSession.sheet.currentObjective.step}</div>}
                       </div>
                     )}
-
-                    {/* 용의자 핀보드 */}
                     <div>
                       <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "10px" }}><span style={{ color: theme.danger, fontSize: "0.9rem" }}>🔴</span><span style={{ fontSize: "0.84rem", fontWeight: "800", color: theme.text }}>용의자 수사망 ({(activeSession.sheet?.npcs || []).length}명)</span></div>
                       <div style={{ display: "grid", gridTemplateColumns: isMobile ? "repeat(2, 1fr)" : "repeat(3, 1fr)", gap: "10px" }}>
@@ -1240,23 +1182,12 @@ const [showEvidence, setShowEvidence] = useState(false);
             )}
 
             {/* ── 📋 우측 캐릭터 시트 오버레이 패널 ── */}
-            <div style={{
-              position: "absolute", top: 0, right: 0, bottom: 0, width: isMobile ? "100%" : "360px",
-              backgroundColor: theme.sidebar, borderLeft: `1px solid ${theme.border}`, zIndex: 90,
-              transform: isSheetOpen ? "translateX(0)" : "translateX(100%)",
-              transition: "transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
-              display: "flex", flexDirection: "column", boxShadow: isSheetOpen ? "-10px 0 30px rgba(0,0,0,0.3)" : "none"
-            }}>
-              {/* 시트 헤더 */}
+            <div style={{ position: "absolute", top: 0, right: 0, bottom: 0, width: isMobile ? "100%" : "360px", backgroundColor: theme.sidebar, borderLeft: `1px solid ${theme.border}`, zIndex: 90, transform: isSheetOpen ? "translateX(0)" : "translateX(100%)", transition: "transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)", display: "flex", flexDirection: "column", boxShadow: isSheetOpen ? "-10px 0 30px rgba(0,0,0,0.3)" : "none" }}>
               <div style={{ padding: "18px 20px", borderBottom: `1px solid ${theme.border}`, backgroundColor: theme.panel, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <span style={{ fontWeight: "900", fontSize: "1.05rem", color: theme.text }}>캐릭터 시트</span>
                 <button onClick={() => setIsSheetOpen(false)} style={{ background: "none", border: "none", color: theme.textMuted, fontSize: "1.3rem", cursor: "pointer" }}>✕</button>
               </div>
-
-              {/* 시트 내부 스크롤 영역 */}
               <div style={{ flex: 1, overflowY: "auto", padding: "20px", display: "flex", flexDirection: "column", gap: "20px" }}>
-                
-                {/* 수사 컨디션 (신뢰도/피로도) */}
                 <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 16px", backgroundColor: "rgba(34, 197, 94, 0.1)", border: "1px solid rgba(34, 197, 94, 0.3)", borderRadius: "10px" }}>
                     <span style={{ fontSize: "0.8rem", fontWeight: "800", color: theme.success || "#22c55e" }}>신뢰도 (HP)</span>
@@ -1272,12 +1203,8 @@ const [showEvidence, setShowEvidence] = useState(false);
                     </div>
                   </div>
                 </div>
-
-                {/* 포스트잇 스타일 사건 파일 */}
                 <div>
-                  <div style={{ fontSize: "0.75rem", fontWeight: "800", color: theme.textMuted, marginBottom: "10px", display: "flex", alignItems: "center", gap: "6px" }}>
-                    <FileSearch size={14} strokeWidth={2.5} /> 사건 파일 & 물증 ({(activeSession.sheet?.handouts || []).length}건)
-                  </div>
+                  <div style={{ fontSize: "0.75rem", fontWeight: "800", color: theme.textMuted, marginBottom: "10px", display: "flex", alignItems: "center", gap: "6px" }}><FileSearch size={14} strokeWidth={2.5} /> 사건 파일 & 물증 ({(activeSession.sheet?.handouts || []).length}건)</div>
                   {(!activeSession.sheet?.handouts || activeSession.sheet.handouts.length === 0) ? (
                     <div style={{ textAlign: "center", padding: "20px", fontSize: "0.75rem", color: theme.textMuted, border: `1px dashed ${theme.border}`, borderRadius: "10px" }}>확보된 단서가 없습니다.</div>
                   ) : (
@@ -1285,35 +1212,23 @@ const [showEvidence, setShowEvidence] = useState(false);
                       {activeSession.sheet.handouts.map((h, idx) => {
                         const isEven = idx % 2 === 0;
                         return (
-                          <div key={idx} style={{ 
-                            backgroundColor: isEven ? (isDarkMode ? "#0c4a6e" : "#e0f2fe") : (isDarkMode ? "#4c1d95" : "#f3e8ff"), 
-                            padding: "12px 14px", borderRadius: "6px", position: "relative",
-                            borderLeft: `4px solid ${isEven ? (isDarkMode ? "#0284c7" : "#0284c7") : (isDarkMode ? "#7c3aed" : "#9333ea")}`,
-                            boxShadow: "0 4px 10px rgba(0,0,0,0.1)", color: isDarkMode ? "#e0e7ff" : "#0f172a"
-                          }}>
+                          <div key={idx} style={{ backgroundColor: isEven ? (isDarkMode ? "#0c4a6e" : "#e0f2fe") : (isDarkMode ? "#4c1d95" : "#f3e8ff"), padding: "12px 14px", borderRadius: "6px", position: "relative", borderLeft: `4px solid ${isEven ? (isDarkMode ? "#0284c7" : "#0284c7") : (isDarkMode ? "#7c3aed" : "#9333ea")}`, boxShadow: "0 4px 10px rgba(0,0,0,0.1)", color: isDarkMode ? "#e0e7ff" : "#0f172a" }}>
                             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "4px" }}>
                               <span style={{ fontWeight: "900", fontSize: "0.85rem", color: isEven ? (isDarkMode ? "#38bdf8" : "#0369a1") : (isDarkMode ? "#c084fc" : "#6b21a8") }}>{h.name || h.title}</span>
                               {h.revealed ? <LockOpen size={14} strokeWidth={2.5} style={{ opacity: 0.6 }} /> : <Lock size={14} strokeWidth={2.5} style={{ opacity: 0.4 }} />}
                             </div>
-                            <div style={{ fontSize: "0.75rem", lineHeight: "1.5", fontWeight: "500", opacity: 0.9, whiteSpace: "pre-wrap" }}>
-                              {h.revealed ? (h.secret || h.overview) : h.overview}
-                            </div>
+                            <div style={{ fontSize: "0.75rem", lineHeight: "1.5", fontWeight: "500", opacity: 0.9, whiteSpace: "pre-wrap" }}>{h.revealed ? (h.secret || h.overview) : h.overview}</div>
                           </div>
                         );
                       })}
                     </div>
                   )}
                 </div>
-
               </div>
             </div>
 
           </div>
         )}
-      </div>
-    </div>
-  );
-}
 
       {/* ── 📱 하단 세그먼트 글래스 탭바 ── */}
       {!activeSession && (
