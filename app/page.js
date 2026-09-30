@@ -2,9 +2,11 @@
 
 import { useState, useEffect } from "react";
 import { THEME_PALETTES, GLASS_STYLE } from "@/lib/themes";
+// 🌟 세련된 벡터 아이콘 라이브러리 임포트
 import { 
   Search, Heart, Flame, LayoutGrid, LibraryBig, PenTool, UserRound, 
-  Menu, Moon, Sun, Save, FileUp, HelpCircle, X, ChevronDown, ChevronUp, Image as ImageIcon
+  Menu, Moon, Sun, Save, FileUp, HelpCircle, X, ChevronDown, ChevronUp, Image as ImageIcon,
+  ClipboardList, Pin, FileSearch, Mailbox, Play
 } from "lucide-react";
 
 export default function GamePlatform() {
@@ -239,12 +241,10 @@ export default function GamePlatform() {
               <Menu size={22} strokeWidth={2} />
             </button>
             
-            {activeSession ? (
+           {activeSession && (
               <span style={{ fontWeight: "800", fontSize: "0.85rem", color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "200px" }}>
                 {activeSession.title}
               </span>
-            ) : (
-              !isMobile && <span style={{ fontWeight: "900", fontSize: "0.95rem" }}>새로운 서사의 시작</span>
             )}
           </div>
 
@@ -399,7 +399,7 @@ export default function GamePlatform() {
                 {/* A. 사건 개요서 */}
                 <section style={{ ...GLASS_STYLE, padding: isMobile ? "16px" : "20px", backgroundColor: theme.panel, borderRadius: "18px", border: `1px solid ${theme.border}`, display: "flex", flexDirection: "column", gap: "12px" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                    <span style={{ fontSize: "1.1rem" }}>📋</span>
+                    <ClipboardList size={22} strokeWidth={2} color={theme.accent} />
                     <span style={{ fontWeight: "900", fontSize: "0.95rem", color: theme.text }}>사건 개요서</span>
                   </div>
                   <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "2fr 1fr", gap: "10px" }}>
@@ -412,10 +412,10 @@ export default function GamePlatform() {
 
                {/* B. 용의자 수사망 */}
                 <section style={{ ...GLASS_STYLE, padding: isMobile ? "16px" : "20px", backgroundColor: theme.panel, borderRadius: "18px", border: `1px solid ${theme.border}`, display: "flex", flexDirection: "column", gap: "16px" }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "10px" }}>
+                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "10px" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                      <span style={{ fontSize: "1.1rem" }}>📌</span>
-<span style={{ fontSize: "0.95rem", color: theme.text }}>
+                      <Pin size={22} strokeWidth={2} color={theme.danger} style={{ transform: "rotate(45deg)" }} />
+                      <span style={{ fontSize: "0.95rem", color: theme.text }}>
   <strong style={{ fontWeight: "900" }}>용의자 수사망</strong>
   <span style={{ fontWeight: "500", color: theme.textMuted, marginLeft: "4px" }}>({suspects.length}명 / 최대 15명)</span>
 </span>
@@ -556,7 +556,7 @@ export default function GamePlatform() {
                 <section style={{ ...GLASS_STYLE, padding: isMobile ? "16px" : "20px", backgroundColor: theme.panel, borderRadius: "18px", border: `1px solid ${theme.border}`, display: "flex", flexDirection: "column", gap: "16px" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "8px" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                      <span style={{ fontSize: "1.1rem" }}>🔍</span>
+                      <FileSearch size={22} strokeWidth={2} color={theme.accent} />
                       <span style={{ fontSize: "0.95rem", color: theme.text }}>
   <strong style={{ fontWeight: "900" }}>사건 단서 및 물증</strong>
   <span style={{ fontWeight: "500", color: theme.textMuted, marginLeft: "4px" }}>({evidenceList.length}건 / 최대 15개)</span>
@@ -594,7 +594,10 @@ export default function GamePlatform() {
                 {/* D. 사건 진상 기밀 봉투 */}
                 <section style={{ ...GLASS_STYLE, padding: isMobile ? "16px" : "20px", backgroundColor: theme.panel, borderRadius: "18px", border: `1px solid ${theme.accent}`, display: "flex", flexDirection: "column", gap: "12px" }}>
 <button type="button" onClick={() => setShowHiddenTruth(!showHiddenTruth)} style={{ width: "100%", textAlign: "left", background: "none", border: "none", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer" }}>
-  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}><span style={{ fontSize: "1.1rem" }}>✉️</span><span style={{ fontWeight: "900", fontSize: "0.95rem", color: theme.accent }}>사건 진상 봉투</span></div>
+  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+    <Mailbox size={22} strokeWidth={2} color={theme.accent} />
+    <span style={{ fontWeight: "900", fontSize: "0.95rem", color: theme.accent }}>사건 진상 봉투</span>
+  </div>
   <span style={{ color: theme.accent, fontSize: "0.85rem", fontWeight: "500" }}>{showHiddenTruth ? "▲" : "▼"}</span>
 </button>
                   {showHiddenTruth && (
@@ -627,16 +630,17 @@ export default function GamePlatform() {
             )}
 
             {/* 🌟 이야기 시작하기 버튼 */}
-            <button
+           <button
               onClick={handleStartGame}
               style={{
                 width: "100%", padding: "16px", borderRadius: "14px",
                 backgroundColor: theme.accent, color: isDarkMode ? "#1a1817" : "#ffffff", border: "none",
                 fontWeight: "900", fontSize: "1.05rem", cursor: "pointer",
-                boxShadow: `0 4px 20px ${theme.accentGlow}`, marginTop: "6px"
+                boxShadow: `0 4px 20px ${theme.accentGlow}`, marginTop: "6px",
+                display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" // 🌟 아이콘 정렬을 위한 스타일 추가
               }}
             >
-              ▶ 이야기 시작하기
+              <Play size={20} strokeWidth={2.5} fill="currentColor" /> 이야기 시작하기
             </button>
               <div style={{ height: "60px", flexShrink: 0 }} />
           </main>
