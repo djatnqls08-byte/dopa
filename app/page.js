@@ -79,10 +79,12 @@ export default function GamePlatform() {
   ];
 
   // ── [6. 추리 모드 로비 데이터] ──
+// 🟢 변경 후 (해결 완료!)
   const [pcName, setPcName] = useState("");
   const [pcAgeGender, setPcAgeGender] = useState("");
   const [pcJob, setPcJob] = useState("");
   const [pcBackground, setPcBackground] = useState("");
+  const [pcPortraitUrl, setPcPortraitUrl] = useState(""); 
 
   const [scenarioTitle, setScenarioTitle] = useState("");
   const [victimName, setVictimName] = useState("");
