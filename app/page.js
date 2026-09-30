@@ -99,13 +99,12 @@ export default function GamePlatform() {
   const [isLoading, setIsLoading] = useState(false);
 
   // ── [8. 동적 조작 함수들] ──
-  // 용의자 추가 (최대 10명 제한)
+ // 용의자 추가 (최대 10명 제한)
   const handleAddSuspect = () => {
     if (suspects.length >= 10) {
       triggerToast("인원 제한", "용의자는 최대 10명까지만 등록할 수 있습니다.", "⚠️");
       return;
     }
-
     const nextId = Date.now();
     setSuspects([
       ...suspects,
@@ -683,15 +682,15 @@ export default function GamePlatform() {
                   })()}
                 </section>
 
-{/* ── C. 사건 단서 및 물증 보관소 (선 버그 없는 안전한 개폐 토글) ── */}
-<div style={{ ...GLASS_STYLE, backgroundColor: theme.panel, borderRadius: "14px", border: `1.5px solid ${theme.border}`, overflow: "hidden", marginBottom: "14px" }}>
-  {/* 누르면 부드럽게 열리고 닫히는 헤더 바 */}
+{/* ── C. 사건 단서 및 물증 보관소 (선 버그 없는 100% 안전 토글) ── */}
+<div style={{ backgroundColor: theme.panel, borderRadius: "14px", border: `1.5px solid ${theme.border}`, overflow: "hidden", marginBottom: "14px", boxShadow: "0 4px 16px rgba(0,0,0,0.06)" }}>
+  {/* 헤더 바: 누르면 닫히고 열림 */}
   <div
     onClick={() => setIsEvidenceOpen(!isEvidenceOpen)}
     style={{ padding: "14px 18px", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer", backgroundColor: theme.panelAlt, userSelect: "none" }}
   >
     <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-      <span>🔍</span>
+      <span style={{ fontSize: "1.1rem" }}>🔍</span>
       <span style={{ fontWeight: "900", fontSize: "0.9rem", color: theme.text }}>
         사건 단서 및 물증 보관소 ({evidenceList.length}건)
       </span>
@@ -702,12 +701,12 @@ export default function GamePlatform() {
     </span>
   </div>
 
-  {/* 열었을 때만 나타나는 단서 목록 */}
+  {/* 펼쳤을 때 나오는 본문 */}
   {isEvidenceOpen && (
     <div style={{ padding: "16px", borderTop: `1px solid ${theme.border}`, display: "flex", flexDirection: "column", gap: "12px" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <span style={{ fontSize: "0.74rem", color: theme.textMuted }}>
-          현장 탐색 및 심문으로 획득할 단서입니다.
+          현장 탐색 및 심문으로 획득할 단서 및 물증입니다.
         </span>
         <button
           type="button"
@@ -720,7 +719,7 @@ export default function GamePlatform() {
             ]);
             triggerToast("단서 추가", "새로운 단서 슬롯이 추가되었습니다.", "📦");
           }}
-          style={{ padding: "4px 12px", backgroundColor: theme.panel, border: `1.5px solid ${theme.accent}`, borderRadius: "12px", color: theme.accent, fontSize: "0.74rem", fontWeight: "800", cursor: "pointer" }}
+          style={{ padding: "5px 12px", backgroundColor: theme.panel, border: `1.5px solid ${theme.accent}`, borderRadius: "14px", color: theme.accent, fontSize: "0.74rem", fontWeight: "800", cursor: "pointer" }}
         >
           ＋ 단서 추가
         </button>
@@ -744,7 +743,7 @@ export default function GamePlatform() {
                 <button
                   type="button"
                   onClick={() => setEvidenceList(evidenceList.filter(ev => ev.id !== item.id))}
-                  style={{ background: "none", border: "none", color: theme.danger, cursor: "pointer", fontSize: "0.8rem" }}
+                  style={{ background: "none", border: "none", color: theme.danger, cursor: "pointer", padding: "2px", fontSize: "0.8rem" }}
                 >
                   🗑
                 </button>
@@ -806,15 +805,15 @@ export default function GamePlatform() {
   )}
 </div>
 
-{/* ── D. 사건 진상 기밀 봉투 (선 버그 없는 안전한 개폐 토글) ── */}
-<div style={{ ...GLASS_STYLE, backgroundColor: theme.panel, borderRadius: "14px", border: `1.5px solid ${theme.accent}`, overflow: "hidden", marginBottom: "14px" }}>
-  {/* 누르면 부드럽게 열리고 닫히는 헤더 바 */}
+{/* ── D. 사건 진상 기밀 봉투 (선 버그 없는 100% 안전 토글) ── */}
+<div style={{ backgroundColor: theme.panel, borderRadius: "14px", border: `1.5px solid ${theme.accent}`, overflow: "hidden", marginBottom: "16px", boxShadow: "0 4px 16px rgba(0,0,0,0.06)" }}>
+  {/* 헤더 바: 누르면 닫히고 열림 */}
   <div
     onClick={() => setIsTruthOpen(!isTruthOpen)}
-    style={{ padding: "16px 18px", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer", backgroundColor: theme.panelAlt, userSelect: "none" }}
+    style={{ padding: "14px 18px", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer", backgroundColor: theme.panelAlt, userSelect: "none" }}
   >
     <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-      <span>✉️</span>
+      <span style={{ fontSize: "1.1rem" }}>✉️</span>
       <span style={{ fontWeight: "900", fontSize: "0.9rem", color: theme.accent }}>
         사건 진상 기밀 봉투 (진범 및 트릭)
       </span>
@@ -824,7 +823,7 @@ export default function GamePlatform() {
     </span>
   </div>
 
-  {/* 열었을 때만 나타나는 진범/트릭 입력란 */}
+  {/* 펼쳤을 때 나오는 본문 */}
   {isTruthOpen && (
     <div style={{ padding: "16px", borderTop: `1px solid ${theme.border}`, display: "flex", flexDirection: "column", gap: "10px" }}>
       <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 2fr", gap: "10px" }}>
