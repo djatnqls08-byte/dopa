@@ -9,7 +9,7 @@ import {
   Menu, Moon, Sun, Save, FileUp, HelpCircle, X, ChevronDown, ChevronUp, Image as ImageIcon,
   ClipboardList, Pin, FileSearch, Mailbox, Play,
   FolderOpen, Lock, Settings, Database, ClipboardPaste, LogOut,
-  Smartphone, Dices, BookOpen
+  ArrowUp, Smartphone, BookOpen, Dices // 🌟 이 4개 아이콘 추가!
 } from "lucide-react";
 
 export default function GamePlatform() {
@@ -1118,7 +1118,7 @@ const [showEvidence, setShowEvidence] = useState(false);
           /* ── [B. 인게임 뷰: 소설 리더 본문 및 팝업/오버레이] ── */
           <div style={{ flex: 1, display: "flex", overflow: "hidden", position: "relative", backgroundColor: theme.bg }}>
             
-            {/* 📖 중앙: 소설형 텍스트 뷰어 (전자책 스타일 완벽 적용) */}
+           {/* 📖 중앙: 소설형 텍스트 뷰어 (전자책 스타일 완벽 적용) */}
             <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", position: "relative" }}>
               <div 
                 className="serif-text" 
@@ -1231,11 +1231,8 @@ const [showEvidence, setShowEvidence] = useState(false);
                         flexShrink: 0, marginBottom: "2px" 
                       }}
                     >
-                      {/* 🌟 사반이 요청한 화살표(↑) 디자인 전송 버튼 */}
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                        <line x1="12" y1="19" x2="12" y2="5"></line>
-                        <polyline points="5 12 12 5 19 12"></polyline>
-                      </svg>
+                      {/* 🌟 사반이 요청한 위쪽 화살표(↑) 디자인 전송 버튼 */}
+                      <ArrowUp size={20} strokeWidth={2.5} />
                     </button>
                   )}
                 </div>
