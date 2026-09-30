@@ -1208,10 +1208,10 @@ const [showEvidence, setShowEvidence] = useState(false);
                     </button>
                   )}
                 </div>
-              </footer>
+</footer>
             </div>
 
-{/* ── 📌 1. 수사 증거보드 (새로 만든 컴포넌트 스위치 달기!) ── */}
+            {/* ── 📌 1. 수사 증거보드 (새로 만든 컴포넌트 스위치 달기!) ── */}
             {showEvidenceBoard && activeSession && activeSession.ruleMode === "freeform" && (
               <SecretBoard
                 activeSession={activeSession}
@@ -1220,12 +1220,12 @@ const [showEvidence, setShowEvidence] = useState(false);
                 onClose={() => setShowEvidenceBoard(false)}
                 onDeclareMystery={() => {
                   setShowEvidenceBoard(false);
-                  setInputMsg(prev => prev.trim() ? prev : "[💡 진상 추리] "); // 🌟 오타 수정 완료!
+                  setInputMsg(prev => prev.trim() ? prev : "[💡 진상 추리] ");
                 }}
               />
             )}
 
-            {/* ── 📋 캐릭터 시트 오버레이 패널 (분리 완료!) ── */}
+            {/* ── 📋 2. 캐릭터 시트 (새로 만든 컴포넌트 스위치 달기!) ── */}
             <CharacterSheet 
               activeSession={activeSession}
               theme={theme}
@@ -1238,6 +1238,13 @@ const [showEvidence, setShowEvidence] = useState(false);
               handleSaveCurrentAsPreset={handleSaveCurrentAsPreset}
               handleSaveSessionAsLobbyPreset={handleSaveSessionAsLobbyPreset}
             />
+
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
 
                 
       {/* ── 📱 하단 세그먼트 글래스 탭바 ── */}
