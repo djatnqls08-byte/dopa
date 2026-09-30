@@ -473,13 +473,14 @@ export default function GamePlatform() {
                     <span style={{ fontWeight: "900", fontSize: "0.95rem", color: theme.text }}>주인공 (수사관) 프로필</span>
                   </div>
 
-                  <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", gap: "16px" }}>
+                  <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", gap: "16px", width: "100%" }}>
                     {/* A. 주인공 사진 (폴라로이드 형태) */}
                     <div
                       title="사진 등록 및 변경 (클릭)"
                       style={{
                         flex: isMobile ? "none" : "0 0 135px",
-                        width: isMobile ? "135px" : "auto",
+                        width: isMobile ? "100%" : "auto", // 🌟 모바일에서 가로를 꽉 채우도록 수정!
+                        maxWidth: isMobile ? "180px" : "none", // 🌟 너무 커지지 않게 제한
                         margin: isMobile ? "0 auto" : "0",
                         backgroundColor: theme.polaroidBg || "#ded7cb", borderRadius: "6px", padding: "8px 8px 12px 8px", color: theme.polaroidText || "#292524",
                         boxShadow: "0 3px 10px rgba(0,0,0,0.18)", display: "flex", flexDirection: "column", alignItems: "center", position: "relative"
@@ -499,7 +500,7 @@ export default function GamePlatform() {
                             <span style={{ fontWeight: "700" }}>수사관 사진</span>
                           </div>
                         )}
-                        {/* 연필 아이콘 (업로드 버튼) */}
+                        {/* 연필 아이콘 (업로드 버튼 + 토스트 알림 추가) */}
                         <label
                           style={{
                             position: "absolute", bottom: "6px", right: "6px", width: "24px", height: "24px", borderRadius: "50%",
@@ -511,7 +512,11 @@ export default function GamePlatform() {
                             const file = e.target.files[0];
                             if (!file) return;
                             const reader = new FileReader();
-                            reader.onload = (ev) => setPcPortraitUrl(ev.target.result);
+                            reader.onload = (ev) => {
+                              setPcPortraitUrl(ev.target.result);
+                              // 🌟 사진 등록 시 토스트 피드백 추가!
+                              triggerToast("사진 등록", "수사관의 프로필 사진이 업데이트되었습니다.", "📸");
+                            };
                             reader.readAsDataURL(file);
                             e.target.value = null;
                           }} />
@@ -522,7 +527,7 @@ export default function GamePlatform() {
                       </div>
                     </div>
 
-                    {/* B. 주인공 수사 서류철 (정보 입력란) */}
+                    {/* B. 주인공 수사 서류철 */}
                     <div style={{ flex: 1, padding: "14px", backgroundColor: theme.panelAlt, borderRadius: "12px", border: `1.5px solid ${theme.borderHighlight || theme.border}`, display: "flex", flexDirection: "column", gap: "10px" }}>
                       <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1.2fr 1fr 1fr", gap: "8px" }}>
                         <div>
@@ -612,7 +617,7 @@ export default function GamePlatform() {
                             >✕</button>
                           )}
 
-                          {/* 사진 영역 */}
+                         {/* 사진 영역 */}
                           <div
                             onClick={(e) => {
                               e.stopPropagation();
@@ -624,14 +629,15 @@ export default function GamePlatform() {
                               width: "100%", aspectRatio: "1/1", backgroundColor: isDarkMode ? "#332d2a" : "#eae4db",
                               borderRadius: "3px", overflow: "hidden",
                               display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", position: "relative",
-                              cursor: "pointer" // 🌟 돋보기 대신 일반 클릭 커서로 변경
+                              cursor: "pointer"
                             }}
                           >
                             {s.portraitUrl ? (
                               <img src={s.portraitUrl} alt="용의자" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                             ) : (
+                              // 🌟 수정됨: 용의자 카드도 주인공과 동일한 ImageIcon을 쓰도록 변경!
                               <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "4px", color: isDarkMode ? "#b3aaa0" : "#8c8278", fontSize: "0.68rem" }}>
-                                <span style={{ fontSize: "1.3rem" }}>📷</span>
+                                <ImageIcon size={24} strokeWidth={1} />
                                 <span style={{ fontWeight: "700" }}>사진 없음</span>
                               </div>
                             )}
