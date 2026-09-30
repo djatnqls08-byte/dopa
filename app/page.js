@@ -85,7 +85,6 @@ export default function GamePlatform() {
   const [pcBackground, setPcBackground] = useState("");
 
   const [scenarioTitle, setScenarioTitle] = useState("");
-  const [scenarioTitle, setScenarioTitle] = useState("");
   const [victimName, setVictimName] = useState("");
   const [publicSynopsis, setPublicSynopsis] = useState("");
   const [openingScene, setOpeningScene] = useState("");
