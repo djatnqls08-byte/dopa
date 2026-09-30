@@ -276,12 +276,16 @@ export default function GamePlatform() {
         {/* ── [A. 로비 뷰 (이전 '창작' 탭)] ── */}
         {!activeSession ? (
           <main style={{ flex: 1, overflowY: "auto", padding: isMobile ? "16px 14px 140px 14px" : "20px 16px 160px 16px", maxWidth: "860px", margin: "0 auto", width: "100%", display: "flex", flexDirection: "column", gap: isMobile ? "14px" : "18px", boxSizing: "border-box" }}>
-            
-            {/* 1. 3대 모드 선택 카드 */}
-            <section style={{ ...GLASS_STYLE, padding: isMobile ? "14px" : "18px", backgroundColor: theme.panel, borderRadius: "16px", border: `1px solid ${theme.border}` }}>
-              <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(3, 1fr)", gap: "10px" }}>
+              
+              {/* 🌟 잃어버렸던 제목을 다시 복구했습니다! */}
+              <div style={{ fontSize: "0.9rem", fontWeight: "800", marginBottom: "12px", color: theme.text }}>
+                1. 룰 시스템 선택
+              </div>
+              
+              {/* 🌟 룰 시스템 3열 가로 배치 (모바일/PC 공통) */}
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "10px" }}>
                 {[
-                  { key: "추리", icon: "🕵️", title: "추리", desc: "진상을 파헤치는 수사" },
+                  { key: "추리", icon: "🕵️‍♂️️", title: "추리", desc: "진상을 파헤치는 수사" },
                   { key: "연애", icon: "🌸", title: "연애", desc: "선택지와 감정선 중심의 서사" },
                   { key: "괴담", icon: "🕯️", title: "괴담", desc: "이면을 밝히는 호러" }
                 ].map(m => {
@@ -291,29 +295,23 @@ export default function GamePlatform() {
                       key={m.key}
                       onClick={() => setSelectedMode(m.key)}
                       style={{
-                        padding: "14px", borderRadius: "12px", cursor: "pointer",
+                        position: "relative",
+                        padding: isMobile ? "16px 8px" : "18px 12px", 
+                        borderRadius: "14px", cursor: "pointer",
                         backgroundColor: isSel ? theme.panelAlt : "transparent",
                         border: `1.5px solid ${isSel ? theme.accent : theme.border}`,
-                        display: "flex", alignItems: "center", gap: "12px", // 🌟 요소를 3개로 나누고 사이 간격을 12px로 고정합니다.
+                        display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "6px",
                         boxShadow: isSel ? `0 0 16px ${theme.accentGlow}` : "none",
                         transition: "all 0.2s"
                       }}
                     >
-                      {/* 1. 좌측 영역: 룰 아이콘 (크기 고정) */}
-                      <span style={{ fontSize: "1.7rem", flexShrink: 0 }}>{m.icon}</span>
-                      
-                      {/* 2. 중앙 영역: 룰 제목과 설명 (가운데 빈 공간을 꽉 채움) */}
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontWeight: "900", fontSize: "0.95rem", color: isSel ? theme.accent : theme.text }}>{m.title}</div>
-                        <div style={{ fontSize: "0.72rem", color: theme.textMuted, marginTop: "3px", wordBreak: "keep-all" }}>{m.desc}</div>
-                      </div>
-
-                      {/* 3. 우측 영역: 물음표 버튼 (크기 고정) */}
+                      {/* 우측 상단 물음표 버튼 (절대 위치로 고정) */}
                       <button
                         onClick={(e) => { e.stopPropagation(); setRuleHelpModal(m); }}
                         title={`${m.title} 규칙 설명 보기`}
                         style={{
-                          width: "24px", height: "24px", borderRadius: "50%", flexShrink: 0, // 🌟 찌그러짐 방지
+                          position: "absolute", top: "8px", right: "8px",
+                          width: "22px", height: "22px", borderRadius: "50%",
                           border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg,
                           color: theme.textMuted, fontSize: "0.75rem", fontWeight: "800",
                           display: "flex", alignItems: "center", justifyContent: "center",
@@ -322,6 +320,20 @@ export default function GamePlatform() {
                       >
                         ?
                       </button>
+
+                      {/* 중앙 아이콘 */}
+                      <span style={{ fontSize: isMobile ? "2rem" : "2.2rem" }}>{m.icon}</span>
+                      
+                      {/* 하단 텍스트 영역 */}
+                      <div style={{ textAlign: "center", width: "100%" }}>
+                        <div style={{ fontWeight: "900", fontSize: "0.95rem", color: isSel ? theme.accent : theme.text }}>{m.title}</div>
+                        {/* 🌟 모바일에서는 설명 텍스트를 숨겨서 디자인을 깔끔하게 유지합니다 */}
+                        {!isMobile && (
+                          <div style={{ fontSize: "0.72rem", color: theme.textMuted, marginTop: "4px", wordBreak: "keep-all" }}>
+                            {m.desc}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   );
                 })}
