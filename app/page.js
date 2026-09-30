@@ -855,7 +855,6 @@ export default function GamePlatform() {
     </div>
   )}
 </div>
-                </section>
               </>
             )}
 
