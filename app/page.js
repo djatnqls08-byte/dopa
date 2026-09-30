@@ -1451,7 +1451,7 @@ const [showEvidence, setShowEvidence] = useState(false);
           </div>
         )}
 
-      </div> {/* 메인 콘텐츠 뷰 닫기 */}
-    </div> {/* 전체 화면 닫기 */}
+      </div>
+    </div>
   );
 }
