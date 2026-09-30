@@ -20,6 +20,7 @@ export async function POST(req) {
     
     if (apiKeys.length === 0) throw new Error("서버에 등록된 API 키가 없습니다.");
 
+    // 🌟 수정된 부분: \vert{}\vert{} 기호를 정상적인 || 기호로 복구했습니다.
     const modeSpecificRules = (ruleMode === "dating" || ruleMode === "dating_msg")
       ? `1. 원본 대사 및 지문 100% 보존: 과도한 윤색 없이 제공된 이름(${pcName \vert{}\vert{} '주인공'}, ${kpcName || '파트너'})으로만 치환하십시오.`
       : `1. 범용 엔진화 및 호흡 조절: 특정 TRPG 상표권(CoC, 인세인 등)을 연상시키는 시스템 용어(예: SAN치, 판정 주사위 등)를 서막과 시놉시스에서 완벽히 삭제하십시오. 여유로운 호흡을 위해 줄바꿈(\\n\\n)을 2~3회 이상 사용하십시오.`;
