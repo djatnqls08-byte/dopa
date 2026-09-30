@@ -704,7 +704,7 @@ export default function GamePlatform() {
               return (
                 <div
                   key={tab.key}
-                  onClick={() => { setActiveTab(tab.key); triggerToast(`[${tab.label}] 탭 전환`); }}
+                  onClick={() => setActiveTab(tab.key)}
                   style={{
                     flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
                     cursor: "pointer", gap: "4px", // gap 증가
