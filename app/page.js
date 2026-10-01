@@ -35,6 +35,30 @@ const GLASS_STYLE = { backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(
 // ==========================================
 const GOOGLE_SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQQEA39XlsqHKGn0GPzmVH42jhimki3yJUIbKHkXjgzmLA5bD66WQvXw3-nHy9PJSxwg727wfSGznYa/pub?gid=0&single=true&output=csv";
 
+function parseCSV(text) {
+  let p = '', c = '', r = [];
+  let q = false;
+  let row = [''];
+  for (let i = 0; i < text.length; i++) {
+    c = text[i];
+    let next = text[i + 1];
+    if (c === '"') {
+      if (q && next === '"') { row[row.length - 1] += '"'; i++; }
+      else { q = !q; }
+    } else if (c === ',' && !q) {
+      row.push('');
+    } else if ((c === '\r' || c === '\n') && !q) {
+      if (c === '\r' && next === '\n') { i++; }
+      r.push(row);
+      row = [''];
+    } else {
+      row[row.length - 1] += c;
+    }
+  }
+  if (row.length > 1 || row[0] !== '') r.push(row);
+  return r;
+}
+
 // 🌟 수빈님 구글 시트 1000% 맞춤형 초강력 파서 엔진!
 function convertRowToPreset(row, index, headers = []) {
   if (!row || row.length === 0) return null;
@@ -154,7 +178,15 @@ function convertRowToPreset(row, index, headers = []) {
 export default function GamePlatform() {
   // ── [3. 상태 관리] ──
   const [isMounted, setIsMounted] = useState(false); // 🌟 에러 #423 방어막
-  const [currentUser, setCurrentUser] = useState(null);
+ const [currentUser, setCurrentUser] = useState(null);
+
+  // 🌟 내 계정 전용 프로필 사진 상자 독립!! (이 부분이 빠져서 에러가 났었어요!)
+  const [userAvatar, setUserAvatar] = useState(""); 
+  useEffect(() => {
+    const avatar = localStorage.getItem("secret_novel_avatar");
+    if (avatar) setUserAvatar(avatar);
+  }, []);
+  
   const [isLoginLoading, setIsLoginLoading] = useState(false);
   const [loginEmail, setLoginEmail] = useState(""); 
   const [loginPassword, setLoginPassword] = useState(""); 
