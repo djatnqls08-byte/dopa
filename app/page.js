@@ -1727,6 +1727,7 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
                                 🎉 라운지 발행됨
                               </div>
                             )}
+                          </div>
 
 {/* 🌟 하단 카드 텍스트 정보 영역 */}
                           <div style={{ padding: "16px", display: "flex", flexDirection: "column", gap: "12px" }}>
