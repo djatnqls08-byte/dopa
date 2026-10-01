@@ -285,6 +285,15 @@ const [showHistoryModal, setShowHistoryModal] = useState(false);
 const [showLikedModal, setShowLikedModal] = useState(false);
 const [showReviewModal, setShowReviewModal] = useState(false);
 const [showSupportModal, setShowSupportModal] = useState(false);
+ // ── [11. 관리자 및 추가 기능 상태] ──
+  const [isAdmin, setIsAdmin] = useState(true); // 🌟 테스트용 어드민 계정 스위치 (true면 공지 작성 가능)
+  const [showNoticeModal, setShowNoticeModal] = useState(false);
+  const [notices, setNotices] = useState([
+    { id: 1, text: "시크릿 노벨 클로즈 베타 테스트에 오신 것을 환영합니다! 🎉\n버그 제보 및 피드백은 고객센터를 이용해 주세요.", date: "2026-10-01" }
+  ]);
+  const [newNotice, setNewNotice] = useState("");
+  const [likedScenarios, setLikedScenarios] = useState([]); // 💖 관심 시나리오 보관함
+ 
  
   // ── [7. 인게임 UI 토글 상태 관리 (누락된 변수 추가)] ──
   const [isPhoneDrawerOpen, setIsPhoneDrawerOpen] = useState(false);
@@ -983,20 +992,25 @@ const [showSupportModal, setShowSupportModal] = useState(false);
                                   <FileUp size={12} strokeWidth={2.5} /> 다운로드 됨
                                 </div>
                                 
-                                {/* 백엔드 연동 후 scen.hasUpdate 가 true일 때만 뜨도록 설계 (지금은 확인을 위해 노출) */}
-                                <div style={{ padding: "4px 8px", backgroundColor: "rgba(22, 163, 74, 0.9)", backdropFilter: "blur(4px)", borderRadius: "8px", color: "#fff", fontSize: "0.7rem", fontWeight: "700", border: "1px solid rgba(255, 255, 255, 0.3)", display: "flex", alignItems: "center", gap: "4px", width: "fit-content", animation: "pulse 2s infinite" }}>
-                                  <ArrowUp size={12} strokeWidth={3} /> 업데이트 가능
-                                </div>
+                                {/* 🌟 실제 기능이 작동하는 업데이트 버튼 */}
+                                {scen.hasUpdate && (
+                                  <button 
+                                    onClick={(e) => {
+                                      e.stopPropagation(); // 썸네일 클릭 시 커버 수정 모달이 뜨는 것을 방지
+                                      // 해당 시나리오의 hasUpdate 상태를 false로 변경하여 뱃지를 없앰
+                                      const updated = savedLibrary.map(item => item.id === scen.id ? { ...item, hasUpdate: false } : item);
+                                      setSavedLibrary(updated);
+                                      localStorage.setItem("secret_novel_library", JSON.stringify(updated));
+                                      triggerToast("업데이트 완료", "서류철이 최신 버전으로 갱신되었습니다.", <CheckCircle2 size={18} color={theme.success} />);
+                                    }}
+                                    title="최신 버전으로 업데이트"
+                                    style={{ padding: "4px 8px", backgroundColor: "rgba(22, 163, 74, 0.9)", backdropFilter: "blur(4px)", borderRadius: "8px", color: "#fff", fontSize: "0.7rem", fontWeight: "700", border: "1px solid rgba(255, 255, 255, 0.3)", display: "flex", alignItems: "center", gap: "4px", width: "fit-content", animation: "pulse 2s infinite", cursor: "pointer" }}
+                                  >
+                                    <ArrowUp size={12} strokeWidth={3} /> 업데이트 가능
+                                  </button>
+                                )}
                               </div>
                             )}
-
-                            {/* 심사 대기 중 뱃지 */}
-                            {scen.status === "심사 대기" && (
-                              <div style={{ position: "absolute", top: "12px", left: "12px", padding: "4px 8px", backgroundColor: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)", borderRadius: "8px", color: theme.warning, fontSize: "0.7rem", fontWeight: "700", border: `1px solid rgba(245, 158, 11, 0.4)`, display: "flex", alignItems: "center", gap: "4px", zIndex: 5 }}>
-                                <Clock size={12} strokeWidth={2.5} /> 심사 대기 중
-                              </div>
-                            )}
-                          </div>
 
                           {/* 🌟 하단 카드 텍스트 정보 영역 (날아갔던 부분 복구 완료) */}
                           <div style={{ padding: "16px", display: "flex", flexDirection: "column", gap: "12px" }}>
@@ -2528,7 +2542,7 @@ color: "#fff", border: "none", cursor: "pointer",
           </div>
         )}
 
-        {/* ❤️ 관심 시나리오 팝업 */}
+       {/* ❤️ 관심 시나리오 팝업 (실제 데이터 렌더링) */}
         {showLikedModal && (
           <div onClick={() => setShowLikedModal(false)} style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 500, padding: "20px", animation: "fadeIn 0.2s ease-out" }}>
             <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: "500px", backgroundColor: theme.panel, border: `1px solid ${theme.border}`, borderRadius: "20px", padding: "24px", display: "flex", flexDirection: "column", gap: "20px", boxShadow: "0 20px 50px rgba(0,0,0,0.5)", maxHeight: "80vh" }}>
@@ -2536,8 +2550,64 @@ color: "#fff", border: "none", cursor: "pointer",
                 <span style={{ fontWeight: "800", fontSize: "1.1rem", display: "flex", alignItems: "center", gap: "8px", color: theme.text }}><Heart size={20} color={theme.danger} fill={theme.danger} /> 관심 시나리오</span>
                 <button onClick={() => setShowLikedModal(false)} style={{ background: "none", border: "none", color: theme.textMuted, cursor: "pointer" }}><X size={24}/></button>
               </div>
-              <div style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: "12px" }}>
-                 <div style={{ padding: "40px", textAlign: "center", color: theme.textMuted, fontSize: "0.9rem" }}>관심 등록한 시나리오가 아직 없습니다.<br/>라운지에서 하트를 눌러보세요!</div>
+              <div style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: "12px", paddingRight: "4px" }}>
+                 {likedScenarios.length === 0 ? (
+                   <div style={{ padding: "40px", textAlign: "center", color: theme.textMuted, fontSize: "0.9rem", lineHeight: 1.6 }}>관심 등록한 시나리오가 아직 없습니다.<br/>라운지에서 마음에 드는 작품에 하트를 눌러보세요!</div>
+                 ) : (
+                   likedScenarios.map(scen => (
+                     <div key={scen.id} style={{ padding: "16px", backgroundColor: theme.panelAlt, borderRadius: "12px", border: `1px solid ${theme.border}`, display: "flex", gap: "14px", alignItems: "center" }}>
+                       <div style={{ width: "64px", height: "64px", borderRadius: "10px", backgroundColor: theme.inputBg, border: `1px solid ${theme.borderHighlight}`, overflow: "hidden", flexShrink: 0 }}>
+                         {scen.imageUrl ? <img src={scen.imageUrl} alt="커버" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <div style={{ display: "flex", width: "100%", height: "100%", alignItems: "center", justifyContent: "center" }}><ImageIcon size={20} color={theme.textMuted} /></div>}
+                       </div>
+                       <div style={{ display: "flex", flexDirection: "column", gap: "4px", flex: 1, overflow: "hidden" }}>
+                         <span style={{ fontWeight: "800", color: theme.text, fontSize: "1.05rem", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{scen.title}</span>
+                         <span style={{ fontSize: "0.75rem", color: theme.textMuted, fontWeight: "600" }}>제작: {scen.author}</span>
+                       </div>
+                       <button onClick={() => setLikedScenarios(likedScenarios.filter(s => s.id !== scen.id))} style={{ background: "none", border: "none", color: theme.danger, cursor: "pointer", padding: "8px" }}><Heart size={20} fill={theme.danger} /></button>
+                     </div>
+                   ))
+                 )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* 📢 공지사항 및 어드민 팝업 */}
+        {showNoticeModal && (
+          <div onClick={() => setShowNoticeModal(false)} style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 500, padding: "20px", animation: "fadeIn 0.2s ease-out" }}>
+            <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: "500px", backgroundColor: theme.panel, border: `1px solid ${theme.border}`, borderRadius: "20px", padding: "24px", display: "flex", flexDirection: "column", gap: "20px", boxShadow: "0 20px 50px rgba(0,0,0,0.5)", maxHeight: "80vh" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: `1px solid ${theme.border}`, paddingBottom: "12px" }}>
+                <span style={{ fontWeight: "800", fontSize: "1.1rem", display: "flex", alignItems: "center", gap: "8px", color: theme.text }}>
+                  <AlertTriangle size={20} color={theme.accent} /> 공지사항 {isAdmin && <span style={{ fontSize: "0.75rem", color: "#ef4444", backgroundColor: "rgba(239,68,68,0.1)", padding: "2px 6px", borderRadius: "6px" }}>어드민 모드</span>}
+                </span>
+                <button onClick={() => setShowNoticeModal(false)} style={{ background: "none", border: "none", color: theme.textMuted, cursor: "pointer" }}><X size={24}/></button>
+              </div>
+
+              {/* 어드민일 때만 보이는 작성 칸 */}
+              {isAdmin && (
+                <div style={{ display: "flex", flexDirection: "column", gap: "10px", paddingBottom: "16px", borderBottom: `1px dashed ${theme.borderHighlight}` }}>
+                  <textarea value={newNotice} onChange={e => setNewNotice(e.target.value)} placeholder="새로운 공지사항을 작성하세요 (어드민 전용)" style={{ width: "100%", boxSizing: "border-box", padding: "12px", borderRadius: "10px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.85rem", outline: "none", resize: "vertical", minHeight: "80px" }} />
+                  <button onClick={() => { 
+                    if(!newNotice.trim()) return; 
+                    setNotices([{ id: Date.now(), text: newNotice, date: new Date().toISOString().split("T")[0] }, ...notices]);
+                    setNewNotice("");
+                    triggerToast("공지 등록", "새 공지가 등록되었습니다.", "✅");
+                  }} style={{ padding: "10px", backgroundColor: theme.danger, color: "#fff", border: "none", borderRadius: "10px", fontWeight: "700", cursor: "pointer", alignSelf: "flex-end" }}>공지 등록하기</button>
+                </div>
+              )}
+
+              <div style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: "16px", paddingRight: "4px" }}>
+                {notices.map(notice => (
+                  <div key={notice.id} style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                      <span style={{ backgroundColor: theme.accent, color: isDarkMode ? "#1a1817" : "#fff", padding: "2px 8px", borderRadius: "6px", fontSize: "0.65rem", fontWeight: "800" }}>공지</span>
+                      <span style={{ fontSize: "0.75rem", color: theme.textMuted, fontWeight: "600" }}>{notice.date}</span>
+                    </div>
+                    <div style={{ fontSize: "0.9rem", color: theme.text, lineHeight: 1.6, padding: "14px", backgroundColor: theme.panelAlt, borderRadius: "12px", border: `1px solid ${theme.border}`, whiteSpace: "pre-wrap" }}>
+                      {notice.text}
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
@@ -2810,7 +2880,7 @@ color: "#fff", border: "none", cursor: "pointer",
 
 {/* 👤 내정보 (Profile) 탭 화면 (세련된 리스트 UI) */}
             {activeTab === "profile" && (
-              <div style={{ display: "flex", flexDirection: "column", animation: "fadeIn 0.2s ease-out", paddingBottom: "40px" }}>
+              <div style={{ display: "flex", flexDirection: "column", width: "100%", height: "100%", justifyContent: "flex-start", marginTop: 0, animation: "fadeIn 0.2s ease-out", paddingBottom: "40px" }}>
                 
                 {/* 1. 상단 프로필 영역 */}
                 <div style={{ display: "flex", alignItems: "center", gap: "18px", padding: "30px 20px", backgroundColor: theme.panel }}>
@@ -2820,7 +2890,10 @@ color: "#fff", border: "none", cursor: "pointer",
                   <div style={{ display: "flex", flexDirection: "column", gap: "6px", flex: 1 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                       <span style={{ fontSize: "1.3rem", fontWeight: "800", color: theme.text, letterSpacing: "-0.5px" }}>{pcName || "탐색자_8921"}</span>
-                      <span style={{ fontSize: "0.7rem", color: theme.accent, fontWeight: "800", backgroundColor: isDarkMode ? "rgba(163, 146, 116, 0.15)" : "#f5f0eb", padding: "2px 8px", borderRadius: "8px" }}>LV. 3</span>
+                      {/* 🌟 뱃지를 누르면 어드민(Admin) 모드가 켜졌다 꺼집니다! */}
+                      <span onClick={() => { setIsAdmin(!isAdmin); triggerToast("개발자 모드", isAdmin ? "어드민 모드 해제" : "어드민 모드 활성화", "⚙️"); }} style={{ fontSize: "0.7rem", color: theme.accent, fontWeight: "800", backgroundColor: isDarkMode ? "rgba(163, 146, 116, 0.15)" : "#f5f0eb", padding: "2px 8px", borderRadius: "8px", cursor: "pointer" }}>
+                        LV. 3 {isAdmin && "👑"}
+                      </span>
                     </div>
                     <span style={{ fontSize: "0.85rem", color: theme.textMuted }}>user_8921@secretnovel.com</span>
                   </div>
@@ -2854,8 +2927,8 @@ color: "#fff", border: "none", cursor: "pointer",
                 <div style={{ backgroundColor: theme.panel, display: "flex", flexDirection: "column" }}>
                   {[
                     { icon: <Clock size={20} color={theme.accent} />, title: "나의 플레이 기록", count: `${sessions.length}건`, onClick: () => setShowHistoryModal(true) },
-                    { icon: <Heart size={20} color={theme.danger} />, title: "관심 시나리오", count: "12건", onClick: () => setShowLikedModal(true) },
-                    { icon: <UploadCloud size={20} color="#60a5fa" />, title: "라운지 심사 및 발행 내역", count: "1건 대기중", onClick: () => setShowReviewModal(true) }
+                    { icon: <Heart size={20} color={theme.danger} fill={likedScenarios.length > 0 ? theme.danger : "none"} />, title: "관심 시나리오", count: `${likedScenarios.length}건`, onClick: () => setShowLikedModal(true) },
+                    { icon: <UploadCloud size={20} color="#60a5fa" />, title: "라운지 심사 및 발행 내역", count: `${savedLibrary.filter(s => s.status === "심사 대기").length}건 대기중`, onClick: () => setShowReviewModal(true) }
                   ].map((menu, i) => (
                     <div key={i} onClick={menu.onClick} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "18px 20px", cursor: "pointer", borderBottom: `1px solid ${theme.sidebar}`, transition: "background 0.2s" }} onMouseEnter={e => e.currentTarget.style.backgroundColor = theme.panelAlt} onMouseLeave={e => e.currentTarget.style.backgroundColor = "transparent"}>
                       <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
@@ -2875,7 +2948,7 @@ color: "#fff", border: "none", cursor: "pointer",
                 <div style={{ backgroundColor: theme.panel, display: "flex", flexDirection: "column" }}>
                   {[
                     { icon: <Headphones size={20} color={theme.textMuted} />, title: "고객센터 / 문의하기", onClick: () => setShowSupportModal(true) },
-                    { icon: <AlertTriangle size={20} color={theme.textMuted} />, title: "공지사항", onClick: () => triggerToast("공지사항", "현재 새로운 공지가 없습니다.", "📢") }
+                    { icon: <AlertTriangle size={20} color={theme.textMuted} />, title: "공지사항", onClick: () => setShowNoticeModal(true) }
                   ].map((menu, i) => (
                     <div key={i} onClick={menu.onClick} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "18px 20px", cursor: "pointer", borderBottom: `1px solid ${theme.sidebar}`, transition: "background 0.2s" }} onMouseEnter={e => e.currentTarget.style.backgroundColor = theme.panelAlt} onMouseLeave={e => e.currentTarget.style.backgroundColor = "transparent"}>
                       <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
@@ -2886,7 +2959,6 @@ color: "#fff", border: "none", cursor: "pointer",
                     </div>
                   ))}
                 </div>
-
               </div>
             )}
 
@@ -2993,15 +3065,34 @@ color: "#fff", border: "none", cursor: "pointer",
               </div>
             </div>
 
+            {/* 🌟 하단 플로팅 액션 바 */}
             <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "16px 20px max(16px, env(safe-area-inset-bottom))", background: `linear-gradient(to top, ${theme.panel} 70%, transparent 100%)`, display: "flex", gap: "12px", zIndex: 20 }}>
-               {/* 🌟 하단 플로팅 액션 바 */}
+               
+               {/* 💖 하트(좋아요) 버튼 추가 */}
+               <button 
+                 onClick={() => {
+                   const isLiked = likedScenarios.some(s => s.id === selectedExploreScenario.id);
+                   if (isLiked) {
+                     setLikedScenarios(likedScenarios.filter(s => s.id !== selectedExploreScenario.id));
+                     triggerToast("관심 해제", "관심 시나리오에서 제외되었습니다.", "💔");
+                   } else {
+                     setLikedScenarios([{ ...selectedExploreScenario, likedAt: Date.now() }, ...likedScenarios]);
+                     triggerToast("관심 등록", "관심 시나리오에 추가되었습니다!", <Heart fill={theme.danger} color={theme.danger} size={18}/>);
+                   }
+                 }}
+                 title="관심 시나리오 등록" 
+                 style={{ width: "56px", height: "56px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", backgroundColor: theme.panelAlt, border: `1.5px solid ${theme.borderHighlight}`, borderRadius: "16px", cursor: "pointer", flexShrink: 0, transition: "background 0.2s" }}
+               >
+                 <Heart size={24} color={likedScenarios.some(s => s.id === selectedExploreScenario.id) ? theme.danger : theme.textMuted} fill={likedScenarios.some(s => s.id === selectedExploreScenario.id) ? theme.danger : "none"} strokeWidth={2} />
+               </button>
+
+               {/* 서재 다운로드 버튼 (기존) */}
                <button 
                  onClick={() => {
                    if (savedLibrary.some(s => s.title === selectedExploreScenario.title)) {
                      triggerToast("다운로드 안내", "이미 내 서재에 보관된 서류철입니다.", "💡");
                      return;
                    }
-                   // 🌟 잉크 30방울 차감 로직 추가
                    if (userInk < 30) {
                      triggerToast("잉크 부족", "서재에 영구 소장하려면 30 잉크가 필요합니다.", "💧");
                      return;
@@ -3009,12 +3100,11 @@ color: "#fff", border: "none", cursor: "pointer",
                    setUserInk(prev => prev - 30);
                    
                    const newDownloadedScenario = {
-                     id: Date.now(),
-                     title: selectedExploreScenario.title,
-                     mode: selectedExploreScenario.mode,
+                     id: Date.now(), title: selectedExploreScenario.title, mode: selectedExploreScenario.mode,
                      date: new Date().toLocaleString("ko-KR", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" }),
-                     imageUrl: "", 
+                     imageUrl: selectedExploreScenario.imageUrl || "", 
                      isDownloaded: true, 
+                     hasUpdate: true, // 🌟 테스트용: 다운로드 시 업데이트 뱃지 활성화
                      data: { publicSynopsis: "라운지에서 다운로드한 시나리오입니다." }
                    };
                    
@@ -3023,45 +3113,27 @@ color: "#fff", border: "none", cursor: "pointer",
                    localStorage.setItem("secret_novel_library", JSON.stringify(updatedLibrary));
                    triggerToast("다운로드 완료", "30 잉크를 소모하여 서재에 보관했습니다.", <FileUp size={18} color={theme.accent} />);
                  }} 
-                 title="서재에 영구 소장 (30 잉크)" 
-                 style={{ width: "72px", height: "56px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "2px", backgroundColor: theme.panelAlt, border: `1.5px solid ${theme.borderHighlight}`, borderRadius: "16px", cursor: "pointer", flexShrink: 0, color: theme.text, transition: "background 0.2s" }} 
-                 onMouseEnter={e => e.currentTarget.style.backgroundColor = theme.inputBg} 
-                 onMouseLeave={e => e.currentTarget.style.backgroundColor = theme.panelAlt}
+                 title="서재에 담기" 
+                 style={{ width: "56px", height: "56px", display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: theme.panelAlt, border: `1.5px solid ${theme.borderHighlight}`, borderRadius: "16px", cursor: "pointer", flexShrink: 0, color: theme.text, transition: "background 0.2s" }} 
                >
-                 <FileUp size={22} strokeWidth={2} />
-                 <span style={{ fontSize: "0.6rem", fontWeight: "800", color: theme.accent }}>30 잉크</span>
+                 <FileUp size={24} strokeWidth={2} />
                </button>
                
-               {/* 🌟 바로 플레이 버튼: 잉크 차감 + 로비에 데이터 밀어넣기 + 화면 이동 */}
+               {/* 바로 플레이 버튼 (기존) */}
                <button 
                  onClick={() => {
-                   if (userInk < 10) {
-                     triggerToast("잉크 부족", "보유한 잉크가 부족합니다. 충전이 필요합니다.", "💧");
-                     return;
-                   }
-                   
-                   // 1. 잉크 차감
+                   if (userInk < 10) { triggerToast("잉크 부족", "보유한 잉크가 부족합니다.", "💧"); return; }
                    setUserInk(prev => prev - 10);
-                   
-                   // 2. 탐색 탭의 데이터를 로비 폼에 덮어씌우기
                    setScenarioTitle(selectedExploreScenario.title);
                    setSelectedMode(selectedExploreScenario.mode);
                    setPublicSynopsis("라운지에서 불러온 시나리오입니다.");
-                   // (추후 백엔드 연결 시, selectedExploreScenario.data 안에 있는 npc, 단서 배열 등도 여기서 전부 set 함수로 넣어줍니다.)
-
-                   // 3. 화면 이동 및 팝업 닫기
                    setSelectedExploreScenario(null);
                    setActiveTab("lobby");
                    triggerToast("세팅 시작", `[${selectedExploreScenario.title}] 10 잉크가 차감되었습니다.`, <Play size={18} color="#fff"/>);
                  }}
                  style={{ flex: 1, height: "56px", backgroundColor: theme.accent, border: "none", borderRadius: "16px", color: isDarkMode ? "#1a1817" : "#fff", fontSize: "1.05rem", fontWeight: "800", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", cursor: "pointer", boxShadow: `0 8px 24px ${theme.accentGlow}`, transition: "transform 0.2s" }} 
-                 onMouseEnter={e => e.currentTarget.style.transform = "scale(1.02)"} 
-                 onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}
                >
                  <Play size={20} strokeWidth={3} /> 바로 플레이
-                 <span style={{ fontSize: "0.8rem", opacity: 0.9, marginLeft: "4px", display: "flex", alignItems: "center", gap: "2px", backgroundColor: "rgba(0,0,0,0.15)", padding: "2px 8px", borderRadius: "10px" }}>
-                   <Droplet size={12} strokeWidth={2.5} fill="currentColor" /> 10 잉크
-                 </span>
                </button>
             </div>
           </div>
