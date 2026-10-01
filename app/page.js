@@ -5,13 +5,14 @@ import SecretBoard from "@/components/SecretBoard";
 import CharacterSheet from "@/components/CharacterSheet";
 import { createClient } from '@supabase/supabase-js'; 
 
-// 🌟 2. 내 프로젝트의 열쇠로 수파베이스와 연결! (Vercel 에러 완벽 방지용)
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://qytikqvngyvrszjygbbn.supabase.co";
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "sb_publishable_h-nZS3_gVKpcLxgowjGK_Q_mr4bFXAp";
-const supabase = createClient(supabaseUrl, supabaseKey);
+// 🌟 Vercel 에러 원천 차단! 금고(process.env) 거치지 않고 직접 꽂아넣기
+const supabase = createClient(
+  "https://qytikqvngyvrszjygbbn.supabase.co",
+  "sb_publishable_h-nZS3_gVKpcLxgowjGK_Q_mr4bFXAp"
+);
 
 import { 
-  Search, Heart, Flame, LayoutGrid, LibraryBig, PenTool, UserRound,
+  Search, Heart, Flame, LayoutGrid, LibraryBig, PenTool, UserRound, 
   Menu, Moon, Sun, Save, FileUp, HelpCircle, X, ChevronDown, ChevronUp, Image as ImageIcon,
   ClipboardList, Pin, FileSearch, Mailbox, Play,
   FolderOpen, Lock, Settings, Database, ClipboardPaste, LogOut,
