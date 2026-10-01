@@ -29,11 +29,6 @@ export default function CharacterSheet({
       {/* ── 상단 헤더 ── */}
       <div style={{ padding: "18px 20px", borderBottom: `1px solid ${theme.border}`, backgroundColor: theme.panel, display: "flex", justifyContent: "space-between", alignItems: "center", flexShrink: 0 }}>
         <span style={{ fontWeight: "900", fontSize: "1.05rem", color: theme.text }}>캐릭터 시트</span>
-        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-          <button onClick={handleSaveCurrentAsPreset} title="내 캐릭터만 저장" style={{ padding: "4px 8px", backgroundColor: theme.panelAlt, border: `1px solid ${theme.border}`, borderRadius: "6px", fontSize: "0.75rem", cursor: "pointer", color: theme.text, fontWeight: "700" }}>💾 PC만</button>
-          <button onClick={handleSaveSessionAsLobbyPreset} title="전체 세팅 저장" style={{ padding: "4px 8px", backgroundColor: theme.panelAlt, border: `1px solid ${theme.border}`, borderRadius: "6px", fontSize: "0.75rem", cursor: "pointer", color: theme.text, fontWeight: "700" }}>📁 전체</button>
-          <button onClick={() => setIsSheetOpen(false)} style={{ background: "none", border: "none", color: theme.textMuted, fontSize: "1.3rem", cursor: "pointer", marginLeft: "4px" }}>✕</button>
-        </div>
       </div>
 
       {/* ── 시트 본문 스크롤 영역 ── */}
@@ -97,11 +92,11 @@ export default function CharacterSheet({
         {/* 4. 신뢰도 & 피로도 (체력바) */}
         <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 16px", backgroundColor: "rgba(34, 197, 94, 0.1)", border: "1px solid rgba(34, 197, 94, 0.3)", borderRadius: "10px" }}>
-            <span style={{ fontSize: "0.8rem", fontWeight: "800", color: theme.success || "#22c55e" }}>신뢰도 (HP)</span>
+            <span style={{ fontSize: "0.8rem", fontWeight: "800", color: theme.success || "#22c55e" }}>{activeSession?.ruleMode === 'dating' ? '멘탈' : activeSession?.ruleMode === 'horror' ? '정신력' : '신뢰도'}</span>
             <strong style={{ color: theme.success || "#22c55e", fontSize: "0.95rem" }}>{sheet.hp || 100} / {sheet.maxHp || 100}</strong>
           </div>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 16px", backgroundColor: "rgba(245, 158, 11, 0.1)", border: "1px solid rgba(245, 158, 11, 0.3)", borderRadius: "10px" }}>
-            <span style={{ fontSize: "0.8rem", fontWeight: "800", color: theme.warning || "#f59e0b" }}>수사 피로도</span>
+            <span style={{ fontSize: "0.8rem", fontWeight: "800", color: theme.warning || "#f59e0b" }}>{activeSession?.ruleMode === 'dating' ? '스트레스 지수' : activeSession?.ruleMode === 'horror' ? '침식도' : '수사 피로도'}</span>
             <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
               <div style={{ width: "60px", height: "6px", backgroundColor: "rgba(0,0,0,0.1)", borderRadius: "3px", overflow: "hidden" }}>
                 <div style={{ width: `${sheet.fatigue || 0}%`, height: "100%", backgroundColor: theme.warning || "#f59e0b", transition: "width 0.3s" }} />
@@ -115,7 +110,7 @@ export default function CharacterSheet({
         {sheet.items && sheet.items.filter(it => it.name !== "소지품").length > 0 && (
           <div>
             <div style={{ fontSize: "0.75rem", fontWeight: "800", color: theme.textMuted, marginBottom: "10px", display: "flex", alignItems: "center", gap: "6px" }}>
-              🎒 소지품 인벤토리
+              🎒 인벤토리
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
               {sheet.items.filter(it => it.name !== "소지품").map((it, idx) => (
@@ -131,7 +126,7 @@ export default function CharacterSheet({
         {/* 6. 사건 파일 & 단서 리스트 */}
         <div>
           <div style={{ fontSize: "0.75rem", fontWeight: "800", color: theme.textMuted, marginBottom: "10px", display: "flex", alignItems: "center", gap: "6px" }}>
-            <FileSearch size={14} strokeWidth={2.5} /> 사건 파일 & 물증 ({(sheet.handouts || []).length}건)
+            <FileSearch size={14} strokeWidth={2.5} /> {activeSession?.ruleMode === 'dating' ? '기억 및 수집품' : activeSession?.ruleMode === 'horror' ? '기이한 흔적 및 단서' : '사건 파일 & 물증'} ({(sheet.handouts || []).length}건)
           </div>
           {(!sheet.handouts || sheet.handouts.length === 0) ? (
             <div style={{ textAlign: "center", padding: "20px", fontSize: "0.75rem", color: theme.textMuted, border: `1px dashed ${theme.border}`, borderRadius: "10px" }}>확보된 단서가 없습니다.</div>
