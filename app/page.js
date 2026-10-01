@@ -3283,65 +3283,63 @@ color: "#fff", border: "none", cursor: "pointer",
           </div>
         )}
 
-{/* 👤 내정보 (Profile) 탭 화면 (세련된 리스트 UI) */}
+{/* 👤 내정보 (Profile) 탭 화면 (여백 및 스크롤 버그 완벽 해결!) */}
             {activeTab === "profile" && (
-              <div style={{ display: "flex", flexDirection: "column", width: "100%", height: "100%", justifyContent: "flex-start", marginTop: 0, animation: "fadeIn 0.2s ease-out", paddingBottom: "40px" }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: "16px", animation: "fadeIn 0.2s ease-out", width: "100%", paddingBottom: "20px" }}>
                 
-                {/* 1. 상단 프로필 영역 */}
-                <div style={{ display: "flex", alignItems: "center", gap: "18px", padding: "30px 20px", backgroundColor: theme.panel }}>
-                  <div style={{ width: "80px", height: "80px", borderRadius: "50%", overflow: "hidden", backgroundColor: theme.panelAlt, border: `1px solid ${theme.borderHighlight}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    {pcPortraitUrl ? <img src={pcPortraitUrl} alt="프로필" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <UserRound size={36} color={theme.textMuted} />}
-                  </div>
-                  <div style={{ display: "flex", flexDirection: "column", gap: "6px", flex: 1 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                      {/* 🌟 진짜 내 닉네임 노출 */}
-                      <span style={{ fontSize: "1.3rem", fontWeight: "800", color: theme.text, letterSpacing: "-0.5px" }}>
-                        {currentUser?.name || pcName || "탐색자"}
-                      </span>
-                      {/* 🌟 어드민일 때만 왕관 뱃지 노출 (클릭 토글 제거) */}
-                      <span style={{ fontSize: "0.7rem", color: isAdmin ? theme.danger : theme.accent, fontWeight: "800", backgroundColor: isDarkMode ? "rgba(163, 146, 116, 0.15)" : "#f5f0eb", padding: "4px 8px", borderRadius: "8px" }}>
-                        {isAdmin ? "👑 관리자" : "LV. 1 탐색자"}
+                {/* 1. 프로필 및 지갑 카드 */}
+                <div style={{ display: "flex", flexDirection: "column", backgroundColor: theme.panel, borderRadius: "20px", border: `1px solid ${theme.border}`, overflow: "hidden", boxShadow: "0 8px 24px rgba(0,0,0,0.04)" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "18px", padding: "24px 20px" }}>
+                    <div style={{ width: "80px", height: "80px", borderRadius: "50%", overflow: "hidden", backgroundColor: theme.panelAlt, border: `1px solid ${theme.borderHighlight}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      {pcPortraitUrl ? <img src={pcPortraitUrl} alt="프로필" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <UserRound size={36} color={theme.textMuted} />}
+                    </div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "6px", flex: 1 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                        <span style={{ fontSize: "1.3rem", fontWeight: "800", color: theme.text, letterSpacing: "-0.5px" }}>
+                          {currentUser?.name || pcName || "탐색자"}
+                        </span>
+                        <span style={{ fontSize: "0.7rem", color: isAdmin ? theme.danger : theme.accent, fontWeight: "800", backgroundColor: isDarkMode ? "rgba(163, 146, 116, 0.15)" : "#f5f0eb", padding: "4px 8px", borderRadius: "8px" }}>
+                          {isAdmin ? "👑 관리자" : "LV. 1 탐색자"}
+                        </span>
+                      </div>
+                      <span style={{ fontSize: "0.85rem", color: theme.textMuted }}>
+                        {currentUser?.email || "이메일 정보 없음"}
                       </span>
                     </div>
-                    {/* 🌟 진짜 내 이메일 노출 */}
-                    <span style={{ fontSize: "0.85rem", color: theme.textMuted }}>
-                      {currentUser?.email || "이메일 정보 없음"}
-                    </span>
+                    <button onClick={() => setShowProfileEdit(true)} style={{ padding: "8px 16px", backgroundColor: theme.panelAlt, border: `1px solid ${theme.border}`, borderRadius: "12px", color: theme.text, fontSize: "0.8rem", fontWeight: "700", cursor: "pointer", transition: "background 0.2s" }} onMouseEnter={e => e.currentTarget.style.backgroundColor = theme.inputBg} onMouseLeave={e => e.currentTarget.style.backgroundColor = theme.panelAlt}>
+                      수정
+                    </button>
                   </div>
-                  <button onClick={() => setShowProfileEdit(true)} style={{ padding: "8px 16px", backgroundColor: theme.panelAlt, border: `1px solid ${theme.border}`, borderRadius: "12px", color: theme.text, fontSize: "0.8rem", fontWeight: "700", cursor: "pointer", transition: "background 0.2s" }} onMouseEnter={e => e.currentTarget.style.backgroundColor = theme.inputBg} onMouseLeave={e => e.currentTarget.style.backgroundColor = theme.panelAlt}>
-                    수정
-                  </button>
-                </div>
 
-                {/* 2. 내 지갑 (굵은 구분선으로 분리) */}
-                <div style={{ borderTop: `8px solid ${theme.sidebar}` }} />
-                <div 
-                  onClick={() => setShowInkModal(true)}
-                  style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "24px 20px", backgroundColor: theme.panel, cursor: "pointer", transition: "background 0.2s" }}
-                  onMouseEnter={e => e.currentTarget.style.backgroundColor = theme.panelAlt} onMouseLeave={e => e.currentTarget.style.backgroundColor = theme.panel}
-                >
-                  <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                    <span style={{ fontSize: "0.85rem", fontWeight: "700", color: theme.accent, display: "flex", alignItems: "center", gap: "6px" }}>
-                      <Droplet size={16} strokeWidth={2.5} /> 보유 잉크
-                    </span>
-                    <span style={{ fontSize: "1.8rem", fontWeight: "800", color: theme.text, letterSpacing: "-0.5px" }}>
-                      {userInk.toLocaleString()} <span style={{ fontSize: "0.95rem", color: theme.textMuted, fontWeight: "600" }}>방울</span>
-                    </span>
-                  </div>
-                  <div style={{ padding: "12px 18px", backgroundColor: theme.accent, color: isDarkMode ? "#1a1817" : "#fff", borderRadius: "14px", fontWeight: "800", fontSize: "0.9rem", display: "flex", alignItems: "center", gap: "6px", boxShadow: `0 4px 12px ${theme.accentGlow}` }}>
-                    <Plus size={16} strokeWidth={3} /> 충전 / 무료 획득
+                  <div style={{ borderTop: `1px solid ${theme.border}` }} />
+                  
+                  <div 
+                    onClick={() => setShowInkModal(true)}
+                    style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "20px", cursor: "pointer", transition: "background 0.2s" }}
+                    onMouseEnter={e => e.currentTarget.style.backgroundColor = theme.panelAlt} onMouseLeave={e => e.currentTarget.style.backgroundColor = "transparent"}
+                  >
+                    <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                      <span style={{ fontSize: "0.85rem", fontWeight: "700", color: theme.accent, display: "flex", alignItems: "center", gap: "6px" }}>
+                        <Droplet size={16} strokeWidth={2.5} /> 보유 잉크
+                      </span>
+                      <span style={{ fontSize: "1.8rem", fontWeight: "800", color: theme.text, letterSpacing: "-0.5px" }}>
+                        {userInk.toLocaleString()} <span style={{ fontSize: "0.95rem", color: theme.textMuted, fontWeight: "600" }}>방울</span>
+                      </span>
+                    </div>
+                    <div style={{ padding: "12px 18px", backgroundColor: theme.accent, color: isDarkMode ? "#1a1817" : "#fff", borderRadius: "14px", fontWeight: "800", fontSize: "0.9rem", display: "flex", alignItems: "center", gap: "6px", boxShadow: `0 4px 12px ${theme.accentGlow}` }}>
+                      <Plus size={16} strokeWidth={3} /> 충전 / 획득
+                    </div>
                   </div>
                 </div>
 
-                {/* 3. 내 활동 메뉴 리스트 */}
-                <div style={{ borderTop: `8px solid ${theme.sidebar}` }} />
-                <div style={{ backgroundColor: theme.panel, display: "flex", flexDirection: "column" }}>
+                {/* 2. 내 활동 메뉴 카드 */}
+                <div style={{ display: "flex", flexDirection: "column", backgroundColor: theme.panel, borderRadius: "20px", border: `1px solid ${theme.border}`, overflow: "hidden", boxShadow: "0 8px 24px rgba(0,0,0,0.04)" }}>
                   {[
                     { icon: <Clock size={20} color={theme.accent} />, title: "나의 플레이 기록", count: `${sessions.length}건`, onClick: () => setShowHistoryModal(true) },
                     { icon: <Heart size={20} color={theme.danger} fill={likedScenarios.length > 0 ? theme.danger : "none"} />, title: "관심 시나리오", count: `${likedScenarios.length}건`, onClick: () => setShowLikedModal(true) },
                     { icon: <UploadCloud size={20} color="#60a5fa" />, title: "라운지 심사 및 발행 내역", count: `${savedLibrary.filter(s => s.status === "심사 대기").length}건 대기중`, onClick: () => setShowReviewModal(true) }
-                  ].map((menu, i) => (
-                    <div key={i} onClick={menu.onClick} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "18px 20px", cursor: "pointer", borderBottom: `1px solid ${theme.sidebar}`, transition: "background 0.2s" }} onMouseEnter={e => e.currentTarget.style.backgroundColor = theme.panelAlt} onMouseLeave={e => e.currentTarget.style.backgroundColor = "transparent"}>
+                  ].map((menu, i, arr) => (
+                    <div key={i} onClick={menu.onClick} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "18px 20px", cursor: "pointer", borderBottom: i === arr.length - 1 ? "none" : `1px solid ${theme.border}`, transition: "background 0.2s" }} onMouseEnter={e => e.currentTarget.style.backgroundColor = theme.panelAlt} onMouseLeave={e => e.currentTarget.style.backgroundColor = "transparent"}>
                       <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
                         {menu.icon}
                         <span style={{ fontSize: "0.95rem", fontWeight: "600", color: theme.text }}>{menu.title}</span>
@@ -3354,14 +3352,13 @@ color: "#fff", border: "none", cursor: "pointer",
                   ))}
                 </div>
 
-                {/* 4. 고객 지원 메뉴 리스트 */}
-                <div style={{ borderTop: `8px solid ${theme.sidebar}` }} />
-                <div style={{ backgroundColor: theme.panel, display: "flex", flexDirection: "column" }}>
+                {/* 3. 고객 지원 메뉴 카드 */}
+                <div style={{ display: "flex", flexDirection: "column", backgroundColor: theme.panel, borderRadius: "20px", border: `1px solid ${theme.border}`, overflow: "hidden", boxShadow: "0 8px 24px rgba(0,0,0,0.04)" }}>
                   {[
                     { icon: <Headphones size={20} color={theme.textMuted} />, title: "고객센터 / 문의하기", onClick: () => setShowSupportModal(true) },
                     { icon: <AlertTriangle size={20} color={theme.textMuted} />, title: "공지사항", onClick: () => setShowNoticeModal(true) }
-                  ].map((menu, i) => (
-                    <div key={i} onClick={menu.onClick} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "18px 20px", cursor: "pointer", borderBottom: `1px solid ${theme.sidebar}`, transition: "background 0.2s" }} onMouseEnter={e => e.currentTarget.style.backgroundColor = theme.panelAlt} onMouseLeave={e => e.currentTarget.style.backgroundColor = "transparent"}>
+                  ].map((menu, i, arr) => (
+                    <div key={i} onClick={menu.onClick} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "18px 20px", cursor: "pointer", borderBottom: i === arr.length - 1 ? "none" : `1px solid ${theme.border}`, transition: "background 0.2s" }} onMouseEnter={e => e.currentTarget.style.backgroundColor = theme.panelAlt} onMouseLeave={e => e.currentTarget.style.backgroundColor = "transparent"}>
                       <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
                         {menu.icon}
                         <span style={{ fontSize: "0.95rem", fontWeight: "600", color: theme.text }}>{menu.title}</span>
@@ -3370,6 +3367,7 @@ color: "#fff", border: "none", cursor: "pointer",
                     </div>
                   ))}
                 </div>
+
               </div>
             )}
 
