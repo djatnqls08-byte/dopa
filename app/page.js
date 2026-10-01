@@ -1801,7 +1801,7 @@ color: "#fff", border: "none", cursor: "pointer",
               {isLoading ? "서막을 여는 중..." : "▶ 이야기 시작하기"}
             </button>
             </div> {/* 🌟 로비(Lobby) 화면 묶음 닫기 */}
-
+          )}
             <div style={{ height: "60px", flexShrink: 0 }} />
           </main>
 
