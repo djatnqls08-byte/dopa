@@ -10,9 +10,9 @@ import {
   Menu, Moon, Sun, Save, FileUp, HelpCircle, X, ChevronDown, ChevronUp, Image as ImageIcon,
   ClipboardList, Pin, FileSearch, Mailbox, Play,
   FolderOpen, Lock, Settings, Database, ClipboardPaste, LogOut,
-  ArrowUp, Smartphone, BookOpen, Dices, ChevronLeft, ChevronRight,
+  ArrowUp, Smartphone, BookOpen, Dices, ChevronLeft, ChevronRight, UploadCloud, AlertTriangle, CheckCircle2,
   Brain, Skull, Eye, Activity, ShieldAlert, ToggleLeft, ToggleRight, Plus, Minus, Ghost,
-  Trash2, Clock, Tag
+  Trash2, Clock, Tag, Droplet
 } from "lucide-react";
 
 const THEME_PALETTES = {
@@ -256,6 +256,23 @@ const handleDeleteFromLibrary = (id) => {
   const [showCgModal, setShowCgModal] = useState(false); // 🖼️ CG 팝업 스위치
   const [activeCgId, setActiveCgId] = useState(null); // 🖼️ 현재 선택된 CG 아이디
 
+ // ── [탐색 탭 UI 미리보기용 더미 데이터] ──
+const EXPLORE_SCENARIOS = [
+  { id: 101, title: "재로 덮인 요람", mode: "괴담", author: "에쉬우드", likes: "1.2K", plays: "5.4K", isOriginal: true },
+  { id: 102, title: "달그림자 경매장의 밤", mode: "연애", author: "라이리스", likes: "890", plays: "3.2K", isOriginal: false },
+  { id: 103, title: "시간의 톱니바퀴", mode: "추리", author: "크로노스", likes: "2.5K", plays: "12K", isOriginal: true },
+  { id: 104, title: "방과 후 미라클", mode: "추리", author: "아카데미", likes: "450", plays: "1.1K", isOriginal: false }
+];
+
+// ── [탐색 탭 상세 페이지용 상태] ──
+const [selectedExploreScenario, setSelectedExploreScenario] = useState(null);
+const [exploreDetailTab, setExploreDetailTab] = useState("소개"); // 소개 탭 vs 주요 인물 탭
+ // ── [업로드(퍼블리싱) 폼 상태] ──
+const [uploadingScenario, setUploadingScenario] = useState(null); // 서재에서 업로드할 시나리오 객체
+ // ── [탐색 라운지 전용 검색/필터 상태] ──
+const [exploreSearchQuery, setExploreSearchQuery] = useState("");
+const [exploreFilter, setExploreFilter] = useState("추천"); // 추천, 추리, 연애, 괴담
+ 
   // ── [7. 인게임 UI 토글 상태 관리 (누락된 변수 추가)] ──
   const [isPhoneDrawerOpen, setIsPhoneDrawerOpen] = useState(false);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
@@ -774,22 +791,124 @@ const handleDeleteFromLibrary = (id) => {
           <main style={{ flex: 1, overflowY: "auto", padding: isMobile ? "16px 14px 140px 14px" : "20px 16px 160px 16px", maxWidth: "860px", margin: "0 auto", width: "100%", display: "flex", flexDirection: "column", gap: isMobile ? "14px" : "18px", boxSizing: "border-box" }}>
 
 {/* 🧭 탐색 (Explore) 탭 화면 */}
-            {activeTab === "explore" && (
-              <div style={{ display: "flex", flexDirection: "column", gap: "16px", animation: "fadeIn 0.2s ease-out" }}>
-                <div style={{ ...GLASS_STYLE, padding: "24px", backgroundColor: theme.panel, borderRadius: "18px", border: `1px solid ${theme.border}`, display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", gap: "12px" }}>
-                  <div style={{ backgroundColor: theme.panelAlt, padding: "16px", borderRadius: "50%", color: theme.accent }}>
-                    <Search size={40} strokeWidth={1.5} />
-                  </div>
-                  <div style={{ fontWeight: "700", fontSize: "1.1rem", color: theme.text }}>
-                    시나리오 라운지
-                  </div>
-                  <div style={{ fontSize: "0.82rem", color: theme.textMuted, lineHeight: "1.5", maxWidth: "300px" }}>
-                    다른 창작자들이 배포한 다양한 시나리오를 둘러보고 내 서재로 가져올 수 있습니다. (쇼케이스 준비 중)
-                  </div>
-                </div>
-              </div>
-            )}
+            {activeTab === "explore" && (() => {
+              // 🌟 탐색 라운지 필터링 로직
+              const filteredExplore = EXPLORE_SCENARIOS.filter(scen => {
+                const matchFilter = exploreFilter === "추천" || scen.mode === exploreFilter;
+                const matchSearch = scen.title.toLowerCase().includes(exploreSearchQuery.toLowerCase()) || scen.author.toLowerCase().includes(exploreSearchQuery.toLowerCase());
+                return matchFilter && matchSearch;
+              });
 
+              return (
+                <div style={{ display: "flex", flexDirection: "column", gap: "24px", animation: "fadeIn 0.2s ease-out", paddingBottom: "20px" }}>
+                  
+                  {/* 1. 상단 검색바 및 잉크 잔액 */}
+                  <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                    <div style={{ flex: 1, display: "flex", alignItems: "center", backgroundColor: theme.panel, border: `1px solid ${theme.border}`, borderRadius: "16px", padding: "0 14px", height: "48px", boxShadow: "0 4px 12px rgba(0,0,0,0.03)" }}>
+                      <Search size={18} color={theme.textMuted} />
+                      <input 
+                        type="text" 
+                        autoComplete="off" 
+                        value={exploreSearchQuery}
+                        onChange={(e) => setExploreSearchQuery(e.target.value)}
+                        placeholder="어떤 사건을 찾으시나요?" 
+                        style={{ flex: 1, height: "100%", border: "none", backgroundColor: "transparent", color: theme.text, fontSize: "0.9rem", outline: "none", paddingLeft: "10px" }} 
+                      />
+                    </div>
+                    {/* 💧 잉크 잔액 표시 */}
+                    <div style={{ display: "flex", alignItems: "center", gap: "6px", backgroundColor: theme.panelAlt, border: `1px solid ${theme.borderHighlight}`, padding: "0 14px", height: "48px", borderRadius: "16px", fontWeight: "800", fontSize: "0.9rem", color: theme.text }}>
+                      <Droplet size={18} strokeWidth={2.5} color={theme.accent} /> 1,200
+                    </div>
+                  </div>
+
+                  {/* 2. 히어로 배너 (추천 탭일 때만 표시) */}
+                  {exploreFilter === "추천" && !exploreSearchQuery && (
+                    <div style={{ ...GLASS_STYLE, width: "100%", aspectRatio: "16/9", backgroundColor: theme.panel, borderRadius: "20px", overflow: "hidden", position: "relative", border: `1px solid ${theme.borderHighlight}`, boxShadow: "0 12px 30px rgba(0,0,0,0.08)", cursor: "pointer" }}>
+                      <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.2) 50%, transparent 100%)", zIndex: 1 }} />
+                      <div style={{ width: "100%", height: "100%", backgroundColor: isDarkMode ? "#292524" : "#e7e5e4", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        <ImageIcon size={48} color={theme.textMuted} opacity={0.3} />
+                      </div>
+                      <div style={{ position: "absolute", bottom: "0", left: "0", right: "0", padding: "20px", zIndex: 2, display: "flex", flexDirection: "column", gap: "8px" }}>
+                        <span style={{ backgroundColor: theme.accent, color: "#fff", padding: "4px 10px", borderRadius: "8px", fontSize: "0.7rem", fontWeight: "800", width: "fit-content" }}>에디터 추천</span>
+                        <h2 style={{ margin: 0, color: "#fff", fontSize: "1.4rem", fontWeight: "800", textShadow: "0 2px 4px rgba(0,0,0,0.5)" }}>천명, 하늘이 정한 삶</h2>
+                        <p style={{ margin: 0, color: "rgba(255,255,255,0.85)", fontSize: "0.85rem", textShadow: "0 1px 2px rgba(0,0,0,0.5)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>소년 앞의 남은 목숨은 1년이다.</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 3. 카테고리 필터 탭 */}
+                  <div style={{ display: "flex", gap: "8px", overflowX: "auto", paddingBottom: "4px", WebkitOverflowScrolling: "touch" }}>
+                    {["추천", "추리", "연애", "괴담"].map((f) => (
+                      <button 
+                        key={f} 
+                        onClick={() => setExploreFilter(f)}
+                        style={{ padding: "10px 18px", borderRadius: "20px", border: `1px solid ${exploreFilter === f ? theme.accent : theme.border}`, backgroundColor: exploreFilter === f ? theme.accent : theme.panel, color: exploreFilter === f ? (isDarkMode ? "#1a1817" : "#fff") : theme.text, fontSize: "0.85rem", fontWeight: "700", cursor: "pointer", whiteSpace: "nowrap", transition: "all 0.2s", boxShadow: exploreFilter === f ? `0 4px 12px ${theme.accentGlow}` : "none" }}
+                      >
+                        {f}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* 4. 섹션: 시나리오 리스트 */}
+                  <div style={{ display: "flex", flexDirection: "column", gap: "16px", marginTop: "8px" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0 4px" }}>
+                      <span style={{ fontSize: "1.1rem", fontWeight: "800", color: theme.text }}>
+                        {exploreSearchQuery ? `'${exploreSearchQuery}' 검색 결과` : exploreFilter === "추천" ? "실시간 인기 서류철" : `${exploreFilter} 시나리오`}
+                      </span>
+                      {!exploreSearchQuery && (
+                        <span style={{ fontSize: "0.8rem", fontWeight: "700", color: theme.textMuted, cursor: "pointer", display: "flex", alignItems: "center" }}>
+                          전체보기 <ChevronRight size={16} strokeWidth={2.5} />
+                        </span>
+                      )}
+                    </div>
+                    
+                    {filteredExplore.length === 0 ? (
+                       <div style={{ padding: "40px 20px", textAlign: "center", color: theme.textMuted, fontSize: "0.9rem", backgroundColor: theme.panelAlt, borderRadius: "16px", border: `1px dashed ${theme.border}` }}>
+                         조건에 맞는 시나리오가 없습니다.
+                       </div>
+                    ) : (
+                      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(4, 1fr)", gap: "14px" }}>
+                        {filteredExplore.map(scen => (
+                          <div key={scen.id} onClick={() => setSelectedExploreScenario(scen)} style={{ display: "flex", flexDirection: "column", gap: "10px", cursor: "pointer" }}>
+                            
+                            {/* 16:9 카드 썸네일 */}
+                            <div style={{ width: "100%", aspectRatio: "16/9", backgroundColor: theme.panelAlt, borderRadius: "14px", overflow: "hidden", border: `1px solid ${theme.border}`, position: "relative", boxShadow: "0 4px 12px rgba(0,0,0,0.04)" }}>
+                              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "100%", height: "100%", color: theme.textMuted }}>
+                                <ImageIcon size={28} strokeWidth={1.5} opacity={0.4} />
+                              </div>
+                              
+                              <div style={{ position: "absolute", top: "8px", left: "8px", backgroundColor: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)", padding: "4px 8px", borderRadius: "6px", color: "#fff", fontSize: "0.65rem", fontWeight: "700", display: "flex", alignItems: "center", gap: "4px" }}>
+                                {scen.mode === "추리" ? <Search size={10} strokeWidth={3} /> : scen.mode === "연애" ? <Heart size={10} strokeWidth={3} /> : <Flame size={10} strokeWidth={3} />}
+                                {scen.mode}
+                              </div>
+
+                              {scen.isOriginal && (
+                                <div style={{ position: "absolute", top: "8px", right: "8px", backgroundColor: theme.accent, padding: "4px 6px", borderRadius: "6px", color: isDarkMode ? "#1a1817" : "#fff", fontSize: "0.6rem", fontWeight: "800" }}>
+                                  ORIGINAL
+                                </div>
+                              )}
+                            </div>
+
+                            {/* 카드 정보 */}
+                            <div style={{ display: "flex", flexDirection: "column", gap: "4px", padding: "0 4px" }}>
+                              <span style={{ fontSize: "0.95rem", fontWeight: "800", color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{scen.title}</span>
+                              <span style={{ fontSize: "0.75rem", color: theme.textMuted, fontWeight: "600" }}>{scen.author}</span>
+                              <div style={{ display: "flex", alignItems: "center", gap: "10px", marginTop: "2px", fontSize: "0.72rem", color: theme.textMuted, fontWeight: "700" }}>
+                                <span style={{ display: "flex", alignItems: "center", gap: "3px" }}><Heart size={13} strokeWidth={2.5} /> {scen.likes}</span>
+                                <span style={{ display: "flex", alignItems: "center", gap: "3px" }}><Play size={13} strokeWidth={2.5} /> {scen.plays}</span>
+                              </div>
+                            </div>
+
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                </div>
+              );
+            })()}
+             
             {/* 👤 내정보 (Profile) 탭 화면 */}
             {activeTab === "profile" && (
               <div style={{ display: "flex", flexDirection: "column", gap: "16px", animation: "fadeIn 0.2s ease-out" }}>
@@ -887,16 +1006,20 @@ const handleDeleteFromLibrary = (id) => {
                               <div style={{ display: "flex", alignItems: "center", gap: "6px", color: theme.textMuted, fontSize: "0.75rem", fontWeight: "500" }}>
                                 <Clock size={14} strokeWidth={2} /> {scen.date}
                               </div>
-                              <div style={{ display: "flex", gap: "8px" }}>
-                                {/* 🌟 팝업 대신 로비 탭으로 데이터를 밀어넣는 폴더 열기(불러오기) 버튼 */}
-                                <button title="로비로 불러와서 세팅/시작하기" onClick={() => handleLoadFromLibrary(scen)} style={{ background: "none", border: "none", color: theme.accent, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: "4px" }}>
-                                  <FolderOpen size={18} strokeWidth={2.5} />
-                                </button>
-                                {/* 삭제 버튼 */}
-                                <button title="서류 폐기" onClick={() => handleDeleteFromLibrary(scen.id)} style={{ background: "none", border: "none", color: theme.textMuted, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: "4px" }}>
-                                  <Trash2 size={18} strokeWidth={2} />
-                                </button>
-                              </div>
+<div style={{ display: "flex", gap: "8px" }}>
+  <button title="로비로 불러와서 세팅/시작하기" onClick={() => handleLoadFromLibrary(scen)} style={{ background: "none", border: "none", color: theme.accent, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: "4px" }}>
+    <FolderOpen size={18} strokeWidth={2.5} />
+  </button>
+  
+  {/* 🌟 탐색 라운지에 공유(업로드)하기 버튼 */}
+  <button title="라운지에 시나리오 공유/업로드" onClick={() => setUploadingScenario(scen)} style={{ background: "none", border: "none", color: "#60a5fa", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: "4px" }}>
+    <UploadCloud size={19} strokeWidth={2.5} />
+  </button>
+
+  <button title="서류 폐기" onClick={() => handleDeleteFromLibrary(scen.id)} style={{ background: "none", border: "none", color: theme.textMuted, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: "4px" }}>
+    <Trash2 size={18} strokeWidth={2} />
+  </button>
+</div>
                             </div>
                           </div>
                         </div>
@@ -2484,6 +2607,255 @@ color: "#fff", border: "none", cursor: "pointer",
               <button onClick={() => setShowTraitModal(false)} style={{ width: "100%", padding: "14px", backgroundColor: theme.accent, color: isDarkMode ? "#1a1817" : "#fff", border: "none", borderRadius: "12px", fontSize: "0.9rem", fontWeight: "700", cursor: "pointer", marginTop: "4px" }}>
                 선택 완료
               </button>
+            </div>
+          </div>
+        )}
+
+{/* 🧭 탐색 탭: 시나리오 상세 페이지 전체 화면 오버레이 */}
+        {selectedExploreScenario && (
+          <div style={{ position: "fixed", inset: 0, backgroundColor: theme.panel, zIndex: 300, display: "flex", flexDirection: "column", animation: "slideUp 0.3s cubic-bezier(0.2, 0.8, 0.2, 1)", overflow: "hidden" }}>
+            
+            {/* 상단 투명 헤더 (뒤로가기 버튼) */}
+            <div style={{ position: "absolute", top: 0, left: 0, right: 0, padding: "16px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", zIndex: 10, background: "linear-gradient(to bottom, rgba(0,0,0,0.6) 0%, transparent 100%)" }}>
+              <button onClick={() => setSelectedExploreScenario(null)} style={{ background: "rgba(0,0,0,0.4)", backdropFilter: "blur(8px)", border: `1px solid rgba(255,255,255,0.1)`, color: "#fff", width: "42px", height: "42px", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", transition: "transform 0.2s" }} onMouseEnter={e => e.currentTarget.style.transform = "scale(1.05)"} onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}>
+                <ChevronLeft size={24} strokeWidth={2.5} />
+              </button>
+            </div>
+
+            <div style={{ flex: 1, overflowY: "auto", paddingBottom: "100px", WebkitOverflowScrolling: "touch" }}>
+              {/* 🌟 메인 커버 이미지 (16:9 풀사이즈) */}
+              <div style={{ width: "100%", aspectRatio: "16/9", backgroundColor: theme.panelAlt, position: "relative" }}>
+                 <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", color: theme.textMuted }}>
+                   <ImageIcon size={48} opacity={0.3} />
+                 </div>
+                 {/* 이미지 소스가 있다면 여기에 <img> 태그 배치 */}
+              </div>
+
+              {/* 제목 및 핵심 정보 구역 */}
+              <div style={{ padding: "24px 20px", display: "flex", flexDirection: "column", gap: "12px", borderBottom: `8px solid ${theme.sidebar}` }}>
+                 <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                   <span style={{ backgroundColor: theme.accent, color: isDarkMode ? "#1a1817" : "#fff", padding: "4px 10px", borderRadius: "6px", fontSize: "0.75rem", fontWeight: "800", display: "flex", alignItems: "center", gap: "4px" }}>
+                     {selectedExploreScenario.mode === "추리" ? <Search size={12} strokeWidth={3} /> : selectedExploreScenario.mode === "연애" ? <Heart size={12} strokeWidth={3} /> : <Flame size={12} strokeWidth={3} />}
+                     {selectedExploreScenario.mode}
+                   </span>
+                   {selectedExploreScenario.isOriginal && (
+                     <span style={{ backgroundColor: theme.panelAlt, border: `1px solid ${theme.borderHighlight}`, color: theme.text, padding: "4px 8px", borderRadius: "6px", fontSize: "0.7rem", fontWeight: "800" }}>
+                       공식 오리지널
+                     </span>
+                   )}
+                 </div>
+                 <h1 style={{ margin: 0, fontSize: "1.6rem", fontWeight: "800", color: theme.text, lineHeight: 1.3, letterSpacing: "-0.5px" }}>
+                   {selectedExploreScenario.title}
+                 </h1>
+                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "4px" }}>
+                   <span style={{ fontSize: "0.9rem", color: theme.textMuted, fontWeight: "700" }}>제작: {selectedExploreScenario.author}</span>
+                   <div style={{ display: "flex", gap: "12px", fontSize: "0.85rem", color: theme.textMuted, fontWeight: "800" }}>
+                     <span style={{ display: "flex", alignItems: "center", gap: "4px" }}><Heart size={16} color={theme.danger} fill={theme.danger} /> {selectedExploreScenario.likes}</span>
+                     <span style={{ display: "flex", alignItems: "center", gap: "4px" }}><Play size={16} color={theme.accent} fill={theme.accent} /> {selectedExploreScenario.plays}</span>
+                   </div>
+                 </div>
+              </div>
+
+              {/* 하단 탭 메뉴 (소개 / 주요 인물) */}
+              <div style={{ display: "flex", borderBottom: `1px solid ${theme.border}`, padding: "0 10px" }}>
+                {["소개", "주요 인물"].map(tab => (
+                  <button key={tab} onClick={() => setExploreDetailTab(tab)} style={{ flex: 1, padding: "16px", background: "none", border: "none", borderBottom: exploreDetailTab === tab ? `3px solid ${theme.accent}` : "3px solid transparent", color: exploreDetailTab === tab ? theme.text : theme.textMuted, fontSize: "0.95rem", fontWeight: "800", cursor: "pointer", transition: "all 0.2s" }}>
+                    {tab}
+                  </button>
+                ))}
+              </div>
+
+              {/* 탭 내용 영역 */}
+              <div style={{ padding: "24px 20px" }}>
+                {exploreDetailTab === "소개" && (
+                  <div style={{ display: "flex", flexDirection: "column", gap: "28px" }}>
+                    <div style={{ fontSize: "0.95rem", color: theme.text, lineHeight: 1.8, fontWeight: "500" }}>
+                      명문 사립 아카데미의 숨겨진 지하실.<br/><br/>
+                      어느 날부터 밤마다 기괴한 소문이 들려오고, 당신은 진상을 파헤치기 위해 금지된 구역으로 향한다. 그곳에서 마주친 것은 과거에 묻혔던 끔찍한 진실과, 누구에게도 말할 수 없는 비밀을 간직한 이들이었다.
+                    </div>
+                    
+                    {/* 🌟 트리거 워닝 박스 */}
+                    <div style={{ backgroundColor: isDarkMode ? "rgba(220, 38, 38, 0.08)" : "#fef2f2", border: `1px solid ${theme.danger}`, borderRadius: "16px", padding: "16px", display: "flex", flexDirection: "column", gap: "10px" }}>
+                      <span style={{ display: "flex", alignItems: "center", gap: "6px", color: theme.danger, fontWeight: "800", fontSize: "0.9rem" }}>
+                        <ShieldAlert size={18} strokeWidth={2.5} /> 이용 전 주의사항
+                      </span>
+                      <div style={{ fontSize: "0.82rem", color: theme.text, lineHeight: 1.6, fontWeight: "500" }}>
+                        본 작품은 유혈 묘사 및 신체 훼손, 폐쇄 공포를 유발할 수 있는 내용이 포함되어 있습니다. 심약자는 이용에 주의해 주시기 바랍니다.
+                      </div>
+                    </div>
+
+                    {/* 이용 안내 및 잉크 차감 정보 */}
+                    <div style={{ display: "flex", flexDirection: "column", gap: "12px", padding: "20px", backgroundColor: theme.panelAlt, borderRadius: "16px", border: `1px solid ${theme.borderHighlight}` }}>
+                      <span style={{ fontWeight: "800", fontSize: "1rem", color: theme.text }}>이용 안내</span>
+                      <ul style={{ margin: 0, paddingLeft: "22px", fontSize: "0.85rem", color: theme.textMuted, lineHeight: 1.8, display: "flex", flexDirection: "column", gap: "8px", fontWeight: "500" }}>
+                        <li>1회 행동 선언 및 진행: <strong style={{ color: theme.text }}>10 잉크 차감</strong></li>
+                        <li>최초 진입 시 서막(오프닝)은 무료로 제공됩니다.</li>
+                        <li>서재로 다운로드한 후 언제든 이어서 플레이할 수 있습니다.</li>
+                      </ul>
+                    </div>
+                  </div>
+                )}
+
+                {exploreDetailTab === "주요 인물" && (
+                  <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                    {/* KPC/PC 용어 완전 배제, 깔끔한 1:1 썸네일 리스트 */}
+                    {[
+                      { name: "세라", job: "미스터리 동아리 부장", desc: "언제나 완벽을 추구하지만, 무언가 큰 실수를 숨기고 있는 듯하다." },
+                      { name: "진우", job: "아카데미 학생회장", desc: "사건의 중심에 서 있는 의문의 소년. 속을 알 수 없는 미소로 일관한다." }
+                    ].map((npc, idx) => (
+                      <div key={idx} style={{ display: "flex", gap: "16px", padding: "16px", backgroundColor: theme.panelAlt, borderRadius: "16px", border: `1px solid ${theme.border}` }}>
+                        <div style={{ width: "70px", height: "70px", borderRadius: "14px", backgroundColor: theme.inputBg, border: `1px solid ${theme.borderHighlight}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                           <ImageIcon size={24} color={theme.textMuted} />
+                        </div>
+                        <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "6px", justifyContent: "center" }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                            <span style={{ fontWeight: "800", fontSize: "1rem", color: theme.text }}>{npc.name}</span>
+                            <span style={{ fontSize: "0.75rem", color: theme.textMuted, fontWeight: "700", borderLeft: `1px solid ${theme.borderHighlight}`, paddingLeft: "8px" }}>{npc.job}</span>
+                          </div>
+                          <div style={{ fontSize: "0.82rem", color: theme.text, lineHeight: 1.5, opacity: 0.9 }}>
+                            {npc.desc}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+{/* ☁️ 서재 -> 탐색 라운지: 시나리오 퍼블리싱(업로드) 전체 화면 폼 */}
+        {uploadingScenario && (
+          <div style={{ position: "fixed", inset: 0, backgroundColor: theme.bg, zIndex: 400, display: "flex", flexDirection: "column", animation: "slideUp 0.3s cubic-bezier(0.2, 0.8, 0.2, 1)", overflow: "hidden" }}>
+            
+            {/* 상단 헤더 */}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 20px", borderBottom: `1px solid ${theme.border}`, backgroundColor: theme.panel }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                <button onClick={() => setUploadingScenario(null)} style={{ background: "none", border: "none", color: theme.text, cursor: "pointer", display: "flex", alignItems: "center", padding: 0 }}>
+                  <ChevronLeft size={28} strokeWidth={2} />
+                </button>
+                <span style={{ fontWeight: "800", fontSize: "1.1rem", color: theme.text }}>라운지 업로드 신청</span>
+              </div>
+              <button 
+                onClick={() => {
+                  setUploadingScenario(null);
+                  triggerToast("심사 대기", "운영자 심사 후 라운지에 공개됩니다.", <CheckCircle2 size={18} color={theme.success} />);
+                }}
+                style={{ padding: "8px 16px", backgroundColor: theme.accent, border: "none", borderRadius: "10px", color: isDarkMode ? "#1a1817" : "#fff", fontWeight: "800", fontSize: "0.85rem", cursor: "pointer", boxShadow: `0 4px 12px ${theme.accentGlow}` }}
+              >
+                심사 요청
+              </button>
+            </div>
+
+            <div style={{ flex: 1, overflowY: "auto", padding: "20px", display: "flex", flexDirection: "column", gap: "24px", maxWidth: "720px", margin: "0 auto", width: "100%", boxSizing: "border-box" }}>
+              
+              {/* 시나리오 기본 정보 요약 (수정 불가, 서재 데이터 연동) */}
+              <div style={{ display: "flex", gap: "16px", padding: "16px", backgroundColor: theme.panel, borderRadius: "16px", border: `1px solid ${theme.border}` }}>
+                <div style={{ width: "80px", aspectRatio: "16/9", backgroundColor: theme.panelAlt, borderRadius: "8px", overflow: "hidden", border: `1px solid ${theme.borderHighlight}`, flexShrink: 0 }}>
+                  {uploadingScenario.imageUrl ? <img src={uploadingScenario.imageUrl} alt="커버" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <div style={{ display: "flex", width: "100%", height: "100%", alignItems: "center", justifyContent: "center" }}><ImageIcon size={20} color={theme.textMuted} /></div>}
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: "6px", justifyContent: "center" }}>
+                  <span style={{ fontSize: "1.05rem", fontWeight: "800", color: theme.text }}>{uploadingScenario.title}</span>
+                  <span style={{ fontSize: "0.75rem", fontWeight: "700", color: theme.textMuted }}>모드: {uploadingScenario.mode}</span>
+                </div>
+              </div>
+
+              {/* 소개글 작성란 */}
+              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                <label style={{ fontSize: "0.85rem", fontWeight: "800", color: theme.text, marginLeft: "4px" }}>탐색 라운지 공개 소개글</label>
+                <textarea 
+                  rows={5} 
+                  placeholder="라운지 상세 페이지에 노출될 매력적인 시놉시스와 소개를 작성해주세요." 
+                  style={{ width: "100%", boxSizing: "border-box", padding: "14px", borderRadius: "12px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.9rem", resize: "vertical", outline: "none", lineHeight: 1.6 }} 
+                />
+              </div>
+
+              {/* 트리거 워닝 (경고문) 작성란 */}
+              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                <label style={{ fontSize: "0.85rem", fontWeight: "800", color: theme.danger, marginLeft: "4px", display: "flex", alignItems: "center", gap: "4px" }}>
+                  <AlertTriangle size={16} strokeWidth={2.5} /> 열람 주의사항 (트리거 워닝)
+                </label>
+                <textarea 
+                  rows={2} 
+                  placeholder="유혈, 폭력성, 특정 공포증 유발 등 열람 전 주의가 필요한 요소가 있다면 반드시 기재해주세요." 
+                  style={{ width: "100%", boxSizing: "border-box", padding: "14px", borderRadius: "12px", border: `1px solid rgba(220, 38, 38, 0.4)`, backgroundColor: isDarkMode ? "rgba(220, 38, 38, 0.05)" : "#fef2f2", color: theme.text, fontSize: "0.9rem", resize: "vertical", outline: "none", lineHeight: 1.6 }} 
+                />
+              </div>
+
+              {/* 등장인물 공개 설정란 */}
+              <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                <label style={{ fontSize: "0.85rem", fontWeight: "800", color: theme.text, marginLeft: "4px" }}>주요 인물 공개 설정</label>
+                <div style={{ fontSize: "0.75rem", color: theme.textMuted, marginLeft: "4px" }}>라운지에 프로필을 노출할 인물을 선택하세요. (스포일러 인물은 숨김 권장)</div>
+                <div style={{ display: "flex", flexDirection: "column", gap: "8px", backgroundColor: theme.panelAlt, padding: "16px", borderRadius: "16px", border: `1px solid ${theme.borderHighlight}` }}>
+                  {uploadingScenario.data?.suspects?.length > 0 ? (
+                    uploadingScenario.data.suspects.map((npc, idx) => (
+                      <label key={idx} style={{ display: "flex", alignItems: "center", gap: "10px", cursor: "pointer", padding: "8px", borderRadius: "8px", transition: "background 0.2s" }} onMouseEnter={e => e.currentTarget.style.backgroundColor = theme.inputBg} onMouseLeave={e => e.currentTarget.style.backgroundColor = "transparent"}>
+                        <input type="checkbox" defaultChecked={true} style={{ width: "16px", height: "16px", accentColor: theme.accent, cursor: "pointer" }} />
+                        <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+                          <span style={{ fontSize: "0.9rem", fontWeight: "700", color: theme.text }}>{npc.name}</span>
+                          <span style={{ fontSize: "0.7rem", color: theme.textMuted }}>{npc.job}</span>
+                        </div>
+                      </label>
+                    ))
+                  ) : (
+                    <div style={{ fontSize: "0.8rem", color: theme.textMuted, textAlign: "center", padding: "10px 0" }}>등록된 인물이 없습니다.</div>
+                  )}
+                </div>
+              </div>
+
+            </div>
+          </div>
+        )}
+
+           {/* 🌟 하단 플로팅 액션 바 */}
+            <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "16px 20px max(16px, env(safe-area-inset-bottom))", background: `linear-gradient(to top, ${theme.panel} 70%, transparent 100%)`, display: "flex", gap: "12px", zIndex: 20 }}>
+               
+               <button 
+                 onClick={() => {
+                   // 이미 서재에 있는지 검사
+                   if (savedLibrary.some(s => s.title === selectedExploreScenario.title)) {
+                     triggerToast("다운로드 안내", "이미 내 서재에 보관된 서류철입니다.", "💡");
+                     return;
+                   }
+                   
+                   // 서재용 데이터 형식으로 변환하여 저장
+                   const newDownloadedScenario = {
+                     id: Date.now(),
+                     title: selectedExploreScenario.title,
+                     mode: selectedExploreScenario.mode,
+                     date: new Date().toLocaleString("ko-KR", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" }),
+                     imageUrl: "", 
+                     isDownloaded: true, // 🌟 다운로드 뱃지 활성화 플래그
+                     data: { 
+                       publicSynopsis: "라운지에서 다운로드한 시나리오입니다.",
+                       // (실제 백엔드 연동 시, 여기에 제작자가 세팅한 NPC, 단서 배열들이 들어옵니다.)
+                     }
+                   };
+                   
+                   const updatedLibrary = [newDownloadedScenario, ...savedLibrary];
+                   setSavedLibrary(updatedLibrary);
+                   localStorage.setItem("secret_novel_library", JSON.stringify(updatedLibrary));
+                   
+                   triggerToast("다운로드 완료", "성공적으로 내 서재에 보관되었습니다.", <FileUp size={18} color={theme.accent} />);
+                 }} 
+                 title="서재에 담기" 
+                 style={{ width: "56px", height: "56px", display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: theme.panelAlt, border: `1.5px solid ${theme.borderHighlight}`, borderRadius: "16px", cursor: "pointer", flexShrink: 0, color: theme.text, transition: "background 0.2s" }} 
+                 onMouseEnter={e => e.currentTarget.style.backgroundColor = theme.inputBg} 
+                 onMouseLeave={e => e.currentTarget.style.backgroundColor = theme.panelAlt}
+               >
+                 <FileUp size={24} strokeWidth={2} />
+               </button>
+               
+               <button 
+                 onClick={() => triggerToast("플레이", "서재에서 세팅 후 시작할 수 있습니다.", <Play size={18} color="#fff"/>)}
+                 style={{ flex: 1, height: "56px", backgroundColor: theme.accent, border: "none", borderRadius: "16px", color: isDarkMode ? "#1a1817" : "#fff", fontSize: "1.05rem", fontWeight: "800", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", cursor: "pointer", boxShadow: `0 8px 24px ${theme.accentGlow}`, transition: "transform 0.2s" }} 
+                 onMouseEnter={e => e.currentTarget.style.transform = "scale(1.02)"} 
+                 onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}
+               >
+                 <Play size={20} strokeWidth={3} /> 바로 플레이
+                 <span style={{ fontSize: "0.8rem", opacity: 0.9, marginLeft: "4px", display: "flex", alignItems: "center", gap: "2px", backgroundColor: "rgba(0,0,0,0.15)", padding: "2px 8px", borderRadius: "10px" }}>
+                   <Droplet size={12} strokeWidth={2.5} fill="currentColor" /> 10 잉크
+                 </span>
+               </button>
             </div>
           </div>
         )}
