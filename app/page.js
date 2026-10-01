@@ -985,17 +985,37 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
     setActiveSessionId(newId);
     setIsLoading(true);
 
-    const openingPrompt = `[세션 시작: 추리/수사 모드 사전 교류 서막 요청]
+    let openingPrompt = "";
+
+    if (newSession.ruleMode === "dating") {
+      openingPrompt = `[세션 시작: 연애 모드 서막 요청]
+시나리오의 [초기 배경/서막]을 플레이어가 몰입할 수 있는 도입부 지문으로 서술하십시오.
+[절대 수칙]
+1. 메타 정보, 괄호 속 해설 등 스포일러를 절대 노출하지 마십시오.
+2. 오직 주인공 '${pName}'의 시점에서 현장 분위기, 인물 간의 시선과 공기의 온도를 4~5문장으로 묘사하십시오.
+3. 지문 끝에 주인공이 취할 만한 선택지 3개를 반드시 출력하십시오:
+<!-- SUGGESTIONS: ["선택지 1", "선택지 2", "선택지 3"] -->`;
+    } else if (newSession.ruleMode === "freeform") {
+      openingPrompt = `[세션 시작: 추리/수사 모드 사전 교류 서막 요청]
 시나리오의 [초기 배경/서막]에 참혹한 사건이나 본격적인 갈등이 적혀 있더라도, 1턴부터 바로 사건을 터뜨리지 마십시오.
 대신 사건이 발생하기 전, 인물들이 한 공간에 모여 일상적인 대화를 나누거나 묘한 긴장감이 흐르는 '폭풍전야'의 시점(명탐정 코난, 소년탐정 김전일의 에피소드 초반부처럼)으로 서막을 시작하십시오.
 
-[🚨 도입부 연출 수칙]
+[도입부 연출 수칙]
 1. [사건 발생 전 상황 조성]:
 - 본격적인 사건이 터지기 전, 인물들의 성격과 관계성을 엿볼 수 있는 상황을 4~5문장으로 서술하십시오.
 2. [인물과의 첫 대면 기회 제공]:
 - 주인공 '${pName}'이 자리에 합류하여 주변 용의자 중 한 명과 가볍게 눈인사를 나누거나 첫마디를 건넬 수 있는 타이밍에서 지문을 멈추십시오.
 3. [자연스러운 대화 유도 선택지]:
 <!-- SUGGESTIONS: ["가까이 있는 인물에게 다가가 가볍게 인사를 건넨다", "자리에 모인 인물들의 낯빛과 기류를 살핀다", "조용히 주변을 둘러보며 자리를 잡는다"] -->`;
+    } else if (newSession.ruleMode === "horror") {
+      openingPrompt = `[세션 시작: 괴담 모드 서막 요청]
+시나리오의 [초기 배경/서막]을 기괴하고 서늘한 분위기로 윤색하여 서술하십시오.
+[절대 수칙]
+1. 괴이의 정체를 미리 밝히지 말고, 시각/청각적인 불쾌감과 서늘한 징조만을 4~5문장으로 서술하십시오.
+2. 주인공 '${pName}'이 미지의 존재에 대한 압박감을 느낄 수 있도록 묘사하십시오.
+3. 지문 끝에 행동을 위한 선택지 3개를 출력하십시오:
+<!-- SUGGESTIONS: ["주변을 조심스레 살펴본다", "불길한 징조의 흔적을 쫓는다", "기척에 귀를 기울인다"] -->`;
+    }
 
     const controller = new AbortController();
     setAbortController(controller);
@@ -1063,13 +1083,25 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
     try {
       const messagesForApi = updatedMessages.slice(-20).map(m => ({ role: m.role, text: m.text }));
 
+      // 🌟 [추가] 3대 모드 전용 동적 마스터링 룰(AI 지시문) 실시간 조립
+      let dynamicRules = `\n\n[마스터링 절대 수칙]\n1. 진상은 플레이어가 단서를 찾기 전까지 절대 누설 금지.\n2. 한 번에 한 상황씩 묘사하여 완급 조절.\n3. NPC의 행동은 플레이어의 선택에 의해서만 반응할 것.`;
+
+      if (activeSession.ruleMode === "dating") {
+        dynamicRules += `\n\n[연애 모드 수칙]\n- 호감도 변동 시 지문 끝에 <!-- AFFECTION: {"name": "인물명", "delta": 1} --> 태그를 출력.\n- 물리적 강압이나 얀데레 묘사 절대 금지. 어른스러운 거리감 유지.\n- 대화 끝에 3개의 대화 선택지(SUGGESTIONS) 제시.`;
+      } else if (activeSession.ruleMode === "freeform") {
+        dynamicRules += `\n\n[추리/수사 모드 수칙]\n- 유저가 [🔍 현장 조사], [💬 심문/추궁] 등의 액션을 선언하면 그에 맞는 단서를 묘사.\n- 새로운 물증이나 단서 발견 시 <!-- CLUE: {"name": "단서명", "desc": "설명"} --> 태그 출력.\n- 범인과 트릭은 유저가 [💡 진상 추리 선언]을 통해 스스로 맞추도록 유도.`;
+      } else if (activeSession.ruleMode === "horror") {
+        dynamicRules += `\n\n[괴담 모드 (1D10) 수칙]\n- 기괴한 현상과 심리적 압박감을 조성하되, 즉각적으로 해소시켜주지 말 것.\n- 특정 행동에 운이나 능력이 필요한 경우 "1D10 판정을 하세요"라고 안내.\n- 침식도가 도달할 만한 징조나 현상을 서늘하게 묘사할 것.`;
+      }
+
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         signal: controller.signal,
         body: JSON.stringify({
           messages: messagesForApi,
-          scenarioText: activeSession.scenarioText,
+          // 🌟 시나리오 원본 뒤에 동적 룰을 합쳐서 AI에게 전달!
+          scenarioText: activeSession.scenarioText + dynamicRules,
           playerSheet: activeSession.sheet,
           ruleMode: activeSession.ruleMode,
           playPreference: activeSession.preference
@@ -1079,20 +1111,79 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
       if (!res.ok) throw new Error("서버 응답 오류");
       const data = await res.json();
       
-      let cleanText = data.text || "";
+      let rawText = data.text || "";
       let suggActions = [];
-      const suggMatch = cleanText.match(/<!--\s*SUGGESTIONS:\s*(\[[\s\S]*?\])\s*-{1,3}>/i);
+      let newClues = [];
+      let affDeltaList = [];
+
+      // 1. SUGGESTIONS (선택지) 태그 추출
+      const suggMatch = rawText.match(/<!--\s*SUGGESTIONS:\s*(\[[\s\S]*?\])\s*-{1,3}>/i);
       if (suggMatch) {
         try { suggActions = JSON.parse(suggMatch[1]); } catch(e) {}
       }
-      // 🌟 AI가 뱉어내는 보이지 않아야 할 모든 시스템 태그(AFFECTION 등) 화면 노출 완전 차단!
-      cleanText = cleanText.replace(/<!--[\s\S]*?-->/g, "").trim();
 
-      setSessions(prev => prev.map(s => s.id === activeSessionId ? {
-        ...s,
-        messages: [...updatedMessages, { role: "model", text: cleanText }],
-        suggestedActions: suggActions
-      } : s));
+      // 2. CLUE (사건 파일/취향 수첩) 태그 추출
+      const clueRegex = /<!--\s*CLUE:\s*(\{[\s\S]*?\})\s*-{1,3}>/gi;
+      let clueMatch;
+      while ((clueMatch = clueRegex.exec(rawText)) !== null) {
+        try {
+          const clueObj = JSON.parse(clueMatch[1]);
+          if (clueObj.name) {
+            newClues.push({ id: Date.now() + Math.random(), name: clueObj.name, desc: clueObj.desc || "" });
+          }
+        } catch (e) {}
+      }
+
+      // 3. AFFECTION (호감도) 태그 추출
+      const affRegex = /<!--\s*AFFECTION:\s*(\{[\s\S]*?\})\s*-{1,3}>/gi;
+      let affMatch;
+      while ((affMatch = affRegex.exec(rawText)) !== null) {
+        try {
+          const affObj = JSON.parse(affMatch[1]);
+          if (affObj.name) {
+            affDeltaList.push({ name: affObj.name, delta: Number(affObj.delta || 0) });
+          }
+        } catch (e) {}
+      }
+
+      // 🌟 [핵심] 더 강력해진 3중 필터로 AI의 모든 시스템 태그 찌꺼기를 화면에서 완전 삭제!
+      let cleanText = rawText
+        .replace(/<!--[\s\S]*?-{1,3}>/g, "") // 정상 및 변형 주석 모두 제거
+        .replace(/<!--[\s\S]*?$/g, "") // 끝 괄호가 안 닫힌 주석까지 추적 제거
+        .trim();
+
+      // 4. 상태 업데이트 (호감도, 단서, 메시지를 세션에 반영)
+      setSessions(prev => prev.map(s => {
+        if (s.id !== activeSessionId) return s;
+
+        let updatedSheet = { ...s.sheet };
+
+        // 단서 추가 반영
+        if (newClues.length > 0) {
+          updatedSheet.clues = [...(updatedSheet.clues || []), ...newClues];
+          setTimeout(() => triggerToast("새로운 정보 획득", "수첩에 새로운 정보가 추가되었습니다."), 100);
+        }
+
+        // 호감도 추가 반영
+        if (affDeltaList.length > 0) {
+          updatedSheet.npcs = (updatedSheet.npcs || []).map(npc => {
+            const affData = affDeltaList.find(a => a.name === npc.name || npc.name.includes(a.name));
+            if (affData) {
+              const currentAff = Number(npc.affection || 0);
+              const newAff = Math.max(0, Math.min(100, currentAff + affData.delta)); // 0~100 사이 유지
+              return { ...npc, affection: newAff };
+            }
+            return npc;
+          });
+        }
+
+        return {
+          ...s,
+          sheet: updatedSheet,
+          messages: [...updatedMessages, { role: "model", text: cleanText }],
+          suggestedActions: suggActions
+        };
+      }));
 
     } catch (err) {
       if (err.name === "AbortError") return;
@@ -1101,6 +1192,52 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
       setIsLoading(false);
       setAbortController(null);
     }
+  };
+
+// 🌟 주사위 굴림 애니메이션 상태
+  const [isRolling, setIsRolling] = useState(false);
+  const [rollingDisplayNum, setRollingDisplayNum] = useState(1);
+
+  // 🌟 [괴담 모드 전용 1D10 주사위 엔진] (이모지 완전 배제)
+  const rollDiceDirectly = (overrideTarget = null, skillName = "") => {
+    // 괴담 모드가 아니면 작동하지 않음
+    if (isRolling || !activeSession || activeSession.ruleMode !== "horror") return;
+    setIsRolling(true);
+    
+    if (typeof playDiceSound === "function") playDiceSound();
+
+    // 1D10 숫자가 빠르게 바뀌는 애니메이션 효과
+    const rollInterval = setInterval(() => {
+      setRollingDisplayNum(Math.floor(Math.random() * 10) + 1);
+    }, 50);
+
+    setTimeout(() => {
+      clearInterval(rollInterval);
+      
+      const roll = Math.floor(Math.random() * 10) + 1;
+      const targetVal = Number(overrideTarget !== null ? overrideTarget : 5);
+      let outcome = "";
+
+      if (roll === 10) {
+        outcome = "극적 성공";
+      } else if (roll === 1) {
+        outcome = "치명적 실패";
+      } else if (roll >= targetVal) {
+        outcome = "성공";
+      } else {
+        outcome = "실패";
+      }
+      
+      // 이모지 없이 깔끔하게 텍스트로만 선언
+      const rollFormatted = `[1D10 행동 판정: 결과 ${roll} / 목표치 ${targetVal}${skillName ? ` (${skillName})` : ""} ➔ 결과: ${outcome}]`;
+
+      setIsRolling(false);
+      
+      if (typeof executeMessage === "function") {
+        executeMessage(rollFormatted);
+      }
+      
+    }, animationEnabled ? 600 : 100);
   };
 
   const handleSendMessage = () => {
@@ -1329,22 +1466,34 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
             </div>
           ) : (
             sessions.map(s => (
-              <div 
+<div 
                 key={s.id} 
                 onClick={() => { setActiveSessionId(s.id); setIsDrawerOpen(false); }}
-                style={{ padding: "12px", backgroundColor: activeSessionId === s.id ? theme.panelAlt : "transparent", border: `1px solid ${activeSessionId === s.id ? theme.accent : theme.border}`, borderRadius: "10px", cursor: "pointer", display: "flex", flexDirection: "column", gap: "6px" }}
+                style={{ borderRadius: "10px", cursor: "pointer", backgroundColor: activeSessionId === s.id ? theme.panelAlt : theme.panel, border: `1px solid ${activeSessionId === s.id ? theme.accent : theme.border}`, overflow: "hidden", display: "flex", flexDirection: "column" }}
               >
-                <span style={{ fontSize: "0.9rem", fontWeight: "700", color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s.title}</span>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <span style={{ fontSize: "0.75rem", color: theme.textMuted }}>{s.ruleMode === "dating" ? "연애" : s.ruleMode === "horror" ? "괴담" : "추리"} 모드</span>
-                  <button onClick={(e) => { 
-                    e.stopPropagation(); 
-                    const updated = sessions.filter(session => session.id !== s.id);
-                    setSessions(updated); 
-                    if(activeSessionId === s.id) setActiveSessionId(null); 
-                  }} style={{ background: "none", border: "none", color: theme.danger, cursor: "pointer", padding: "2px", display: "flex", alignItems: "center" }}>
-                    <Trash2 size={14} />
-                  </button>
+                {/* 🌟 추가된 세션 카드(썸네일) 영역 */}
+                <div style={{ width: "100%", height: "120px", backgroundColor: theme.inputBg, display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
+                  {s.thumbnail || s.imageUrl ? (
+                    <img src={s.thumbnail || s.imageUrl} alt="세션 카드" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                  ) : (
+                    <span style={{ fontSize: "2rem", opacity: 0.2 }}>🖼️</span>
+                  )}
+                </div>
+                
+                {/* 하단 텍스트 영역 */}
+                <div style={{ padding: "12px", display: "flex", flexDirection: "column", gap: "6px" }}>
+                  <span style={{ fontSize: "0.9rem", fontWeight: "700", color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s.title}</span>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <span style={{ fontSize: "0.75rem", color: theme.textMuted }}>{s.ruleMode === "dating" ? "연애" : s.ruleMode === "horror" ? "괴담" : "추리"} 모드</span>
+                    <button onClick={(e) => { 
+                      e.stopPropagation(); 
+                      const updated = sessions.filter(session => session.id !== s.id);
+                      setSessions(updated); 
+                      if(activeSessionId === s.id) setActiveSessionId(null); 
+                    }} style={{ background: "none", border: "none", color: theme.danger, cursor: "pointer", padding: "2px", display: "flex", alignItems: "center" }}>
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
                 </div>
               </div>
             ))
@@ -2050,23 +2199,10 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
                     </button>
                   </div>
                   
-                  {/* 🌟 복구된 세션 카드(표지) 등록 영역 */}
-                  <div style={{ display: "flex", gap: "16px", alignItems: "flex-start" }}>
-                    <label style={{ flex: "0 0 90px", aspectRatio: "3/4", backgroundColor: theme.inputBg, border: `1.5px dashed ${theme.borderHighlight}`, borderRadius: "8px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", cursor: "pointer", overflow: "hidden", position: "relative" }}>
-                      {scenarioImageUrl ? <img src={scenarioImageUrl} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <div style={{ textAlign: "center", color: theme.textMuted }}><ImageIcon size={24} /><div style={{ fontSize: "0.65rem", marginTop: "4px", fontWeight: "700" }}>표지 등록</div></div>}
-                      <input type="file" accept="image/*" style={{ display: "none" }} onChange={e => {
-                        const file = e.target.files[0];
-                        if(file) {
-                          const reader = new FileReader();
-                          reader.onload = ev => setScenarioImageUrl(ev.target.result);
-                          reader.readAsDataURL(file);
-                        }
-                      }} />
-                    </label>
-                    <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "10px" }}>
-                      <input type="text" autoComplete="off" value={scenarioTitle} onChange={e => setScenarioTitle(e.target.value)} placeholder="사건명/시나리오 제목" style={{ width: "100%", boxSizing: "border-box", padding: "10px 12px", borderRadius: "8px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.85rem", outline: "none" }} />
-                      <input type="text" autoComplete="off" value={victimName} onChange={e => setVictimName(e.target.value)} placeholder="사건 대상 / 목표 인물" style={{ width: "100%", boxSizing: "border-box", padding: "10px 12px", borderRadius: "8px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.85rem", outline: "none" }} />
-                    </div>
+                  {/* 🌟 세션 카드 이미지 삭제 후 텍스트 필드만 깔끔하게 유지 */}
+                  <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                    <input type="text" autoComplete="off" value={scenarioTitle} onChange={e => setScenarioTitle(e.target.value)} placeholder="사건명 / 시나리오 제목" style={{ width: "100%", boxSizing: "border-box", padding: "10px 12px", borderRadius: "8px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.85rem", outline: "none" }} />
+                    <input type="text" autoComplete="off" value={victimName} onChange={e => setVictimName(e.target.value)} placeholder="주요 공략 대상 / 사건 목표" style={{ width: "100%", boxSizing: "border-box", padding: "10px 12px", borderRadius: "8px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.85rem", outline: "none" }} />
                   </div>
 
                   <textarea rows={2} value={publicSynopsis} onChange={e => setPublicSynopsis(e.target.value)} placeholder="현장 상황 및 사건 발생 개요..." style={{ width: "100%", boxSizing: "border-box", padding: "10px 12px", borderRadius: "8px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.83rem", resize: "none", outline: "none" }} />
@@ -2324,22 +2460,10 @@ color: "#fff", border: "none", cursor: "pointer",
                     </button>
                   </div>
                   
-                  <div style={{ display: "flex", gap: "16px", alignItems: "flex-start" }}>
-                    <label style={{ flex: "0 0 90px", aspectRatio: "3/4", backgroundColor: theme.inputBg, border: `1.5px dashed ${theme.borderHighlight}`, borderRadius: "8px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", cursor: "pointer", overflow: "hidden", position: "relative" }}>
-                      {scenarioImageUrl ? <img src={scenarioImageUrl} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <div style={{ textAlign: "center", color: theme.textMuted }}><ImageIcon size={24} /><div style={{ fontSize: "0.65rem", marginTop: "4px", fontWeight: "700" }}>표지 등록</div></div>}
-                      <input type="file" accept="image/*" style={{ display: "none" }} onChange={e => {
-                        const file = e.target.files[0];
-                        if(file) {
-                          const reader = new FileReader();
-                          reader.onload = ev => setScenarioImageUrl(ev.target.result);
-                          reader.readAsDataURL(file);
-                        }
-                      }} />
-                    </label>
-                    <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "10px" }}>
-                      <input type="text" autoComplete="off" value={scenarioTitle} onChange={e => setScenarioTitle(e.target.value)} placeholder="시나리오 제목 (예: 어느 세이렌의 결백)" style={{ width: "100%", boxSizing: "border-box", padding: "10px 12px", borderRadius: "8px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.85rem", outline: "none" }} />
-                      <input type="text" autoComplete="off" value={victimName} onChange={e => setVictimName(e.target.value)} placeholder="주요 공략 대상 / 서사 목표" style={{ width: "100%", boxSizing: "border-box", padding: "10px 12px", borderRadius: "8px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.85rem", outline: "none" }} />
-                    </div>
+                  {/* 🌟 세션 카드 이미지 삭제 후 텍스트 필드만 남김 */}
+                  <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                    <input type="text" autoComplete="off" value={scenarioTitle} onChange={e => setScenarioTitle(e.target.value)} placeholder="시나리오 제목 (예: 어느 세이렌의 결백)" style={{ width: "100%", boxSizing: "border-box", padding: "10px 12px", borderRadius: "8px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.85rem", outline: "none" }} />
+                    <input type="text" autoComplete="off" value={victimName} onChange={e => setVictimName(e.target.value)} placeholder="주요 공략 대상 / 서사 목표" style={{ width: "100%", boxSizing: "border-box", padding: "10px 12px", borderRadius: "8px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.85rem", outline: "none" }} />
                   </div>
 
                   <textarea rows={2} value={publicSynopsis} onChange={e => setPublicSynopsis(e.target.value)} placeholder="시놉시스 및 초기 배경 설명..." style={{ width: "100%", boxSizing: "border-box", padding: "10px 12px", borderRadius: "8px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.83rem", resize: "none", outline: "none" }} />
@@ -2665,22 +2789,10 @@ color: "#fff", border: "none", cursor: "pointer",
                     </button>
                   </div>
                   
-                  <div style={{ display: "flex", gap: "16px", alignItems: "flex-start" }}>
-                    <label style={{ flex: "0 0 90px", aspectRatio: "3/4", backgroundColor: theme.inputBg, border: `1.5px dashed ${theme.borderHighlight}`, borderRadius: "8px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", cursor: "pointer", overflow: "hidden", position: "relative" }}>
-                      {scenarioImageUrl ? <img src={scenarioImageUrl} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <div style={{ textAlign: "center", color: theme.textMuted }}><ImageIcon size={24} /><div style={{ fontSize: "0.65rem", marginTop: "4px", fontWeight: "700" }}>표지 등록</div></div>}
-                      <input type="file" accept="image/*" style={{ display: "none" }} onChange={e => {
-                        const file = e.target.files[0];
-                        if(file) {
-                          const reader = new FileReader();
-                          reader.onload = ev => setScenarioImageUrl(ev.target.result);
-                          reader.readAsDataURL(file);
-                        }
-                      }} />
-                    </label>
-                    <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "10px" }}>
-                      <input type="text" autoComplete="off" value={scenarioTitle} onChange={e => setScenarioTitle(e.target.value)} placeholder="사건명 (예: 안개 낀 폐교)" style={{ width: "100%", boxSizing: "border-box", padding: "10px 12px", borderRadius: "8px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.85rem", outline: "none" }} />
-                      <input type="text" autoComplete="off" value={victimName} onChange={e => setVictimName(e.target.value)} placeholder="사건 대상 / 조사 목표" style={{ width: "100%", boxSizing: "border-box", padding: "10px 12px", borderRadius: "8px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.85rem", outline: "none" }} />
-                    </div>
+                  {/* 🌟 세션 카드 이미지 삭제 후 텍스트 필드만 깔끔하게 유지 */}
+                  <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                    <input type="text" autoComplete="off" value={scenarioTitle} onChange={e => setScenarioTitle(e.target.value)} placeholder="사건명 / 시나리오 제목" style={{ width: "100%", boxSizing: "border-box", padding: "10px 12px", borderRadius: "8px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.85rem", outline: "none" }} />
+                    <input type="text" autoComplete="off" value={victimName} onChange={e => setVictimName(e.target.value)} placeholder="주요 공략 대상 / 사건 목표" style={{ width: "100%", boxSizing: "border-box", padding: "10px 12px", borderRadius: "8px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.85rem", outline: "none" }} />
                   </div>
 
                   <textarea rows={2} value={publicSynopsis} onChange={e => setPublicSynopsis(e.target.value)} placeholder="현장 상황 및 초기 배경 설명..." style={{ width: "100%", boxSizing: "border-box", padding: "10px 12px", borderRadius: "8px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.83rem", resize: "none", outline: "none" }} />
