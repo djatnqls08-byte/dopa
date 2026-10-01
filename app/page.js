@@ -1740,8 +1740,14 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
                               </div>
                             )}
                             {scen.status === "반려" && (
-                              <div title={`반려 사유: ${scen.rejectReason}`} style={{ position: "absolute", top: "12px", left: "12px", padding: "4px 8px", backgroundColor: "rgba(0,0,0,0.8)", backdropFilter: "blur(4px)", borderRadius: "8px", color: theme.danger, fontSize: "0.7rem", fontWeight: "700", border: `1px solid ${theme.danger}`, zIndex: 5, cursor: "help" }}>
-                                🚫 반려 (터치하여 확인)
+                              <div 
+                                onClick={(e) => {
+                                  e.stopPropagation(); // 🌟 뒤에 있는 썸네일 클릭 방지
+                                  triggerToast("반려 사유", scen.rejectReason || "기재된 사유가 없습니다.", "🚫");
+                                }}
+                                style={{ position: "absolute", top: "12px", left: "12px", padding: "4px 8px", backgroundColor: "rgba(0,0,0,0.8)", backdropFilter: "blur(4px)", borderRadius: "8px", color: theme.danger, fontSize: "0.7rem", fontWeight: "700", border: `1px solid ${theme.danger}`, zIndex: 5, cursor: "pointer" }}
+                              >
+                                🚫 반려
                               </div>
                             )}
                             {scen.status === "발행 완료" && (
