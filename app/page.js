@@ -1,5 +1,5 @@
 "use client";
-
+ 
 import { useState, useEffect } from "react";
 import SecretBoard from "@/components/SecretBoard";
 import CharacterSheet from "@/components/CharacterSheet";
