@@ -197,118 +197,6 @@ export default function GamePlatform() {
   const [showTermsModal, setShowTermsModal] = useState(false); 
   const [isGuestPlay, setIsGuestPlay] = useState(false); 
 
-  // 🌟 [핵심 패치] 자동 로그인 유지 & 모바일 뒤로가기 튕김 방어
-  useEffect(() => {
-    setIsMounted(true); // 에러 방어막 해제 (클라이언트 렌더링 완료)
-
-    // 1. 새로고침해도 로그인 안 튕기게 유지 (Supabase 세션 확인)
-    const restoreSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user) {
-        const userObj = { uid: session.user.id, email: session.user.email, name: session.user.email.split('@')[0] };
-        setCurrentUser(userObj);
-      } else {
-        const localUser = localStorage.getItem("secret_novel_user");
-        if (localUser) {
-          try { setCurrentUser(JSON.parse(localUser)); } catch (e) {}
-        }
-      }
-    };
-    restoreSession();
-
-    // 2. 모바일 뒤로가기 앱 꺼짐 방지 & 모달/팝업창 닫기 로직
-    window.history.pushState(null, "", window.location.href);
-    const handlePopState = () => {
-      // 뒤로가기를 눌러도 크롬창이 꺼지지 않도록 다시 상태를 밀어넣음
-      window.history.pushState(null, "", window.location.href);
-      
-      // 열려있는 모든 팝업/모달/상세창을 싹 닫아줍니다!
-      setIsDrawerOpen(false);
-      setShowCgModal(false);
-      setShowPortraitModal(false);
-      setShowPasteModal(false);
-      setShowInkModal(false);
-      setShowHistoryModal(false);
-      setShowLikedModal(false);
-      setShowReviewModal(false);
-      setShowSupportModal(false);
-      setShowNoticeModal(false);
-      setShowLibEditModal(false);
-      setShowTraitModal(false);
-      setShowMainNoticePopup(false);
-      setSelectedExploreScenario(null);
-      setUploadingScenario(null);
-    };
-    window.addEventListener("popstate", handlePopState);
-    return () => window.removeEventListener("popstate", handlePopState);
-  }, []);
-
-  // 🌟 (신규) 내 서재의 심사 상태를 서버와 실시간으로 맞추는 안테나!
-  useEffect(() => {
-    if (currentUser?.email && savedLibrary.length > 0) {
-      const syncStatus = async () => {
-        const { data } = await supabase.from('scenarios').select('title, status, reject_reason').eq('author_email', currentUser.email);
-        if (data) {
-          let isChanged = false;
-          const synced = savedLibrary.map(local => {
-            const serverItem = data.find(d => d.title === local.title);
-            if (serverItem && (local.status !== serverItem.status || local.rejectReason !== serverItem.reject_reason)) {
-              isChanged = true;
-              return { ...local, status: serverItem.status, rejectReason: serverItem.reject_reason };
-            }
-            return local;
-          });
-          if (isChanged) {
-            setSavedLibrary(synced);
-            localStorage.setItem("secret_novel_library", JSON.stringify(synced));
-          }
-        }
-      };
-      syncStatus();
-    }
-  }, [currentUser]); // 로그인 완료 시 한 번 싹 맞춰줍니다.
-
-
-// ☁️ [클라우드 서재 & 세션 자동 동기화 엔진]
-  // 1. 로그인 성공 시, 클라우드에서 내 데이터 싹 불러오기!
-  useEffect(() => {
-    if (currentUser?.uid) {
-      const fetchCloudData = async () => {
-        const { data, error } = await supabase.from('user_saves').select('*').eq('user_id', currentUser.uid).single();
-        if (data) {
-          if (data.library_data && data.library_data.length > 0) setSavedLibrary(data.library_data);
-          if (data.session_data && data.session_data.length > 0) setSessions(data.session_data);
-          if (data.liked_data && data.liked_data.length > 0) setLikedScenarios(data.liked_data);
-          triggerToast("동기화 완료", "클라우드에서 서재와 진행 상황을 불러왔습니다.", "☁️");
-        }
-      };
-      fetchCloudData();
-    }
-  }, [currentUser]);
-
-  // 2. 게임 중 데이터가 변하면 2초 뒤 클라우드에 조용히 자동 백업! (서버 과부하 방지)
-  useEffect(() => {
-    if (!currentUser?.uid) return;
-    if (savedLibrary.length === 0 && sessions.length === 0 && likedScenarios.length === 0) return;
-
-    const syncTimer = setTimeout(async () => {
-      await supabase.from('user_saves').upsert({
-        user_id: currentUser.uid,
-        library_data: savedLibrary,
-        session_data: sessions,
-        liked_data: likedScenarios,
-        updated_at: new Date().toISOString()
-      });
-      
-      // 로컬(브라우저)에도 이중으로 안전하게 저장해 둡니다.
-      localStorage.setItem("secret_novel_library", JSON.stringify(savedLibrary));
-      localStorage.setItem("secret_novel_sessions", JSON.stringify(sessions));
-      localStorage.setItem("secret_novel_liked", JSON.stringify(likedScenarios));
-    }, 2000); 
-
-    return () => clearTimeout(syncTimer);
-  }, [savedLibrary, sessions, likedScenarios, currentUser]);
-  
  // ── [0. 폰트 강제 로드] ──
   useEffect(() => {
     const style = document.createElement("style");
@@ -1295,6 +1183,119 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
     if (!inputMsg.trim() || isLoading) return;
     executeMessage(inputMsg);
   };
+
+
+// 🌟 [핵심 패치] 자동 로그인 유지 & 모바일 뒤로가기 튕김 방어
+  useEffect(() => {
+    setIsMounted(true); // 에러 방어막 해제 (클라이언트 렌더링 완료)
+
+    // 1. 새로고침해도 로그인 안 튕기게 유지 (Supabase 세션 확인)
+    const restoreSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        const userObj = { uid: session.user.id, email: session.user.email, name: session.user.email.split('@')[0] };
+        setCurrentUser(userObj);
+      } else {
+        const localUser = localStorage.getItem("secret_novel_user");
+        if (localUser) {
+          try { setCurrentUser(JSON.parse(localUser)); } catch (e) {}
+        }
+      }
+    };
+    restoreSession();
+
+    // 2. 모바일 뒤로가기 앱 꺼짐 방지 & 모달/팝업창 닫기 로직
+    window.history.pushState(null, "", window.location.href);
+    const handlePopState = () => {
+      // 뒤로가기를 눌러도 크롬창이 꺼지지 않도록 다시 상태를 밀어넣음
+      window.history.pushState(null, "", window.location.href);
+      
+      // 열려있는 모든 팝업/모달/상세창을 싹 닫아줍니다!
+      setIsDrawerOpen(false);
+      setShowCgModal(false);
+      setShowPortraitModal(false);
+      setShowPasteModal(false);
+      setShowInkModal(false);
+      setShowHistoryModal(false);
+      setShowLikedModal(false);
+      setShowReviewModal(false);
+      setShowSupportModal(false);
+      setShowNoticeModal(false);
+      setShowLibEditModal(false);
+      setShowTraitModal(false);
+      setShowMainNoticePopup(false);
+      setSelectedExploreScenario(null);
+      setUploadingScenario(null);
+    };
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
+
+  // 🌟 (신규) 내 서재의 심사 상태를 서버와 실시간으로 맞추는 안테나!
+  useEffect(() => {
+    if (currentUser?.email && savedLibrary.length > 0) {
+      const syncStatus = async () => {
+        const { data } = await supabase.from('scenarios').select('title, status, reject_reason').eq('author_email', currentUser.email);
+        if (data) {
+          let isChanged = false;
+          const synced = savedLibrary.map(local => {
+            const serverItem = data.find(d => d.title === local.title);
+            if (serverItem && (local.status !== serverItem.status || local.rejectReason !== serverItem.reject_reason)) {
+              isChanged = true;
+              return { ...local, status: serverItem.status, rejectReason: serverItem.reject_reason };
+            }
+            return local;
+          });
+          if (isChanged) {
+            setSavedLibrary(synced);
+            localStorage.setItem("secret_novel_library", JSON.stringify(synced));
+          }
+        }
+      };
+      syncStatus();
+    }
+  }, [currentUser]); // 로그인 완료 시 한 번 싹 맞춰줍니다.
+
+
+// ☁️ [클라우드 서재 & 세션 자동 동기화 엔진]
+  // 1. 로그인 성공 시, 클라우드에서 내 데이터 싹 불러오기!
+  useEffect(() => {
+    if (currentUser?.uid) {
+      const fetchCloudData = async () => {
+        const { data, error } = await supabase.from('user_saves').select('*').eq('user_id', currentUser.uid).single();
+        if (data) {
+          if (data.library_data && data.library_data.length > 0) setSavedLibrary(data.library_data);
+          if (data.session_data && data.session_data.length > 0) setSessions(data.session_data);
+          if (data.liked_data && data.liked_data.length > 0) setLikedScenarios(data.liked_data);
+          triggerToast("동기화 완료", "클라우드에서 서재와 진행 상황을 불러왔습니다.", "☁️");
+        }
+      };
+      fetchCloudData();
+    }
+  }, [currentUser]);
+
+  // 2. 게임 중 데이터가 변하면 2초 뒤 클라우드에 조용히 자동 백업! (서버 과부하 방지)
+  useEffect(() => {
+    if (!currentUser?.uid) return;
+    if (savedLibrary.length === 0 && sessions.length === 0 && likedScenarios.length === 0) return;
+
+    const syncTimer = setTimeout(async () => {
+      await supabase.from('user_saves').upsert({
+        user_id: currentUser.uid,
+        library_data: savedLibrary,
+        session_data: sessions,
+        liked_data: likedScenarios,
+        updated_at: new Date().toISOString()
+      });
+      
+      // 로컬(브라우저)에도 이중으로 안전하게 저장해 둡니다.
+      localStorage.setItem("secret_novel_library", JSON.stringify(savedLibrary));
+      localStorage.setItem("secret_novel_sessions", JSON.stringify(sessions));
+      localStorage.setItem("secret_novel_liked", JSON.stringify(likedScenarios));
+    }, 2000); 
+
+    return () => clearTimeout(syncTimer);
+  }, [savedLibrary, sessions, likedScenarios, currentUser]);
 
 // 🌟 서버-클라이언트 렌더링 충돌(에러 423) 완벽 방지
   if (!isMounted) {
