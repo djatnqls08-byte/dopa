@@ -1521,29 +1521,26 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
           )}
         </div>
 
-        <div style={{ padding: "14px", borderTop: `1px solid ${theme.border}`, display: "flex", gap: "8px" }}>
-          {activeSession ? (
+        <div style={{ padding: "14px", borderTop: `1px solid ${theme.border}`, display: "flex", flexWrap: "wrap", gap: "8px" }}>
+          {activeSession && (
            <button 
               onClick={() => { setActiveSessionId(null); setIsDrawerOpen(false); }} 
               style={{ 
-                flex: 1, padding: "12px", backgroundColor: theme.danger || "#ef4444", 
+                flex: "1 1 100%", padding: "12px", backgroundColor: theme.danger || "#ef4444", 
                 border: "none", borderRadius: "8px", color: "#fff", fontSize: "0.85rem", 
                 fontWeight: "600", cursor: "pointer", boxShadow: "0 4px 12px rgba(239, 68, 68, 0.3)",
-                display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" 
+                display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", marginBottom: "4px"
               }}
             >
               <LogOut size={18} strokeWidth={2.5} /> 로비로 나가기
             </button>
-          ) : (
-            <>
-              <button onClick={() => triggerToast("환경 설정", "준비 중입니다.", <Settings size={18} color={theme.accent} />)} style={{ flex: 1, padding: "10px", backgroundColor: theme.panel, border: `1px solid ${theme.border}`, borderRadius: "8px", color: theme.text, fontSize: "0.78rem", fontWeight: "700", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}>
-  <Settings size={16} strokeWidth={2.5} /> 설정
-</button>
-<button onClick={() => triggerToast("데이터 관리", "준비 중입니다.", <Database size={18} color={theme.accent} />)} style={{ flex: 1, padding: "10px", backgroundColor: theme.panel, border: `1px solid ${theme.border}`, borderRadius: "8px", color: theme.text, fontSize: "0.78rem", fontWeight: "700", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}>
-  <Database size={16} strokeWidth={2.5} /> 데이터
-</button>
-            </>
           )}
+          <button onClick={() => triggerToast("환경 설정", "준비 중입니다.", <Settings size={18} color={theme.accent} />)} style={{ flex: 1, padding: "10px", backgroundColor: theme.panel, border: `1px solid ${theme.border}`, borderRadius: "8px", color: theme.text, fontSize: "0.78rem", fontWeight: "700", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}>
+            <Settings size={16} strokeWidth={2.5} /> 설정
+          </button>
+          <button onClick={() => triggerToast("데이터 관리", "준비 중입니다.", <Database size={18} color={theme.accent} />)} style={{ flex: 1, padding: "10px", backgroundColor: theme.panel, border: `1px solid ${theme.border}`, borderRadius: "8px", color: theme.text, fontSize: "0.78rem", fontWeight: "700", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}>
+            <Database size={16} strokeWidth={2.5} /> 데이터
+          </button>
         </div>
       </aside>
 
@@ -3188,23 +3185,11 @@ color: "#fff", border: "none", cursor: "pointer",
             <div style={{ height: "60px", flexShrink: 0 }} />
           </main>
 
-        ) : (
+) : (
           <div style={{ flex: 1, display: "flex", overflow: "hidden", position: "relative", backgroundColor: theme.bg }}>
             
             <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", position: "relative" }}>
               <div 
-                className="serif-text" 
-                ref={chatContainerRef} 
-                style={{
-                  flex: 1, overflowY: "auto", 
-                  padding: isMobile ? "24px 20px 140px 20px" : "50px 60px 160px 60px", 
-                  display: "flex", flexDirection: "column", gap: "28px", 
-                  maxWidth: "760px", margin: "0 auto", width: "100%", boxSizing: "border-box", 
-                  fontSize: "1.12rem", lineHeight: 2.1, color: theme.text, letterSpacing: "-0.02em",
-                  fontWeight: 400
-                }}
-              >
-<div 
                 className="serif-text" 
                 ref={chatContainerRef} 
                 style={{
@@ -3241,7 +3226,7 @@ color: "#fff", border: "none", cursor: "pointer",
                             textAlign: m.role === "user" ? "center" : "left",
                             fontStyle: m.role === "user" ? "italic" : "normal",
                             fontWeight: m.role === "user" ? "700" : "400",
-                            // 🌟 유저(나)는 고딕 고정, 상대방(모델)은 리디바탕 고정
+                            /* 🌟 에러의 주범이었던 주석 수정 완료! 유저는 고딕, 모델은 리디바탕 고정 */
                             fontFamily: isUser ? "'Pretendard', sans-serif" : "'RIDIBatang', serif"
                           }}
                         >
@@ -3258,7 +3243,7 @@ color: "#fff", border: "none", cursor: "pointer",
                             </div>
                           )}
                           
-                          {/* 🌟 텍스트를 문단 단위로 쪼개어 가독성 극대화 (마진을 더 시원하게 줌) */}
+                          {/* 🌟 문단 단위로 쪼개어 마진을 시원하게 벌려줍니다. */}
                           <div style={{ display: "flex", flexDirection: "column", gap: "22px", lineHeight: "2.1" }}>
                             {m.text.split('\n').filter(line => line.trim() !== '').map((line, lIdx) => (
                               <span key={lIdx} style={{ display: "block" }}>
@@ -3269,7 +3254,7 @@ color: "#fff", border: "none", cursor: "pointer",
                         </div>
                       </div>
 
-                      {/* 🌟 취소 버튼 바깥 동그라미/테두리 완전 제거 */}
+                      {/* 🌟 취소 버튼 바깥 동그라미 및 테두리 완전 제거 */}
                       {isLastUserMsg && !isLoading && (
                         <div style={{ display: "flex", justifyContent: "center", marginTop: "14px" }}>
                           <button
@@ -3290,6 +3275,8 @@ color: "#fff", border: "none", cursor: "pointer",
                               padding: "6px 16px", color: theme.textMuted, fontSize: "0.78rem", fontWeight: "700", 
                               cursor: "pointer", display: "flex", alignItems: "center", gap: "6px", transition: "color 0.2s"
                             }}
+                            onMouseEnter={e => e.currentTarget.style.color = theme.text}
+                            onMouseLeave={e => e.currentTarget.style.color = theme.textMuted}
                           >
                             <span style={{ fontSize: "1.1rem" }}>⎌</span> 대화 전송 취소하기
                           </button>
@@ -3313,11 +3300,11 @@ color: "#fff", border: "none", cursor: "pointer",
                 display: "flex", flexDirection: "column", alignItems: "center", gap: "12px", zIndex: 30
               }}>
                 
-                {/* 💡 상단: 1,2,3 대신 선택지 버튼 칩 렌더링! */}
+                {/* 💡 상단: 1, 2, 3 숫자 텍스트 대신 깔끔한 버튼(칩) 형태로 렌더링! */}
                 {activeSession?.suggestedActions?.length > 0 && (
                   <div style={{ display: "flex", gap: "8px", overflowX: "auto", width: "100%", maxWidth: "680px", paddingBottom: "4px", WebkitOverflowScrolling: "touch" }}>
                     {activeSession.suggestedActions.map((sugg, idx) => {
-                       // "1. 대사내용" 처럼 앞에 숫자가 붙어있으면 떼어냅니다.
+                       // 🌟 "1. 텍스트" 형식으로 넘어올 경우 숫자와 쌍따옴표를 예쁘게 제거합니다.
                        const cleanSugg = sugg.replace(/^\d+\.\s*/, "").replace(/^"/, "").replace(/"$/, "");
                        return (
                         <button
@@ -3333,7 +3320,6 @@ color: "#fff", border: "none", cursor: "pointer",
                   </div>
                 )}
 
-                {/* ✍️ 하단: 실제 텍스트 입력 캡슐 */}
                 <div style={{
                   width: "100%", maxWidth: "680px", display: "flex", alignItems: "flex-end", gap: "8px",
                   backgroundColor: theme.inputBg, border: `1.5px solid ${theme.border}`, borderRadius: "28px",
@@ -3394,6 +3380,7 @@ color: "#fff", border: "none", cursor: "pointer",
               </footer>
             </div>
 
+            {/* 🌟 기존 시크릿 보드 등 모달 유지 */}
             {showEvidenceBoard && activeSession && activeSession.ruleMode === "freeform" && (
               <SecretBoard
                 activeSession={activeSession}
@@ -3414,7 +3401,6 @@ color: "#fff", border: "none", cursor: "pointer",
               isSheetOpen={isSheetOpen}
               setIsSheetOpen={setIsSheetOpen}
               theme={theme}
-              // 🌟 (신규 추가!) 인물 클릭 시 모달창을 띄워주는 변수 주입
               setActivePortraitTarget={setActivePortraitSuspectId}
               setShowPortraitEditModal={setShowPortraitModal}
             />
