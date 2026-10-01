@@ -242,9 +242,6 @@ const handleDeleteFromLibrary = (id) => {
    setSavedLibrary(updated);
    localStorage.setItem("secret_novel_library", JSON.stringify(updated));
 }; 
- 
-const [showLibEditModal, setShowLibEditModal] = useState(false);
-const [editingLibItem, setEditingLibItem] = useState(null);
 
  const [cgList, setCgList] = useState([
     { id: 1, title: "", condition: "", dialogue: "", imageUrl: "", showDetails: false }
