@@ -3346,7 +3346,8 @@ color: "#fff", border: "none", cursor: "pointer",
                     tag: editingBanner.tag,
                     title: editingBanner.title,
                     description: editingBanner.desc,
-                    image_url: editingBanner.imageUrl
+                    image_url: editingBanner.imageUrl,
+                    link_id: editingBanner.linkId // 🌟 드디어 목적지(link_id) 저장!!
                   });
 
                   if (!error) {
