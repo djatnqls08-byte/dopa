@@ -494,6 +494,22 @@ const handleDeleteFromLibrary = (id) => {
   const [showCgModal, setShowCgModal] = useState(false); // 🖼️ CG 팝업 스위치
   const [activeCgId, setActiveCgId] = useState(null); // 🖼️ 현재 선택된 CG 아이디
 
+// 🌟 (복구 완료!) 메인 배너 데이터 상자 및 안테나
+  const [banners, setBanners] = useState([]);
+  const [showBannerEdit, setShowBannerEdit] = useState(false);
+  const [editingBanner, setEditingBanner] = useState(null); 
+
+  useEffect(() => {
+    // 앱을 처음 켤 때 Supabase 서버에서 현재 전시 중인 배너를 가져옵니다!
+    const fetchBanners = async () => {
+      const { data, error } = await supabase.from('main_banners').select('*').order('id', { ascending: true });
+      if (data && !error) {
+        setBanners(data.map(b => ({ id: b.id, tag: b.tag, title: b.title, desc: b.description, imageUrl: b.image_url })));
+      }
+    };
+    fetchBanners();
+  }, []);
+  
 // ── [탐색 탭 라운지 데이터 (구글 시트 연동)] ──
 const [exploreScenarios, setExploreScenarios] = useState([]); // 처음엔 빈 배열
 
