@@ -3216,7 +3216,18 @@ color: "#fff", border: "none", cursor: "pointer",
           </div>
         )}
 
-        {savedLibrary.filter(s => s.status === "심사 대기").length === 0 ? (
+        {/* ☁️ 라운지 심사 및 발행 내역 팝업 */}
+        {showReviewModal && (
+          <div onClick={() => setShowReviewModal(false)} style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 500, padding: "20px", animation: "fadeIn 0.2s ease-out" }}>
+            <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: "500px", backgroundColor: theme.panel, border: `1px solid ${theme.border}`, borderRadius: "20px", padding: "24px", display: "flex", flexDirection: "column", gap: "20px", boxShadow: "0 20px 50px rgba(0,0,0,0.5)", maxHeight: "80vh" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: `1px solid ${theme.border}`, paddingBottom: "12px" }}>
+                <span style={{ fontWeight: "800", fontSize: "1.1rem", display: "flex", alignItems: "center", gap: "8px", color: theme.text }}>
+                  <UploadCloud size={20} color="#60a5fa" /> 라운지 심사 및 발행 내역
+                </span>
+                <button onClick={() => setShowReviewModal(false)} style={{ background: "none", border: "none", color: theme.textMuted, cursor: "pointer" }}><X size={24}/></button>
+              </div>
+              <div style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: "12px", paddingRight: "4px" }}>
+                {savedLibrary.filter(s => s.status === "심사 대기").length === 0 ? (
                    <div style={{ padding: "40px", textAlign: "center", color: theme.textMuted, fontSize: "0.9rem" }}>현재 심사 중이거나 발행된 서류철이 없습니다.</div>
                 ) : (
                    savedLibrary.filter(s => s.status === "심사 대기").map(s => (
@@ -3229,12 +3240,10 @@ color: "#fff", border: "none", cursor: "pointer",
                        {/* 🌟 어드민이면 승인 버튼이 보이고, 일반 유저면 대기중 뱃지만 보임 */}
                        {isAdmin ? (
                          <button onClick={() => {
-                           // 승인 로직: 라운지에 정식 등록!
                            const updated = savedLibrary.map(item => item.id === s.id ? { ...item, status: "발행 완료", isPublic: true } : item);
                            setSavedLibrary(updated);
                            localStorage.setItem("secret_novel_library", JSON.stringify(updated));
                            
-                           // 탐색 라운지에 데이터와 함께 쏘아올림
                            const newExploreItem = {
                              id: s.id, title: s.title, mode: s.mode, author: currentUser?.name || pcName || "익명 탐색자", 
                              likes: "0", plays: "0", isOriginal: false, imageUrl: s.imageUrl, 
