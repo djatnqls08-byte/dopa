@@ -1676,7 +1676,7 @@ color: "#fff", border: "none", cursor: "pointer",
                       <ImageIcon color={isDarkMode ? "#f472b6" : "#ec4899"} size={22} strokeWidth={2} />
                       <span style={{ fontWeight: "700", fontSize: "0.95rem", color: theme.text }}>이벤트 CG 갤러리</span>
                     </div>
-                    <span style={{ display: "flex", alignItems: "center", color: theme.textMuted }}>{showCgGallery ? <ChevronUp size="{18}" strokeWidth="{2}"/> : <ChevronDown size="{18}" strokeWidth="{2}"/>}</span>
+                    <span style={{ display: "flex", alignItems: "center", color: theme.textMuted }}>{showCgGallery ? <ChevronUp size={18} strokeWidth={2} /> : <ChevronDown size={18} strokeWidth={2} />}</span>
                   </button>
 
                   {showCgGallery && (
@@ -1690,7 +1690,7 @@ color: "#fff", border: "none", cursor: "pointer",
                                 <img src={item.imageUrl} alt="CG" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                               ) : (
                                 <div style={{ color: theme.textMuted, fontSize: "0.75rem", display: "flex", flexDirection: "column", alignItems: "center", gap: "6px" }}>
-                                  <ImageIcon color="{theme.accent}" size="{24}" strokeWidth="{1.5}"/>
+                                  <ImageIcon color={theme.accent} size={24} strokeWidth={1.5} />
                                   <span style={{ fontWeight: "700" }}>터치하여 이미지 등록</span>
                                 </div>
                               )}
@@ -1700,7 +1700,7 @@ color: "#fff", border: "none", cursor: "pointer",
                               <input type="text" autoComplete="off" value={item.title} onChange={e => setCgList(cgList.map(c => c.id === item.id ? { ...c, title: e.target.value } : c))} placeholder={`CG ${idx + 1} 명칭`} style={{ flex: 1, padding: "10px 12px", borderRadius: "8px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.85rem", fontWeight: "600", outline: "none" }} />
                               {cgList.length > 1 && (
                                 <button type="button" onClick={() => setCgList(cgList.filter(c => c.id !== item.id))} style={{ background: "none", border: "none", color: theme.danger, cursor: "pointer", padding: "4px", display: "flex", alignItems: "center" }}>
-                                  <Trash2 size="{16}" strokeWidth="{2.5}"/>
+                                  <Trash2 size={16} strokeWidth={2.5} />
                                 </button>
                               )}
                             </div>
@@ -1726,7 +1726,7 @@ color: "#fff", border: "none", cursor: "pointer",
                       <FolderOpen color={isDarkMode ? "#f472b6" : "#ec4899"} size={22} strokeWidth={2} />
                       <span style={{ fontWeight: "700", fontSize: "0.95rem", color: theme.text }}>선택지 분기 및 루트 설계</span>
                     </div>
-                    <span style={{ display: "flex", alignItems: "center", color: theme.textMuted }}>{showRouteList ? <ChevronUp size="{18}" strokeWidth="{2}"/> : <ChevronDown size="{18}" strokeWidth="{2}"/>}</span>
+                    <span style={{ display: "flex", alignItems: "center", color: theme.textMuted }}>{showRouteList ? <ChevronUp size={18} strokeWidth={2} /> : <ChevronDown size={18} strokeWidth={2} />}</span>
                   </button>
 
                   {showRouteList && (
@@ -1747,7 +1747,7 @@ color: "#fff", border: "none", cursor: "pointer",
                             <input type="text" autoComplete="off" value={route.affectionChange} onChange={e => setRouteList(routeList.map(r => r.id === route.id ? { ...r, affectionChange: e.target.value } : r))} placeholder="호감도 (예: +10)" style={{ width: "75px", padding: "8px 10px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.accent, fontWeight: "600", fontSize: "0.78rem", outline: "none", textAlign: "center" }} />
                             {routeList.length > 1 && (
                               <button type="button" onClick={() => setRouteList(routeList.filter(r => r.id !== route.id))} style={{ background: "none", border: "none", color: theme.danger, cursor: "pointer", fontSize: "0.8rem", display: "flex", alignItems: "center" }}>
-                                <Trash2 size="{16}" strokeWidth="{2.5}"/>
+                                <Trash2 size={16} strokeWidth={2.5} />
                               </button>
                             )}
                           </div>
