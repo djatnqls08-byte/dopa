@@ -1669,7 +1669,7 @@ color: "#fff", border: "none", cursor: "pointer",
                   )}
                 </div>
 
-                {/* 🌟 2. 이벤트 CG 갤러리 */}
+{/* 🌟 2. 이벤트 CG 갤러리 */}
                 <section style={{ ...GLASS_STYLE, padding: isMobile ? "16px" : "20px", backgroundColor: theme.panel, borderRadius: "18px", border: `1px solid ${theme.border}`, display: "flex", flexDirection: "column", gap: "12px" }}>
                   <button type="button" onClick={() => setShowCgGallery(!showCgGallery)} style={{ width: "100%", textAlign: "left", background: "none", border: "none", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer", padding: 0 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
