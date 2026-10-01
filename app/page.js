@@ -11,7 +11,7 @@ import {
   ClipboardList, Pin, FileSearch, Mailbox, Play,
   FolderOpen, Lock, Settings, Database, ClipboardPaste, LogOut,
   ArrowUp, Smartphone, BookOpen, Dices, ChevronLeft, ChevronRight, UploadCloud, AlertTriangle, CheckCircle2,
-  Brain, Skull, Eye, Activity, ShieldAlert, ToggleLeft, ToggleRight, Plus, Minus, Ghost,
+  Brain, Skull, Eye, Activity, ShieldAlert, ToggleLeft, ToggleRight, Plus, Minus, Ghost, Gift, Video, CreditCard, Headphones,
   Trash2, Clock, Tag, Droplet
 } from "lucide-react";
 
@@ -236,7 +236,7 @@ const handleLoadFromLibrary = (scen) => {
   triggerToast("불러오기 완료", `[${scen.title}] 서류를 로비에 펼쳤습니다.`, "📂");
 };
 
-// 🗑 서재에서 삭제하는 함수
+// <Trash2 size="{16}" strokeWidth="{2}"/> 서재에서 삭제하는 함수
 const handleDeleteFromLibrary = (id) => {
    const updated = savedLibrary.filter(item => item.id !== id);
    setSavedLibrary(updated);
@@ -273,7 +273,8 @@ const [uploadingScenario, setUploadingScenario] = useState(null); // 서재에�
 const [exploreSearchQuery, setExploreSearchQuery] = useState("");
 const [exploreFilter, setExploreFilter] = useState("추천"); // 추천, 추리, 연애, 괴담
  // ── [글로벌 재화 상태] ──
-const [userInk, setUserInk] = useState(1200);
+const [userInk, setUserInk] = useState(0);
+const [showInkModal, setShowInkModal] = useState(false); // 🌟 잉크 충전소 모달 스위치
  
   // ── [7. 인게임 UI 토글 상태 관리 (누락된 변수 추가)] ──
   const [isPhoneDrawerOpen, setIsPhoneDrawerOpen] = useState(false);
@@ -315,7 +316,7 @@ const [userInk, setUserInk] = useState(1200);
       const prevTarget = filtered[deletedIndex - 1] || filtered[0];
       setSelectedSuspectId(prevTarget.id);
     }
-    triggerToast("인물 삭제", "수사망에서 제외되었습니다.", "🗑️");
+    triggerToast("인물 삭제", "수사망에서 제외되었습니다.", "<Trash2 size="{16}" strokeWidth="{2}"/>️");
   };
 
   const handleUpdateSuspect = (id, field, value) => {
@@ -807,11 +808,14 @@ const [userInk, setUserInk] = useState(1200);
                   <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
                     <div style={{ flex: 1, display: "flex", alignItems: "center", backgroundColor: theme.panel, border: `1px solid ${theme.border}`, borderRadius: "16px", padding: "0 14px", height: "48px", boxShadow: "0 4px 12px rgba(0,0,0,0.03)" }}>
                       <Search size={18} color={theme.textMuted} />
-                      <input 
+                     <input 
                         type="text" 
                         autoComplete="off" 
                         value={exploreSearchQuery}
                         onChange={(e) => setExploreSearchQuery(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") e.currentTarget.blur(); // 모바일 환경에서 엔터 시 키보드 내리기
+                        }}
                         placeholder="어떤 사건을 찾으시나요?" 
                         style={{ flex: 1, height: "100%", border: "none", backgroundColor: "transparent", color: theme.text, fontSize: "0.9rem", outline: "none", paddingLeft: "10px" }} 
                       />
@@ -822,11 +826,13 @@ const [userInk, setUserInk] = useState(1200);
                         </button>
                       )}
                     </div>
-                    {/* 💧 잉크 잔액 표시 (테두리 제거됨) */}
-                    <div style={{ display: "flex", alignItems: "center", gap: "6px", backgroundColor: theme.panelAlt, padding: "0 14px", height: "48px", borderRadius: "16px", fontWeight: "800", fontSize: "0.9rem", color: theme.text }}>
+                    {/* 💧 잉크 잔액 표시 */}
+                    <div 
+                      onClick={() => setShowInkModal(true)} 
+                      style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: "6px", backgroundColor: theme.panelAlt, padding: "0 14px", height: "48px", borderRadius: "16px", fontWeight: "800", fontSize: "0.9rem", color: theme.text }}
+                    >
                       <Droplet size={18} strokeWidth={2.5} color={theme.accent} /> {userInk.toLocaleString()}
                     </div>
-                  </div>
 
                   {/* 2. 히어로 배너 (그림자 잘림 방지를 위해 마진 조정) */}
                   {exploreFilter === "추천" && !exploreSearchQuery && (
@@ -1376,7 +1382,7 @@ color: "#fff", border: "none", cursor: "pointer",
                             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "6px" }}>
                               <input type="text" autoComplete="off" value={item.name} onChange={e => handleUpdateEvidence(item.id, "name", e.target.value)} placeholder={`단서 ${idx + 1} 명칭`} style={{ flex: 1, padding: "8px 10px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.82rem", fontWeight: "600", outline: "none" }} />
                               {evidenceList.length > 1 && (
-                                <button type="button" onClick={(e) => handleDeleteEvidence(e, item.id)} style={{ background: "none", border: "none", color: theme.danger, cursor: "pointer", padding: "2px", fontSize: "0.8rem" }}>🗑</button>
+                                <button type="button" onClick={(e) => handleDeleteEvidence(e, item.id)} style={{ background: "none", border: "none", color: theme.danger, cursor: "pointer", padding: "2px", fontSize: "0.8rem" }}><Trash2 size="{16}" strokeWidth="{2}"/></button>
                               )}
                             </div>
                             <input type="text" autoComplete="off" value={item.overview} onChange={e => handleUpdateEvidence(item.id, "overview", e.target.value)} placeholder="발견 위치 및 겉모습..." style={{ width: "100%", boxSizing: "border-box", padding: "8px 10px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.78rem", outline: "none" }} />
@@ -1695,7 +1701,7 @@ color: "#fff", border: "none", cursor: "pointer",
                               <input type="text" autoComplete="off" value={item.title} onChange={e => setCgList(cgList.map(c => c.id === item.id ? { ...c, title: e.target.value } : c))} placeholder={`CG ${idx + 1} 명칭`} style={{ flex: 1, padding: "10px 12px", borderRadius: "8px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.85rem", fontWeight: "600", outline: "none" }} />
                               {cgList.length > 1 && (
                                 <button type="button" onClick={() => setCgList(cgList.filter(c => c.id !== item.id))} style={{ background: "none", border: "none", color: theme.danger, cursor: "pointer", padding: "4px" }}>
-                                  🗑
+                                  <Trash2 size="{16}" strokeWidth="{2}"/>
                                 </button>
                               )}
                             </div>
@@ -1751,7 +1757,7 @@ color: "#fff", border: "none", cursor: "pointer",
                               {suspects.map(s => <option key={s.id} value={s.id}>{s.name || "이름 미상"}</option>)}
                             </select>
                             <input type="text" autoComplete="off" value={route.affectionChange} onChange={e => setRouteList(routeList.map(r => r.id === route.id ? { ...r, affectionChange: e.target.value } : r))} placeholder="호감도 (예: +10)" style={{ width: "75px", padding: "8px 10px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.accent, fontWeight: "600", fontSize: "0.78rem", outline: "none", textAlign: "center" }} />
-                            {routeList.length > 1 && <button type="button" onClick={() => setRouteList(routeList.filter(r => r.id !== route.id))} style={{ background: "none", border: "none", color: theme.danger, cursor: "pointer", fontSize: "0.8rem" }}>🗑</button>}
+                            {routeList.length > 1 && <button type="button" onClick={() => setRouteList(routeList.filter(r => r.id !== route.id))} style={{ background: "none", border: "none", color: theme.danger, cursor: "pointer", fontSize: "0.8rem" }}><Trash2 size="{16}" strokeWidth="{2}"/></button>}
                           </div>
                         </div>
                       ))}
@@ -2436,9 +2442,82 @@ color: "#fff", border: "none", cursor: "pointer",
               </div>
               <textarea rows={8} value={pastedText} onChange={e => setPastedText(e.target.value)} placeholder="스튜디오에서 작성된 시나리오 전체 글을 여기에 붙여넣으세요..." style={{ width: "100%", boxSizing: "border-box", padding: "12px", backgroundColor: theme.inputBg, border: `1px solid ${theme.border}`, borderRadius: "8px", color: theme.text, fontSize: "0.82rem", outline: "none", resize: "none" }} />
               <div style={{ display: "flex", gap: "8px" }}>
-                <button onClick={() => setShowPasteModal(false)} style={{ flex: 1, padding: "10px", backgroundColor: theme.panelAlt, border: `1px solid ${theme.border}`, borderRadius: "8px", color: theme.text, fontSize: "0.8rem", cursor: "pointer" }}>취소</button>
-                <button onClick={handleApplyPastedScenario} style={{ flex: 2, padding: "10px", backgroundColor: theme.accent, color: isDarkMode ? "#1a1817" : "#fff", border: "none", borderRadius: "8px", fontSize: "0.8rem", fontWeight: "600", cursor: "pointer" }}>서류철에 자동 배치 ➔</button>
+                <button onClick={handleApplyPastedScenario} style={{ flex: 2, padding: "10px", backgroundColor: theme.accent, color: isDarkMode ? "#1a1817" : "#fff", border: "none", borderRadius: "8px", fontSize: "0.8rem", fontWeight: "600", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}>
+                  서류철에 자동 배치 <ChevronRight size={16} strokeWidth={2.5} />
+                </button>
               </div>
+            </div>
+          </div>
+        )}
+
+
+{/* 💧 잉크 충전소 팝업 (무료 획득 및 상점) */}
+        {showInkModal && (
+          <div onClick={() => setShowInkModal(false)} style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 400, padding: "20px", animation: "fadeIn 0.2s ease-out" }}>
+            <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: "440px", backgroundColor: theme.panel, border: `1px solid ${theme.border}`, borderRadius: "20px", padding: "24px", display: "flex", flexDirection: "column", gap: "24px", boxShadow: "0 20px 50px rgba(0,0,0,0.5)", maxHeight: "85vh", overflowY: "auto" }}>
+              
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <span style={{ fontWeight: "800", fontSize: "1.1rem", display: "flex", alignItems: "center", gap: "8px", color: theme.text }}>
+                  <Droplet size={24} strokeWidth={2.5} color={theme.accent} /> 잉크 충전소
+                </span>
+                <button onClick={() => setShowInkModal(false)} style={{ background: "none", border: "none", color: theme.text, fontSize: "1.2rem", cursor: "pointer" }}><X size={24}/></button>
+              </div>
+
+              {/* 내 잉크 요약 */}
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "8px", padding: "20px", backgroundColor: theme.panelAlt, borderRadius: "16px", border: `1px solid ${theme.borderHighlight}` }}>
+                <span style={{ fontSize: "0.85rem", fontWeight: "600", color: theme.textMuted }}>현재 보유 잉크</span>
+                <span style={{ fontSize: "2rem", fontWeight: "800", color: theme.text }}>{userInk.toLocaleString()}</span>
+              </div>
+
+              {/* 🎁 무료 잉크 획득 구역 */}
+              <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                <span style={{ fontSize: "0.9rem", fontWeight: "800", color: theme.text }}>무료 잉크 획득</span>
+                
+                <div onClick={() => { setUserInk(prev => prev + 5); triggerToast("출석체크 완료", "5 잉크가 지급되었습니다!", <CheckCircle2 size={18} color={theme.success}/>); }} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px", backgroundColor: theme.inputBg, borderRadius: "14px", border: `1px solid ${theme.border}`, cursor: "pointer", transition: "transform 0.2s" }} onMouseEnter={e => e.currentTarget.style.transform = "scale(1.02)"} onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                    <div style={{ padding: "8px", backgroundColor: "rgba(22, 163, 74, 0.1)", borderRadius: "10px", color: theme.success }}><Gift size={20} strokeWidth={2.5} /></div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+                      <span style={{ fontSize: "0.9rem", fontWeight: "700", color: theme.text }}>오늘의 출석체크</span>
+                      <span style={{ fontSize: "0.75rem", color: theme.textMuted }}>매일 1회 접속 보상</span>
+                    </div>
+                  </div>
+                  <span style={{ fontWeight: "800", color: theme.accent, fontSize: "0.95rem" }}>+ 5</span>
+                </div>
+
+                <div onClick={() => { setUserInk(prev => prev + 10); triggerToast("시청 완료", "10 잉크가 지급되었습니다!", <Video size={18} color={theme.accent}/>); }} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px", backgroundColor: theme.inputBg, borderRadius: "14px", border: `1px solid ${theme.border}`, cursor: "pointer", transition: "transform 0.2s" }} onMouseEnter={e => e.currentTarget.style.transform = "scale(1.02)"} onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                    <div style={{ padding: "8px", backgroundColor: "rgba(96, 165, 250, 0.1)", borderRadius: "10px", color: "#60a5fa" }}><Video size={20} strokeWidth={2.5} /></div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+                      <span style={{ fontSize: "0.9rem", fontWeight: "700", color: theme.text }}>광고 보고 잉크 받기</span>
+                      <span style={{ fontSize: "0.75rem", color: theme.textMuted }}>남은 횟수: 5/5</span>
+                    </div>
+                  </div>
+                  <span style={{ fontWeight: "800", color: theme.accent, fontSize: "0.95rem" }}>+ 10</span>
+                </div>
+              </div>
+
+              {/* 💳 잉크 상점 구역 */}
+              <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                <span style={{ fontSize: "0.9rem", fontWeight: "800", color: theme.text }}>스토어 충전</span>
+                {[
+                  { amount: 100, price: "₩ 1,200", bonus: "" },
+                  { amount: 500, price: "₩ 5,500", bonus: "+50 방울 보너스" },
+                  { amount: 1200, price: "₩ 12,000", bonus: "+200 방울 보너스" }
+                ].map((item, i) => (
+                  <div key={i} onClick={() => triggerToast("결제 준비 중", "스토어 결제 모듈이 아직 연결되지 않았습니다.", <CreditCard size={18}/>)} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px", backgroundColor: theme.inputBg, borderRadius: "14px", border: `1px solid ${theme.border}`, cursor: "pointer", transition: "border-color 0.2s" }} onMouseEnter={e => e.currentTarget.style.borderColor = theme.accent} onMouseLeave={e => e.currentTarget.style.borderColor = theme.border}>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                      <span style={{ fontSize: "1.05rem", fontWeight: "800", color: theme.text, display: "flex", alignItems: "center", gap: "6px" }}>
+                        <Droplet size={16} strokeWidth={3} color={theme.accent} /> {item.amount}
+                      </span>
+                      {item.bonus && <span style={{ fontSize: "0.75rem", color: theme.accent, fontWeight: "700" }}>{item.bonus}</span>}
+                    </div>
+                    <div style={{ padding: "8px 14px", backgroundColor: theme.panel, border: `1px solid ${theme.border}`, borderRadius: "10px", fontSize: "0.85rem", fontWeight: "700", color: theme.text }}>
+                      {item.price}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
             </div>
           </div>
         )}
@@ -2588,6 +2667,87 @@ color: "#fff", border: "none", cursor: "pointer",
             </div>
           </div>
         )}
+
+{/* 👤 내정보 (Profile) 탭 화면 */}
+            {activeTab === "profile" && (
+              <div style={{ display: "flex", flexDirection: "column", gap: "24px", animation: "fadeIn 0.2s ease-out", paddingBottom: "20px" }}>
+                
+                {/* 1. 유저 계정 프로필 카드 */}
+                <div style={{ display: "flex", alignItems: "center", gap: "16px", padding: "24px", backgroundColor: theme.panel, borderRadius: "20px", border: `1px solid ${theme.borderHighlight}`, boxShadow: "0 10px 30px rgba(0,0,0,0.05)" }}>
+                  <div style={{ width: "72px", height: "72px", borderRadius: "50%", overflow: "hidden", backgroundColor: theme.panelAlt, border: `2px solid ${theme.border}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <UserRound size={36} color={theme.textMuted} />
+                  </div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "6px", flex: 1 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                      <span style={{ fontSize: "1.3rem", fontWeight: "800", color: theme.text }}>탐색자_8921</span>
+                      <span style={{ fontSize: "0.7rem", color: theme.accent, fontWeight: "800", backgroundColor: theme.inputBg, padding: "2px 8px", borderRadius: "8px", border: `1px solid ${theme.borderHighlight}` }}>LV. 3</span>
+                    </div>
+                    <span style={{ fontSize: "0.85rem", color: theme.textMuted, fontWeight: "500" }}>user_8921@secretnovel.com</span>
+                  </div>
+                  <button onClick={() => triggerToast("프로필 수정", "준비 중입니다.", <PenTool size={16}/>)} style={{ background: "none", border: "none", color: theme.textMuted, cursor: "pointer", padding: "8px" }}>
+                    <Settings size={22} strokeWidth={2} />
+                  </button>
+                </div>
+
+                {/* 2. 내 지갑 (클릭 시 잉크 충전소 오픈) */}
+                <div 
+                  onClick={() => setShowInkModal(true)}
+                  style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "20px 24px", backgroundColor: isDarkMode ? "rgba(163, 146, 116, 0.1)" : "#fefcf9", borderRadius: "20px", border: `1.5px solid ${theme.accent}`, cursor: "pointer", transition: "transform 0.2s" }}
+                  onMouseEnter={e => e.currentTarget.style.transform = "scale(1.02)"} 
+                  onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}
+                >
+                  <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                    <span style={{ fontSize: "0.85rem", fontWeight: "700", color: theme.accent, display: "flex", alignItems: "center", gap: "6px" }}>
+                      <Droplet size={16} strokeWidth={2.5} /> 보유 잉크
+                    </span>
+                    <span style={{ fontSize: "1.6rem", fontWeight: "800", color: theme.text, letterSpacing: "-0.5px" }}>
+                      {userInk.toLocaleString()} <span style={{ fontSize: "0.9rem", color: theme.textMuted, fontWeight: "600" }}>방울</span>
+                    </span>
+                  </div>
+                  <div style={{ padding: "10px 16px", backgroundColor: theme.accent, color: isDarkMode ? "#1a1817" : "#fff", borderRadius: "12px", fontWeight: "800", fontSize: "0.9rem", display: "flex", alignItems: "center", gap: "6px", boxShadow: `0 4px 12px ${theme.accentGlow}` }}>
+                    <Plus size={16} strokeWidth={3} /> 충전 / 무료 획득
+                  </div>
+                </div>
+
+                {/* 3. 내 활동 메뉴 */}
+                <div style={{ display: "flex", flexDirection: "column", gap: "4px", backgroundColor: theme.panel, borderRadius: "20px", padding: "8px", border: `1px solid ${theme.border}` }}>
+                  {[
+                    { icon: <Clock size={20} strokeWidth={2} color={theme.accent} />, title: "나의 플레이 기록", count: `${sessions.length}건` },
+                    { icon: <Heart size={20} strokeWidth={2} color={theme.danger} />, title: "관심 시나리오", count: "12건" },
+                    { icon: <UploadCloud size={20} strokeWidth={2} color="#60a5fa" />, title: "라운지 심사 및 발행 내역", count: "1건 대기중" }
+                  ].map((menu, i) => (
+                    <div key={i} onClick={() => triggerToast(menu.title, "세부 페이지 준비 중입니다.", "🚀")} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 12px", cursor: "pointer", borderRadius: "12px", transition: "background 0.2s" }} onMouseEnter={e => e.currentTarget.style.backgroundColor = theme.panelAlt} onMouseLeave={e => e.currentTarget.style.backgroundColor = "transparent"}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                        {menu.icon}
+                        <span style={{ fontSize: "0.95rem", fontWeight: "700", color: theme.text }}>{menu.title}</span>
+                      </div>
+                      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                        <span style={{ fontSize: "0.8rem", color: theme.textMuted, fontWeight: "600" }}>{menu.count}</span>
+                        <ChevronRight size={18} color={theme.textMuted} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* 4. 고객 지원 메뉴 */}
+                <div style={{ display: "flex", flexDirection: "column", gap: "4px", backgroundColor: theme.panel, borderRadius: "20px", padding: "8px", border: `1px solid ${theme.border}` }}>
+                  {[
+                    { icon: <Headphones size={20} strokeWidth={2} color={theme.textMuted} />, title: "고객센터 / 문의하기" },
+                    { icon: <AlertTriangle size={20} strokeWidth={2} color={theme.textMuted} />, title: "공지사항" }
+                  ].map((menu, i) => (
+                    <div key={i} onClick={() => triggerToast(menu.title, "준비 중입니다.", "🎧")} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 12px", cursor: "pointer", borderRadius: "12px", transition: "background 0.2s" }} onMouseEnter={e => e.currentTarget.style.backgroundColor = theme.panelAlt} onMouseLeave={e => e.currentTarget.style.backgroundColor = "transparent"}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                        {menu.icon}
+                        <span style={{ fontSize: "0.95rem", fontWeight: "700", color: theme.text }}>{menu.title}</span>
+                      </div>
+                      <ChevronRight size={18} color={theme.textMuted} />
+                    </div>
+                  ))}
+                </div>
+
+              </div>
+            )}
+
 
 {/* 🧭 탐색 탭: 시나리오 상세 페이지 전체 화면 오버레이 */}
         {selectedExploreScenario && (
