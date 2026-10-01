@@ -385,21 +385,6 @@ const [showLibEditModal, setShowLibEditModal] = useState(false);
 const [editingLibItem, setEditingLibItem] = useState(null);
 const [itemToDelete, setItemToDelete] = useState(null); // 🌟 추가: 예쁜 삭제 팝업 스위치
 
-  // 마운트 시 로컬 스토리지에서 저장된 서재 데이터 불러오기
-  useEffect(() => {
-    const stored = localStorage.getItem("secret_novel_library");
-    if (stored) {
-      try { setSavedLibrary(JSON.parse(stored)); } catch(e) {}
-    }
-  }, []);
-
-  // 🌟 추가: 어드민 계정이면 무한 잉크 즉시 입금!!
-  useEffect(() => {
-    if (isAdmin) {
-      setUserInk(9999999);
-    }
-  }, [isAdmin]);
-
 // 마운트 시 로컬 스토리지에서 저장된 서재 데이터 불러오기
 useEffect(() => {
   const stored = localStorage.getItem("secret_novel_library");
@@ -552,6 +537,15 @@ const [showSupportModal, setShowSupportModal] = useState(false);
 // ── [11. 관리자 및 추가 기능 상태] ──
   const MY_ADMIN_EMAIL = "usb1201@naver.com"; 
   const isAdmin = currentUser?.email === MY_ADMIN_EMAIL; // 이메일이 일치할 때만 어드민 권한 부여
+  
+  // 🌟 [제자리로 이사 옴!] 어드민 계정이면 무한 잉크 즉시 입금!!
+  useEffect(() => {
+    if (isAdmin) {
+      setUserInk(9999999);
+    }
+  }, [isAdmin]);
+
+  const [showNoticeModal, setShowNoticeModal] = useState(false);
   const [showNoticeModal, setShowNoticeModal] = useState(false);
   const [notices, setNotices] = useState([
     { id: 1, text: "시크릿 노벨 클로즈 베타 테스트에 오신 것을 환영합니다! 🎉\n버그 제보 및 피드백은 고객센터를 이용해 주세요.", date: "2026-10-01" }
