@@ -173,14 +173,61 @@ function convertRowToPreset(row, index, headers = []) {
 }
 
 export default function GamePlatform() {
-// ── [3. 상태 관리] ──
+  // ── [3. 상태 관리] ──
+  const [isMounted, setIsMounted] = useState(false); // 🌟 에러 #423 방어막
   const [currentUser, setCurrentUser] = useState(null);
   const [isLoginLoading, setIsLoginLoading] = useState(false);
-  const [loginEmail, setLoginEmail] = useState(""); // 🌟 이메일 입력창 상태
-  const [loginPassword, setLoginPassword] = useState(""); // 🌟 비밀번호 입력창 상태
-  const [agreeTerms, setAgreeTerms] = useState(false); // 🌟 개인정보 동의 체크박스 상태!
-  const [showTermsModal, setShowTermsModal] = useState(false); // 🌟 약관 팝업창 스위치!
-  const [isGuestPlay, setIsGuestPlay] = useState(false); // 🌟 탐색 탭에서 바로 시작했는지 확인하는 스위치
+  const [loginEmail, setLoginEmail] = useState(""); 
+  const [loginPassword, setLoginPassword] = useState(""); 
+  const [agreeTerms, setAgreeTerms] = useState(false); 
+  const [showTermsModal, setShowTermsModal] = useState(false); 
+  const [isGuestPlay, setIsGuestPlay] = useState(false); 
+
+  // 🌟 [핵심 패치] 자동 로그인 유지 & 모바일 뒤로가기 튕김 방어
+  useEffect(() => {
+    setIsMounted(true); // 에러 방어막 해제 (클라이언트 렌더링 완료)
+
+    // 1. 새로고침해도 로그인 안 튕기게 유지 (Supabase 세션 확인)
+    const restoreSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        const userObj = { uid: session.user.id, email: session.user.email, name: session.user.email.split('@')[0] };
+        setCurrentUser(userObj);
+      } else {
+        const localUser = localStorage.getItem("secret_novel_user");
+        if (localUser) {
+          try { setCurrentUser(JSON.parse(localUser)); } catch (e) {}
+        }
+      }
+    };
+    restoreSession();
+
+    // 2. 모바일 뒤로가기 앱 꺼짐 방지 & 모달/팝업창 닫기 로직
+    window.history.pushState(null, "", window.location.href);
+    const handlePopState = () => {
+      // 뒤로가기를 눌러도 크롬창이 꺼지지 않도록 다시 상태를 밀어넣음
+      window.history.pushState(null, "", window.location.href);
+      
+      // 열려있는 모든 팝업/모달/상세창을 싹 닫아줍니다!
+      setIsDrawerOpen(false);
+      setShowCgModal(false);
+      setShowPortraitModal(false);
+      setShowPasteModal(false);
+      setShowInkModal(false);
+      setShowHistoryModal(false);
+      setShowLikedModal(false);
+      setShowReviewModal(false);
+      setShowSupportModal(false);
+      setShowNoticeModal(false);
+      setShowLibEditModal(false);
+      setShowTraitModal(false);
+      setShowMainNoticePopup(false);
+      setSelectedExploreScenario(null);
+      setUploadingScenario(null);
+    };
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
 
   const [banners, setBanners] = useState([
     { id: 1, tag: "이번 주말의 추천 사건", title: "저택의 그림자", desc: "어느 비 오는 밤, 저택에서 울린 한 발의 총성.", imageUrl: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=800&q=80" },
@@ -849,6 +896,11 @@ const [showSupportModal, setShowSupportModal] = useState(false);
     executeMessage(inputMsg);
   };
 
+// 🌟 서버-클라이언트 렌더링 충돌(에러 423) 완벽 방지
+  if (!isMounted) {
+    return <div style={{ width: "100vw", height: "100vh", backgroundColor: "#1a1817" }} />;
+  }
+  
 // 🌟 진짜 Supabase 로그인 / 회원가입 화면
   if (!currentUser) {
     return (
