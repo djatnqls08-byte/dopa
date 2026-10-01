@@ -1762,7 +1762,7 @@ color: "#fff", border: "none", cursor: "pointer",
               </div>
             )}
 
-{selectedMode === "괴담" && (
+            {selectedMode === "괴담" && (
               <>
                 {/* 1. 사건 개요서 */}
                 <section style={{ ...GLASS_STYLE, padding: isMobile ? "16px" : "20px", backgroundColor: theme.panel, borderRadius: "18px", border: `1px solid ${theme.border}`, display: "flex", flexDirection: "column", gap: "12px" }}>
@@ -2053,7 +2053,6 @@ color: "#fff", border: "none", cursor: "pointer",
                 </button>
 
               </div>
-            )}
             )}
 
             <div style={{ height: "60px", flexShrink: 0 }} />
