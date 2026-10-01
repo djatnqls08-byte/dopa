@@ -3012,60 +3012,6 @@ color: "#fff", border: "none", cursor: "pointer",
           </div>
         )}
 
-           {/* 🌟 하단 플로팅 액션 바 */}
-            <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "16px 20px max(16px, env(safe-area-inset-bottom))", background: `linear-gradient(to top, ${theme.panel} 70%, transparent 100%)`, display: "flex", gap: "12px", zIndex: 20 }}>
-               
-               <button 
-                 onClick={() => {
-                   // 이미 서재에 있는지 검사
-                   if (savedLibrary.some(s => s.title === selectedExploreScenario.title)) {
-                     triggerToast("다운로드 안내", "이미 내 서재에 보관된 서류철입니다.", "💡");
-                     return;
-                   }
-                   
-                   // 서재용 데이터 형식으로 변환하여 저장
-                   const newDownloadedScenario = {
-                     id: Date.now(),
-                     title: selectedExploreScenario.title,
-                     mode: selectedExploreScenario.mode,
-                     date: new Date().toLocaleString("ko-KR", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" }),
-                     imageUrl: "", 
-                     isDownloaded: true, // 🌟 다운로드 뱃지 활성화 플래그
-                     data: { 
-                       publicSynopsis: "라운지에서 다운로드한 시나리오입니다.",
-                       // (실제 백엔드 연동 시, 여기에 제작자가 세팅한 NPC, 단서 배열들이 들어옵니다.)
-                     }
-                   };
-                   
-                   const updatedLibrary = [newDownloadedScenario, ...savedLibrary];
-                   setSavedLibrary(updatedLibrary);
-                   localStorage.setItem("secret_novel_library", JSON.stringify(updatedLibrary));
-                   
-                   triggerToast("다운로드 완료", "성공적으로 내 서재에 보관되었습니다.", <FileUp size={18} color={theme.accent} />);
-                 }} 
-                 title="서재에 담기" 
-                 style={{ width: "56px", height: "56px", display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: theme.panelAlt, border: `1.5px solid ${theme.borderHighlight}`, borderRadius: "16px", cursor: "pointer", flexShrink: 0, color: theme.text, transition: "background 0.2s" }} 
-                 onMouseEnter={e => e.currentTarget.style.backgroundColor = theme.inputBg} 
-                 onMouseLeave={e => e.currentTarget.style.backgroundColor = theme.panelAlt}
-               >
-                 <FileUp size={24} strokeWidth={2} />
-               </button>
-               
-               <button 
-                 onClick={() => triggerToast("플레이", "서재에서 세팅 후 시작할 수 있습니다.", <Play size={18} color="#fff"/>)}
-                 style={{ flex: 1, height: "56px", backgroundColor: theme.accent, border: "none", borderRadius: "16px", color: isDarkMode ? "#1a1817" : "#fff", fontSize: "1.05rem", fontWeight: "800", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", cursor: "pointer", boxShadow: `0 8px 24px ${theme.accentGlow}`, transition: "transform 0.2s" }} 
-                 onMouseEnter={e => e.currentTarget.style.transform = "scale(1.02)"} 
-                 onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}
-               >
-                 <Play size={20} strokeWidth={3} /> 바로 플레이
-                 <span style={{ fontSize: "0.8rem", opacity: 0.9, marginLeft: "4px", display: "flex", alignItems: "center", gap: "2px", backgroundColor: "rgba(0,0,0,0.15)", padding: "2px 8px", borderRadius: "10px" }}>
-                   <Droplet size={12} strokeWidth={2.5} fill="currentColor" /> 10 잉크
-                 </span>
-               </button>
-            </div>
-          </div>
-        )}
-
         {ruleHelpModal && (
           <div onClick={() => setRuleHelpModal(null)} style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 160, padding: "20px" }}>
             <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: "440px", padding: "22px", borderRadius: "16px", backgroundColor: theme.panel, color: theme.text, display: "flex", flexDirection: "column", gap: "12px", boxShadow: "0 16px 40px rgba(0,0,0,0.3)" }}>
