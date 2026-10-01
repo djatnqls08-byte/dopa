@@ -976,7 +976,9 @@ export default function GamePlatform() {
                             <span style={{ fontWeight: "800", display: "flex", alignItems: "center", gap: "6px" }}>
                               <Lock size={15} strokeWidth={2.5} /> 숨겨진 비밀 / 약점
                             </span>
-                            <span style={{ fontWeight: "500", fontSize: "0.85rem" }}>{cur.showSecret ? "▲" : "▼"}</span>
+                            <span style={{ display: "flex", alignItems: "center", color: theme.textMuted }}>
+  {showEvidence ? <ChevronUp size={18} strokeWidth={2} /> : <ChevronDown size={18} strokeWidth={2} />}
+</span>
                           </button>
                           
                           {cur.showSecret && (
@@ -998,8 +1000,9 @@ export default function GamePlatform() {
                       <FileSearch size={22} strokeWidth={2} color={theme.accent} />
                       <span style={{ fontWeight: "600", fontSize: "0.95rem", color: theme.text }}>사건 단서 및 물증</span>
                     </div>
-                    <span style={{ color: theme.text, fontSize: "0.85rem", fontWeight: "500" }}>
-                      {showEvidence ? "▲" : "▼"}
+                 <span style={{ display: "flex", alignItems: "center", color: theme.textMuted }}>
+  {showEvidence ? <ChevronUp size={18} strokeWidth={2} /> : <ChevronDown size={18} strokeWidth={2} />}
+</span>
                     </span>
                   </button>
 
@@ -1020,7 +1023,9 @@ export default function GamePlatform() {
                                 <span style={{ fontWeight: "800", display: "flex", alignItems: "center", gap: "6px" }}>
                                   <Lock size={15} strokeWidth={2.5} /> 감식 진상 / 모순
                                 </span>
-                                <span style={{ fontWeight: "500", fontSize: "0.85rem" }}>{item.showSecret ? "▲" : "▼"}</span>
+                               <span style={{ display: "flex", alignItems: "center", color: theme.textMuted }}>
+  {showEvidence ? <ChevronUp size={18} strokeWidth={2} /> : <ChevronDown size={18} strokeWidth={2} />}
+</span>
                               </button>
                               {item.showSecret && (
                                 <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginTop: "8px" }}>
