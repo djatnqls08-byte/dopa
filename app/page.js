@@ -546,7 +546,6 @@ const [showSupportModal, setShowSupportModal] = useState(false);
   }, [isAdmin]);
 
   const [showNoticeModal, setShowNoticeModal] = useState(false);
-  const [showNoticeModal, setShowNoticeModal] = useState(false);
   const [notices, setNotices] = useState([
     { id: 1, text: "시크릿 노벨 클로즈 베타 테스트에 오신 것을 환영합니다! 🎉\n버그 제보 및 피드백은 고객센터를 이용해 주세요.", date: "2026-10-01" }
   ]);
