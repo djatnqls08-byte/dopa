@@ -529,10 +529,10 @@ const handleDeleteFromLibrary = (id) => {
     const fetchBanners = async () => {
       const { data, error } = await supabase.from('main_banners').select('*').order('id', { ascending: true });
       
-      // 🌟 서버에서 데이터를 성공적으로 가져오고, 내용이 비어있지 않을 때만 세팅!
-      if (data && data.length > 0 && !error) {
-        setBanners(data.map(b => ({ id: b.id, tag: b.tag, title: b.title, desc: b.description, imageUrl: b.image_url })));
-      } else {
+      // 🌟 끝부분에 linkId: b.link_id 안테나 추가 완료!
+            if (data && data.length > 0 && !error) {
+              setBanners(data.map(b => ({ id: b.id, tag: b.tag, title: b.title, desc: b.description, imageUrl: b.image_url, linkId: b.link_id })));
+            } else {
         // 🌟 비어있거나 에러가 나면 무조건 띄워줄 '기본 배너' (증발 방어막!)
         setBanners([
           { id: 1, tag: "이번 주말의 추천 사건", title: "저택의 그림자", desc: "어느 비 오는 밤, 저택에서 울린 한 발의 총성.", imageUrl: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=800&q=80" },
@@ -1516,20 +1516,20 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
                   {exploreFilter === "추천" && !exploreSearchQuery ? (
                     <div style={{ display: "flex", flexDirection: "column", gap: "32px" }}>
                       
-                     {/* A. 히어로 다중 배너 (가로 스크롤 & 어드민 편집) */}
+{/* A. 히어로 다중 배너 (가로 스크롤 & 어드민 편집) */}
                       <div style={{ position: "relative", display: "flex", overflowX: "auto", snapType: "x mandatory", gap: "16px", paddingBottom: "8px", WebkitOverflowScrolling: "touch", width: "100%", scrollbarWidth: "none" }}>
                         {banners.map((banner) => (
                           <div 
                             key={banner.id} 
-                            // 🌟 (핵심!) 배너를 클릭하면, 배너에 적힌 linkId(이름)와 똑같은 시나리오를 찾아서 열어줍니다!
+                            // 🌟 (핵심!) 배너를 클릭하면 목적지(linkId)를 찾아 팝업을 열어줍니다! (어드민도 테스트 가능)
                             onClick={() => {
-                              if (!isAdmin && banner.linkId) {
+                              if (banner.linkId) {
                                 const targetScen = exploreScenarios.find(s => s.title.includes(banner.linkId));
                                 if (targetScen) setSelectedExploreScenario(targetScen);
                                 else triggerToast("안내", "현재 라운지에서 찾을 수 없는 시나리오입니다.", "🔍");
                               }
                             }}
-                            style={{ ...GLASS_STYLE, flex: "0 0 100%", snapAlign: "center", aspectRatio: "16/9", backgroundColor: theme.panel, borderRadius: "20px", overflow: "hidden", position: "relative", border: `1px solid ${theme.borderHighlight}`, cursor: (!isAdmin && banner.linkId) ? "pointer" : "default" }}
+                            style={{ ...GLASS_STYLE, flex: "0 0 100%", snapAlign: "center", aspectRatio: "16/9", backgroundColor: theme.panel, borderRadius: "20px", overflow: "hidden", position: "relative", border: `1px solid ${theme.borderHighlight}`, cursor: banner.linkId ? "pointer" : "default" }}
                           >
                             <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.1) 60%, transparent 100%)", zIndex: 1 }} />
                             <img src={banner.imageUrl} alt="배너" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
@@ -1541,7 +1541,10 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
                             
                             {/* 👑 어드민 전용 배너 편집 버튼 */}
                             {isAdmin && (
-                              <button onClick={() => { setEditingBanner({ ...banner }); setShowBannerEdit(true); }} style={{ position: "absolute", top: "16px", right: "16px", zIndex: 10, padding: "6px 12px", backgroundColor: theme.danger, color: "#fff", border: "none", borderRadius: "8px", fontWeight: "800", fontSize: "0.75rem", cursor: "pointer", boxShadow: "0 4px 12px rgba(0,0,0,0.3)" }}>
+                              <button onClick={(e) => { 
+                                e.stopPropagation(); // 🌟 배너 교체 버튼을 누르면 상세 페이지로 넘어가지 않게 막아줍니다!
+                                setEditingBanner({ ...banner }); setShowBannerEdit(true); 
+                              }} style={{ position: "absolute", top: "16px", right: "16px", zIndex: 10, padding: "6px 12px", backgroundColor: theme.danger, color: "#fff", border: "none", borderRadius: "8px", fontWeight: "800", fontSize: "0.75rem", cursor: "pointer", boxShadow: "0 4px 12px rgba(0,0,0,0.3)" }}>
                                 <PenTool size={14} style={{ marginRight: "4px", verticalAlign: "middle" }} /> 배너 교체
                               </button>
                             )}
@@ -4055,18 +4058,33 @@ color: "#fff", border: "none", cursor: "pointer",
               </div>
             </div>
 
-            {/* 🌟 하단 플로팅 액션 바 */}
+{/* 🌟 하단 플로팅 액션 바 */}
             <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "16px 20px max(16px, env(safe-area-inset-bottom))", background: `linear-gradient(to top, ${theme.panel} 70%, transparent 100%)`, display: "flex", gap: "12px", zIndex: 20 }}>
                <button 
                  onClick={() => {
                    const isLiked = likedScenarios.some(s => s.id === selectedExploreScenario.id);
+                   const isOrg = selectedExploreScenario.isOriginal;
+                   let newLikes = Number(selectedExploreScenario.likes || 0);
+
                    if (isLiked) {
                      setLikedScenarios(likedScenarios.filter(s => s.id !== selectedExploreScenario.id));
+                     if (!isOrg) {
+                       newLikes = Math.max(0, newLikes - 1); // 🌟 서버 하트 깎기
+                       supabase.from('scenarios').update({ likes: newLikes }).eq('id', selectedExploreScenario.id).then();
+                     }
                      triggerToast("관심 해제", "관심 시나리오에서 제외되었습니다.", "💔");
                    } else {
                      setLikedScenarios([{ ...selectedExploreScenario, likedAt: Date.now() }, ...likedScenarios]);
+                     if (!isOrg) {
+                       newLikes += 1; // 🌟 서버 하트 올리기
+                       supabase.from('scenarios').update({ likes: newLikes }).eq('id', selectedExploreScenario.id).then();
+                     }
                      triggerToast("관심 등록", "관심 시나리오에 추가되었습니다!", <Heart fill={theme.danger} color={theme.danger} size={18}/>);
                    }
+                   
+                   // 🌟 (핵심) 누르는 즉시 화면에 숫자 반영!
+                   setSelectedExploreScenario(prev => ({ ...prev, likes: newLikes }));
+                   setExploreScenarios(prev => prev.map(s => s.id === selectedExploreScenario.id ? { ...s, likes: newLikes } : s));
                  }}
                  title="관심 시나리오 등록" 
                  style={{ width: "56px", height: "56px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", backgroundColor: theme.panelAlt, border: `1.5px solid ${theme.borderHighlight}`, borderRadius: "16px", cursor: "pointer", flexShrink: 0, transition: "background 0.2s" }}
@@ -4114,14 +4132,17 @@ color: "#fff", border: "none", cursor: "pointer",
                    
                    // 🌟 데이터베이스의 조회수(plays) 1 올리기! (오리지널이 아닐 때만)
                    if (!selectedExploreScenario.isOriginal) {
-                     supabase.from('scenarios').update({ plays: selectedExploreScenario.plays + 1 }).eq('id', selectedExploreScenario.id).then();
+                     const newPlays = Number(selectedExploreScenario.plays || 0) + 1;
+                     supabase.from('scenarios').update({ plays: newPlays }).eq('id', selectedExploreScenario.id).then();
+                     // 🌟 (핵심) 플레이 누르는 즉시 화면 리스트에 조회수 숫자 반영!
+                     setExploreScenarios(prev => prev.map(s => s.id === selectedExploreScenario.id ? { ...s, plays: newPlays } : s));
                    }
 
                    const d = selectedExploreScenario.data;
                    if (d) {
                      setSelectedMode(selectedExploreScenario.mode);
                      setScenarioTitle(selectedExploreScenario.title);
-                     setPlayPreference(d.playPreference || ""); setPcName(d.pcName || ""); setOriginalPcName(d.pcName || ""); setPcAgeGender(d.pcAgeGender || ""); setPcJob(d.pcJob || ""); setPcBackground(d.pcBackground || ""); setPcPortraitUrl(d.pcPortraitUrl || ""); setPcSecret(d.pcSecret || ""); setShowPcSecret(d.showPcSecret || false);
+                     setPlayPreference(d.playPreference || ""); setPcName(d.pcName || ""); setPcAgeGender(d.pcAgeGender || ""); setPcJob(d.pcJob || ""); setPcBackground(d.pcBackground || ""); setPcPortraitUrl(d.pcPortraitUrl || ""); setPcSecret(d.pcSecret || ""); setShowPcSecret(d.showPcSecret || false);
                      setVictimName(d.victimName || ""); setPublicSynopsis(d.publicSynopsis || ""); setOpeningScene(d.openingScene || ""); setCulpritName(d.culpritName || ""); setTrickDetail(d.trickDetail || ""); setHiddenTruth(d.hiddenTruth || "");
                      
                      if(d.horrorStats) setHorrorStats(d.horrorStats);
