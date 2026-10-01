@@ -1655,14 +1655,14 @@ color: "#fff", border: "none", cursor: "pointer",
                   )}
                 </div>
 
-                {/* 🌟 2. 이벤트 CG 갤러리 (추리 모드 가이드라인 완벽 복붙 통일) */}
+                {/* 🌟 2. 이벤트 CG 갤러리 */}
                 <section style={{ ...GLASS_STYLE, padding: isMobile ? "16px" : "20px", backgroundColor: theme.panel, borderRadius: "18px", border: `1px solid ${theme.border}`, display: "flex", flexDirection: "column", gap: "12px" }}>
                   <button type="button" onClick={() => setShowCgGallery(!showCgGallery)} style={{ width: "100%", textAlign: "left", background: "none", border: "none", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer", padding: 0 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                      <ImageIcon size={22} strokeWidth={2} color={isDarkMode ? "#f472b6" : "#ec4899"} />
+                      <ImageIcon "#ec4899"} "#f472b6" : ? color="{isDarkMode" size="{22}" strokeWidth="{2}"/>
                       <span style={{ fontWeight: "700", fontSize: "0.95rem", color: theme.text }}>이벤트 CG 갤러리</span>
                     </div>
-                    <span style={{ display: "flex", alignItems: "center", color: theme.textMuted }}>{showCgGallery ? <ChevronUp size={18} strokeWidth={2} /> : <ChevronDown size={18} strokeWidth={2} />}</span>
+                    <span style={{ display: "flex", alignItems: "center", color: theme.textMuted }}>{showCgGallery ? <ChevronUp size="{18}" strokeWidth="{2}"/> : <ChevronDown size="{18}" strokeWidth="{2}"/>}</span>
                   </button>
 
                   {showCgGallery && (
@@ -1671,48 +1671,33 @@ color: "#fff", border: "none", cursor: "pointer",
                         {cgList.map((item, idx) => (
                           <div key={item.id} style={{ backgroundColor: theme.panelAlt, border: `1px solid ${theme.border}`, borderRadius: "12px", padding: "14px", display: "flex", flexDirection: "column", gap: "12px" }}>
                             
-                            {/* 1. 🌟 이미지 상단 꽉 차게 배치 (16:9 비율 유지) */}
-                            <div 
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setActiveCgId(item.id);
-                                setShowCgModal(true);
-                              }}
-                              title="CG 확대 및 등록" 
-                              style={{ width: "100%", aspectRatio: "16/9", backgroundColor: theme.inputBg, border: `1px dashed ${theme.borderHighlight}`, borderRadius: "8px", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", position: "relative", boxShadow: "0 4px 10px rgba(0,0,0,0.05)", transition: "opacity 0.2s" }}
-                              onMouseEnter={e => e.currentTarget.style.opacity = 0.85}
-                              onMouseLeave={e => e.currentTarget.style.opacity = 1}
-                            >
+                            <div onClick={(e) => { e.stopPropagation(); setActiveCgId(item.id); setShowCgModal(true); }} title="CG 확대 및 등록" style={{ width: "100%", aspectRatio: "16/9", backgroundColor: theme.inputBg, border: `1px dashed ${theme.borderHighlight}`, borderRadius: "8px", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", position: "relative", boxShadow: "0 4px 10px rgba(0,0,0,0.05)", transition: "opacity 0.2s" }} onMouseEnter={e => e.currentTarget.style.opacity = 0.85} onMouseLeave={e => e.currentTarget.style.opacity = 1}>
                               {item.imageUrl ? (
                                 <img src={item.imageUrl} alt="CG" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                               ) : (
                                 <div style={{ color: theme.textMuted, fontSize: "0.75rem", display: "flex", flexDirection: "column", alignItems: "center", gap: "6px" }}>
-                                  <ImageIcon size={24} strokeWidth={1.5} color={theme.accent} />
+                                  <ImageIcon color="{theme.accent}" size="{24}" strokeWidth="{1.5}"/>
                                   <span style={{ fontWeight: "700" }}>터치하여 이미지 등록</span>
                                 </div>
                               )}
                             </div>
 
-                            {/* 2. CG 명칭 및 삭제 버튼 */}
                             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "8px" }}>
                               <input type="text" autoComplete="off" value={item.title} onChange={e => setCgList(cgList.map(c => c.id === item.id ? { ...c, title: e.target.value } : c))} placeholder={`CG ${idx + 1} 명칭`} style={{ flex: 1, padding: "10px 12px", borderRadius: "8px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.85rem", fontWeight: "600", outline: "none" }} />
-                             {cgList.length > 1 && (
+                              {cgList.length > 1 && (
                                 <button type="button" onClick={() => setCgList(cgList.filter(c => c.id !== item.id))} style={{ background: "none", border: "none", color: theme.danger, cursor: "pointer", padding: "4px", display: "flex", alignItems: "center" }}>
-                                  <Trash2 size={16} strokeWidth={2.5} />
+                                  <Trash2 size="{16}" strokeWidth="{2.5}"/>
                                 </button>
                               )}
                             </div>
                             
-                            {/* 3. 해금 조건 & 대사 묘사 */}
                             <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                               <input type="text" autoComplete="off" value={item.condition} onChange={e => setCgList(cgList.map(c => c.id === item.id ? { ...c, condition: e.target.value } : c))} placeholder="해금 조건 (예: 옥상 이벤트 성공)" style={{ width: "100%", boxSizing: "border-box", padding: "10px 12px", borderRadius: "8px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.82rem", outline: "none" }} />
                               <textarea rows={2} value={item.dialogue} onChange={e => setCgList(cgList.map(c => c.id === item.id ? { ...c, dialogue: e.target.value } : c))} placeholder="대사 및 상황 묘사를 입력하세요..." style={{ width: "100%", boxSizing: "border-box", padding: "10px 12px", borderRadius: "8px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.82rem", outline: "none", resize: "vertical" }} />
                             </div>
-
                           </div>
                         ))}
                       </div>
-                      
                       <button type="button" onClick={() => setCgList([...cgList, { id: Date.now(), title: "", condition: "", dialogue: "", imageUrl: "", showDetails: true }])} style={{ width: "100%", padding: "12px", backgroundColor: isDarkMode ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.02)", border: `1.5px dashed ${theme.borderHighlight || theme.border}`, borderRadius: "12px", color: "#ec4899", fontSize: "0.82rem", fontWeight: "600", cursor: "pointer", transition: "all 0.2s" }}>
                         ＋ 새로운 CG 추가 ({cgList.length})
                       </button>
@@ -1720,14 +1705,14 @@ color: "#fff", border: "none", cursor: "pointer",
                   )}
                 </section>
 
-                {/* 🌟 3. 선택지 분기 및 루트 설계 (추리 모드 가이드라인 완벽 복붙 통일) */}
+                {/* 🌟 3. 선택지 분기 및 루트 설계 */}
                 <section style={{ ...GLASS_STYLE, padding: isMobile ? "16px" : "20px", backgroundColor: theme.panel, borderRadius: "18px", border: `1px solid ${theme.border}`, display: "flex", flexDirection: "column", gap: "12px" }}>
                   <button type="button" onClick={() => setShowRouteList(!showRouteList)} style={{ width: "100%", textAlign: "left", background: "none", border: "none", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer", padding: 0 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                      <FolderOpen size={22} strokeWidth={2} color={isDarkMode ? "#f472b6" : "#ec4899"} />
+                      <FolderOpen "#ec4899"} "#f472b6" : ? color="{isDarkMode" size="{22}" strokeWidth="{2}"/>
                       <span style={{ fontWeight: "700", fontSize: "0.95rem", color: theme.text }}>선택지 분기 및 루트 설계</span>
                     </div>
-                    <span style={{ display: "flex", alignItems: "center", color: theme.textMuted }}>{showRouteList ? <ChevronUp size={18} strokeWidth={2} /> : <ChevronDown size={18} strokeWidth={2} />}</span>
+                    <span style={{ display: "flex", alignItems: "center", color: theme.textMuted }}>{showRouteList ? <ChevronUp size="{18}" strokeWidth="{2}"/> : <ChevronDown size="{18}" strokeWidth="{2}"/>}</span>
                   </button>
 
                   {showRouteList && (
@@ -1735,17 +1720,9 @@ color: "#fff", border: "none", cursor: "pointer",
                       {routeList.map((route, idx) => (
                         <div key={route.id} style={{ display: "flex", flexDirection: isMobile ? "column" : "row", gap: "8px", backgroundColor: theme.panelAlt, border: `1px solid ${theme.border}`, borderRadius: "12px", padding: "14px", alignItems: isMobile ? "stretch" : "center" }}>
                           <div style={{ display: "flex", alignItems: "center", gap: "8px", flex: 2 }}>
-                            <span style={{ 
-  backgroundColor: isDarkMode ? "rgba(236, 72, 153, 0.15)" : "#fbcfe8", 
-  color: isDarkMode ? "#f472b6" : "#be185d", 
-  padding: "4px 8px", 
-  borderRadius: "8px", 
-  fontSize: "0.7rem", 
-  fontWeight: "700", 
-  whiteSpace: "nowrap" 
-}}>
-  분기 {idx + 1}
-</span>
+                            <span style={{ backgroundColor: isDarkMode ? "rgba(236, 72, 153, 0.15)" : "#fbcfe8", color: isDarkMode ? "#f472b6" : "#be185d", padding: "4px 8px", borderRadius: "8px", fontSize: "0.7rem", fontWeight: "700", whiteSpace: "nowrap" }}>
+                              분기 {idx + 1}
+                            </span>
                             <input type="text" autoComplete="off" value={route.routeName} onChange={e => setRouteList(routeList.map(r => r.id === route.id ? { ...r, routeName: e.target.value } : r))} placeholder="분기 설명 (예: 옥상에서 위로한다)" style={{ width: "100%", padding: "8px 10px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.8rem", outline: "none" }} />
                           </div>
                           <div style={{ display: "flex", alignItems: "center", gap: "8px", flex: 1 }}>
@@ -1754,11 +1731,14 @@ color: "#fff", border: "none", cursor: "pointer",
                               {suspects.map(s => <option key={s.id} value={s.id}>{s.name || "이름 미상"}</option>)}
                             </select>
                             <input type="text" autoComplete="off" value={route.affectionChange} onChange={e => setRouteList(routeList.map(r => r.id === route.id ? { ...r, affectionChange: e.target.value } : r))} placeholder="호감도 (예: +10)" style={{ width: "75px", padding: "8px 10px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.accent, fontWeight: "600", fontSize: "0.78rem", outline: "none", textAlign: "center" }} />
-                            {routeList.length > 1 && <button type="button" onClick={() => setRouteList(routeList.filter(r => r.id !== route.id))} style={{ background: "none", border: "none", color: theme.danger, cursor: "pointer", fontSize: "0.8rem" }}><Trash2 size="{16}" strokeWidth="{2}"/></button>}
+                            {routeList.length > 1 && (
+                              <button type="button" onClick={() => setRouteList(routeList.filter(r => r.id !== route.id))} style={{ background: "none", border: "none", color: theme.danger, cursor: "pointer", fontSize: "0.8rem", display: "flex", alignItems: "center" }}>
+                                <Trash2 size="{16}" strokeWidth="{2.5}"/>
+                              </button>
+                            )}
                           </div>
                         </div>
                       ))}
-                      
                       <button type="button" onClick={() => setRouteList([...routeList, { id: Date.now(), routeName: "", targetId: "", affectionChange: "+10", requiredCG: "" }])} style={{ width: "100%", padding: "12px", backgroundColor: isDarkMode ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.02)", border: `1.5px dashed ${theme.borderHighlight || theme.border}`, borderRadius: "12px", color: "#ec4899", fontSize: "0.82rem", fontWeight: "600", cursor: "pointer", transition: "all 0.2s" }}>
                         ＋ 새로운 루트/분기 추가 ({routeList.length})
                       </button>
