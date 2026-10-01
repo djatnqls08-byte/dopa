@@ -3468,7 +3468,7 @@ color: "#fff", border: "none", cursor: "pointer",
           </div>
         )}
 
-        {/* ☁️ 라운지 심사 및 발행 내역 팝업 */}
+        {/* ☁️️ 라운지 심사 및 발행 내역 팝업 */}
         {showReviewModal && (
           <div onClick={() => setShowReviewModal(false)} style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 500, padding: "20px", animation: "fadeIn 0.2s ease-out" }}>
             <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: "500px", backgroundColor: theme.panel, border: `1px solid ${theme.border}`, borderRadius: "20px", padding: "24px", display: "flex", flexDirection: "column", gap: "20px", boxShadow: "0 20px 50px rgba(0,0,0,0.5)", maxHeight: "80vh" }}>
@@ -3478,9 +3478,8 @@ color: "#fff", border: "none", cursor: "pointer",
                 </span>
                 <button onClick={() => setShowReviewModal(false)} style={{ background: "none", border: "none", color: theme.textMuted, cursor: "pointer" }}><X size={24}/></button>
               </div>
+
               <div style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: "12px", paddingRight: "4px" }}>
-                
-                {/* 👑 어드민(관리자) 접속 시: 서버에서 가져온 진짜 심사 대기열 보여주기 */}
                 {isAdmin ? (
                   isReviewFetching ? (
                     <div style={{ padding: "40px", textAlign: "center", color: theme.textMuted, fontSize: "0.9rem", fontWeight: "700", animation: "pulse 1.5s infinite" }}>
@@ -3491,7 +3490,6 @@ color: "#fff", border: "none", cursor: "pointer",
                   ) : (
                     adminPendingScenarios.map(s => (
                       <div key={s.id} style={{ padding: "16px", backgroundColor: theme.inputBg, borderRadius: "12px", border: `1px solid ${theme.warning}`, display: "flex", flexDirection: "column", gap: "14px" }}>
-                        
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                           <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
                             <span style={{ fontWeight: "800", color: theme.text, fontSize: "1.05rem" }}>{s.title}</span>
@@ -3501,14 +3499,11 @@ color: "#fff", border: "none", cursor: "pointer",
                         </div>
                         
                         <div style={{ display: "flex", gap: "8px", justifyContent: "flex-end" }}>
-                          {/* ❌ 반려 버튼 (사유 입력 팝업) */}
                           <button onClick={async () => {
                             const reason = window.prompt(`[${s.title}] 거절 사유를 입력해주세요.\n(유저에게 피드백으로 전달됩니다)`);
-                            if (!reason) return; // 취소 누르거나 빈칸이면 중단
+                            if (!reason) return;
                             
                             triggerToast("처리 중...", "서버에 반려 상태를 등록 중입니다.", "⏳");
-                            
-                            // 서버에 상태를 '반려'로 바꾸고 사유 저장!
                             const { error } = await supabase.from('scenarios').update({ status: '반려', reject_reason: reason }).eq('id', s.id);
                             
                             if (!error) {
@@ -3521,11 +3516,8 @@ color: "#fff", border: "none", cursor: "pointer",
                             반려 (사유 입력)
                           </button>
                           
-                          {/* ✅ 승인(발행) 버튼 */}
                           <button onClick={async () => {
                             triggerToast("처리 중...", "서버에 정식 발행 중입니다.", "⏳");
-                            
-                            // 서버에 상태를 '발행 완료'로 업데이트!
                             const { error } = await supabase.from('scenarios').update({ status: '발행 완료' }).eq('id', s.id);
                             
                             if (!error) {
@@ -3538,12 +3530,10 @@ color: "#fff", border: "none", cursor: "pointer",
                             승인 (발행)
                           </button>
                         </div>
-                        
                       </div>
                     ))
                   )
                 ) : (
-                  /* 👤 일반 유저 접속 시: 기존처럼 내 컴퓨터에 저장된 내역 보기 */
                   savedLibrary.filter(s => s.status === "심사 대기").length === 0 ? (
                      <div style={{ padding: "40px", textAlign: "center", color: theme.textMuted, fontSize: "0.9rem" }}>현재 심사 중인 서류철이 없습니다.</div>
                   ) : (
@@ -3559,33 +3549,9 @@ color: "#fff", border: "none", cursor: "pointer",
                   )
                 )}
               </div>
-                       
-                       {/* 🌟 어드민이면 승인 버튼이 보이고, 일반 유저면 대기중 뱃지만 보임 */}
-                       {isAdmin ? (
-                         <button onClick={() => {
-                           const updated = savedLibrary.map(item => item.id === s.id ? { ...item, status: "발행 완료", isPublic: true } : item);
-                           setSavedLibrary(updated);
-                           localStorage.setItem("secret_novel_library", JSON.stringify(updated));
-                           
-                           const newExploreItem = {
-                             id: s.id, title: s.title, mode: s.mode, author: currentUser?.name || pcName || "익명 탐색자", 
-                             likes: "0", plays: "0", isOriginal: false, imageUrl: s.imageUrl, 
-                             data: { ...s.data, publicSynopsis: s.loungeData?.synopsis, triggerWarning: s.loungeData?.warning }
-                           };
-                           setExploreScenarios([newExploreItem, ...exploreScenarios]);
-                           triggerToast("승인 완료", "라운지에 정식 발행되었습니다.", "🎉");
-                         }} style={{ padding: "6px 12px", backgroundColor: theme.success, color: "#fff", border: "none", borderRadius: "8px", fontWeight: "700", cursor: "pointer" }}>승인 (발행)</button>
-                       ) : (
-                         <span style={{ backgroundColor: theme.warning, color: "#fff", padding: "6px 10px", borderRadius: "10px", fontSize: "0.75rem", fontWeight: "800", boxShadow: "0 2px 8px rgba(245, 158, 11, 0.4)" }}>심사 대기 중</span>
-                       )}
-                     </div>
-                   ))
-                )}
-              </div>
             </div>
           </div>
         )}
-
         {/* 🎧 고객센터 팝업 */}
         {showSupportModal && (
           <div onClick={() => setShowSupportModal(false)} style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 500, padding: "20px", animation: "fadeIn 0.2s ease-out" }}>
