@@ -131,6 +131,8 @@ export default function GamePlatform() {
   const [showCgGallery, setShowCgGallery] = useState(false); // CG 갤러리 접기/펴기
   const [showRouteList, setShowRouteList] = useState(false); // 공략 루트 접기/펴기
   const [showPhoneDetail, setShowPhoneDetail] = useState(false); // 📱 핸드폰 상세 프로필 화면 전환용
+  const [showCgModal, setShowCgModal] = useState(false); // 🖼️ CG 팝업 스위치
+  const [activeCgId, setActiveCgId] = useState(null); // 🖼️ 현재 선택된 CG 아이디
 
   // ── [7. 인게임 UI 토글 상태 관리 (누락된 변수 추가)] ──
   const [isPhoneDrawerOpen, setIsPhoneDrawerOpen] = useState(false);
@@ -822,7 +824,9 @@ export default function GamePlatform() {
                           <span style={{ fontWeight: "800", display: "flex", alignItems: "center", gap: "6px" }}>
                             <Lock size={15} strokeWidth={2.5} /> 수사관의 숨겨진 비밀 / 약점
                           </span>
-                          <span style={{ fontWeight: "500", fontSize: "0.85rem" }}>{showPcSecret ? "▲" : "▼"}</span>
+                          <span style={{ display: "flex", alignItems: "center" }}>
+                            {showPcSecret ? <ChevronUp size={18} strokeWidth={2} /> : <ChevronDown size={18} strokeWidth={2} />}
+                          </span>
                         </button>
                         
                         {showPcSecret && (
@@ -1056,9 +1060,9 @@ export default function GamePlatform() {
                       <Mailbox size={22} strokeWidth={2} color={theme.accent} />
                       <span style={{ fontWeight: "600", fontSize: "0.95rem", color: theme.text }}>사건 진상 봉투</span>
                     </div>
-                    <span style={{ color: theme.text, fontSize: "0.85rem", fontWeight: "500" }}>
-                      {showHiddenTruth ? "▲" : "▼"}
-                    </span>
+                    <span style={{ display: "flex", alignItems: "center", color: theme.textMuted }}>
+  {showHiddenTruth ? <ChevronUp size={18} strokeWidth={2} /> : <ChevronDown size={18} strokeWidth={2} />}
+</span>
                   </button>
                   
                   {showHiddenTruth && (
@@ -1253,19 +1257,26 @@ export default function GamePlatform() {
                                 <textarea rows={2} value={cur.behavior} onChange={e => updateCur("behavior", e.target.value)} placeholder="상태 메시지나 성격을 입력하세요..." style={{ ...thinInputStyle, resize: "none" }} />
                               </div>
 
-                              {/* 🌟 수정사항 1: 주인공(PC)일 때도 비밀 칸이 뜨도록 제한 삭제 */}
+                              {/* 🌟 연애 모드: 남모르는 비밀 (주인공/공략대상 통합 제어 + 세련된 화살표 적용) */}
                               <div style={{ backgroundColor: isDarkMode ? "rgba(0,0,0,0.2)" : "#fdf2f8", borderRadius: "12px", border: `1px solid #f9a8d4`, padding: "14px", marginTop: "8px" }}>
                                 <button type="button" onClick={() => {
-                                  // 주인공 전용 비밀 토글 로직 추가가 필요하지만 임시 우회
-                                  if(!isPcDetail) handleUpdateSuspect(cur.id, "showSecret", !cur.showSecret);
+                                  if (isPcDetail) setShowPcSecret(!showPcSecret);
+                                  else handleUpdateSuspect(cur.id, "showSecret", !cur.showSecret);
                                 }} style={{ width: "100%", textAlign: "left", background: "none", border: "none", fontSize: "0.8rem", color: "#db2777", cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center", padding: 0 }}>
-                                  <span style={{ fontWeight: "800", display: "flex", alignItems: "center", gap: "6px" }}><Lock size={15} strokeWidth={2.5} /> 남모르는 비밀 / 진심</span>
-                                  <span style={{ fontWeight: "500", fontSize: "0.85rem" }}>{cur.showSecret ? "▲" : "▼"}</span>
+                                  <span style={{ fontWeight: "800", display: "flex", alignItems: "center", gap: "6px" }}>
+                                    <Lock size={15} strokeWidth={2.5} /> 남모르는 비밀 / 진심
+                                  </span>
+                                  <span style={{ display: "flex", alignItems: "center" }}>
+                                    {(isPcDetail ? showPcSecret : cur.showSecret) ? <ChevronUp size={18} strokeWidth={2} /> : <ChevronDown size={18} strokeWidth={2} />}
+                                  </span>
                                 </button>
-                                {/* 무조건 펼쳐지도록 임시 처리 (주인공 상태 관리를 위해) */}
-                                <input type="text" value={cur.secret} onChange={e => {
-                                  if(!isPcDetail) handleUpdateSuspect(cur.id, "secret", e.target.value);
-                                }} placeholder="예: 사실 오래전부터 주인공을 마음에 두고 있었다." style={{ width: "100%", boxSizing: "border-box", padding: "10px", marginTop: "12px", borderRadius: "8px", border: `1px solid #f9a8d4`, backgroundColor: theme.inputBg, color: "#be185d", fontSize: "0.85rem", outline: "none" }} />
+                                
+                                {(isPcDetail ? showPcSecret : cur.showSecret) && (
+                                  <input type="text" value={isPcDetail ? pcSecret : cur.secret} onChange={e => {
+                                    if (isPcDetail) setPcSecret(e.target.value);
+                                    else handleUpdateSuspect(cur.id, "secret", e.target.value);
+                                  }} placeholder="예: 사실 오래전부터 마음에 두고 있었다." style={{ width: "100%", boxSizing: "border-box", padding: "10px", marginTop: "12px", borderRadius: "8px", border: `1px solid #f9a8d4`, backgroundColor: theme.inputBg, color: "#be185d", fontSize: "0.85rem", outline: "none" }} />
+                                )}
                               </div>
                             </div>
                           </div>
@@ -1282,7 +1293,9 @@ export default function GamePlatform() {
                       <ImageIcon size={22} strokeWidth={2} color="#ec4899" />
                       <span style={{ fontWeight: "900", fontSize: "0.95rem", color: theme.text }}>이벤트 CG 갤러리</span>
                     </div>
-                    <span style={{ color: theme.text, fontSize: "0.85rem", fontWeight: "500" }}>{showCgGallery ? "▲" : "▼"}</span>
+                    <span style={{ display: "flex", alignItems: "center", color: theme.textMuted }}>
+  {showCgGallery ? <ChevronUp size={18} strokeWidth={2} /> : <ChevronDown size={18} strokeWidth={2} />}
+</span>
                   </button>
 
                   {showCgGallery && (
@@ -1295,17 +1308,18 @@ export default function GamePlatform() {
                               {cgList.length > 1 && <button type="button" onClick={() => setCgList(cgList.filter(c => c.id !== item.id))} style={{ background: "none", border: "none", color: theme.danger, cursor: "pointer" }}>🗑</button>}
                             </div>
                             <div style={{ display: "flex", gap: "10px", alignItems: "flex-start" }}>
-                              <label title="CG 이미지 등록" style={{ flex: "0 0 80px", height: "80px", backgroundColor: theme.inputBg, border: `1px dashed ${theme.border}`, borderRadius: "8px", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", position: "relative" }}>
+                              {/* 🌟 16:9 썸네일 (클릭 시 팝업 오픈) */}
+                              <div 
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setActiveCgId(item.id);
+                                  setShowCgModal(true);
+                                }}
+                                title="CG 확대 및 등록" 
+                                style={{ flex: "0 0 120px", aspectRatio: "16/9", backgroundColor: theme.inputBg, border: `1px dashed ${theme.border}`, borderRadius: "8px", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", position: "relative", boxShadow: "0 4px 10px rgba(0,0,0,0.05)" }}
+                              >
                                 {item.imageUrl ? <img src={item.imageUrl} alt="CG" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <div style={{ color: theme.textMuted, fontSize: "0.65rem", display: "flex", flexDirection: "column", alignItems: "center" }}><ImageIcon size={18} /><span>이미지</span></div>}
-                                <input type="file" accept="image/*" style={{ display: "none" }} onChange={(e) => {
-                                  const file = e.target.files[0];
-                                  if (file) {
-                                    const r = new FileReader();
-                                    r.onload = (ev) => setCgList(cgList.map(c => c.id === item.id ? { ...c, imageUrl: ev.target.result } : c));
-                                    r.readAsDataURL(file);
-                                  }
-                                }} />
-                              </label>
+                              </div>
                               <textarea rows={3} value={item.condition} onChange={e => setCgList(cgList.map(c => c.id === item.id ? { ...c, condition: e.target.value } : c))} placeholder="해금 조건 (예: 옥상 이벤트 성공)" style={{ flex: 1, padding: "8px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.78rem", outline: "none", resize: "none" }} />
                             </div>
                           </div>
@@ -1325,7 +1339,9 @@ export default function GamePlatform() {
                       <FolderOpen size={22} strokeWidth={2} color="#ec4899" />
                       <span style={{ fontWeight: "900", fontSize: "0.95rem", color: theme.text }}>선택지 분기 및 루트 설계</span>
                     </div>
-                    <span style={{ color: theme.text, fontSize: "0.85rem", fontWeight: "500" }}>{showRouteList ? "▲" : "▼"}</span>
+                    <span style={{ display: "flex", alignItems: "center", color: theme.textMuted }}>
+  {showRouteList ? <ChevronUp size={18} strokeWidth={2} /> : <ChevronDown size={18} strokeWidth={2} />}
+</span>
                   </button>
 
                   {showRouteList && (
@@ -1575,6 +1591,82 @@ export default function GamePlatform() {
             })}
           </nav>
         )}
+
+{/* ── 🖼️ 이벤트 CG 모달 (16:9 뷰어 + 연필 아이콘) ── */}
+        {showCgModal && (() => {
+          const targetCg = cgList.find(c => c.id === activeCgId);
+          if (!targetCg) return null;
+
+          return (
+            <div
+              onClick={() => setShowCgModal(false)}
+              style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0, 0, 0, 0.8)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 99999, padding: "16px", animation: "fadeIn 0.2s ease-out" }}
+            >
+              <div
+                onClick={e => e.stopPropagation()}
+                style={{ backgroundColor: theme.panel, border: `1.5px solid ${theme.border}`, width: "100%", maxWidth: "640px", borderRadius: "18px", padding: "20px", color: theme.text, display: "flex", flexDirection: "column", gap: "14px", boxShadow: "0 20px 50px rgba(0,0,0,0.5)" }}
+              >
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: `1px solid ${theme.border}`, paddingBottom: "10px" }}>
+                  <div>
+                    <h3 style={{ margin: 0, fontSize: "1rem", fontWeight: "900", color: theme.accent }}>
+                      {targetCg.title || "이름 없는 CG"}
+                    </h3>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowCgModal(false)}
+                    style={{ background: "none", border: "none", color: theme.textMuted, fontSize: "1.2rem", cursor: "pointer", lineHeight: 1 }}
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                {/* 🌟 16:9 뷰어 및 이미지 등록 */}
+                <div style={{ width: "100%", aspectRatio: "16/9", borderRadius: "14px", overflow: "hidden", border: `1.5px solid ${theme.border}`, backgroundColor: isDarkMode ? "rgba(0, 0, 0, 0.25)" : "#f0ece4", display: "flex", alignItems: "center", justifyContent: "center", position: "relative" }}>
+                  {targetCg.imageUrl ? (
+                    <img src={targetCg.imageUrl} alt="CG" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                  ) : (
+                    <div style={{ textAlign: "center", color: theme.textMuted, fontSize: "0.85rem", lineHeight: "1.6" }}>
+                      <div style={{ fontSize: "2.4rem", marginBottom: "6px", display: "flex", justifyContent: "center" }}>
+                        <ImageIcon size={48} strokeWidth={1} color={theme.textMuted} />
+                      </div>
+                      등록된 CG 이미지가 없습니다.
+                    </div>
+                  )}
+
+                  <label
+                    title="CG 이미지 변경/등록"
+                    style={{
+                      position: "absolute", bottom: "16px", right: "16px", width: "42px", height: "42px", borderRadius: "50%",
+                      backgroundColor: "rgba(0,0,0,0.7)", color: "#fff", border: "1.5px solid rgba(255,255,255,0.4)", 
+                      cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 5,
+                      boxShadow: "0 4px 10px rgba(0,0,0,0.5)", transition: "transform 0.2s"
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.transform = "scale(1.1)"}
+                    onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}
+                  >
+                    <PenTool size={20} strokeWidth={2.5} />
+                    <input 
+                      type="file" 
+                      accept="image/*" 
+                      style={{ display: "none" }} 
+                      onChange={(e) => {
+                        const file = e.target.files[0];
+                        if (!file) return;
+                        const reader = new FileReader();
+                        reader.onload = (ev) => {
+                          setCgList(cgList.map(c => c.id === targetCg.id ? { ...c, imageUrl: ev.target.result } : c));
+                        };
+                        reader.readAsDataURL(file);
+                        e.target.value = null; 
+                      }} 
+                    />
+                  </label>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
 
         {showPortraitModal && (() => {
           const isPc = activePortraitSuspectId === "pc";
