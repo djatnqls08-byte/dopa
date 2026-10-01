@@ -472,14 +472,20 @@ const [showSupportModal, setShowSupportModal] = useState(false);
       job: pcJob || "조사원",
       ageGender: pcAgeGender || "",
       background: pcBackground || "",
+      secret: pcSecret || "", // 🌟 주인공의 비밀 추가
       portrait: pcPortraitUrl || "",
       hp: 100, 
       maxHp: 100,
       npcs: suspects.map(s => ({ ...s, secretRevealed: false })), 
       handouts: evidenceList.map(e => ({ ...e, revealed: false })), 
-      fatigue: 0 
+      fatigue: 0,
+      // 🌟 [추가됨] 시크릿 노벨 괴담 모드 독자 시스템 데이터 연동
+      horrorStats: horrorStats,
+      horrorTraits: horrorTraits,
+      horrorTraumas: horrorTraumas,
+      abyssTriggers: abyssTriggers,
     };
-
+   
     const newId = Date.now();
     const newSession = {
       id: newId,
