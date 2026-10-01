@@ -1376,7 +1376,17 @@ color: "#fff", border: "none", cursor: "pointer",
                       {routeList.map((route, idx) => (
                         <div key={route.id} style={{ display: "flex", flexDirection: isMobile ? "column" : "row", gap: "8px", backgroundColor: theme.panelAlt, border: `1px solid ${theme.border}`, borderRadius: "12px", padding: "14px", alignItems: isMobile ? "stretch" : "center" }}>
                           <div style={{ display: "flex", alignItems: "center", gap: "8px", flex: 2 }}>
-                            <span style={{ backgroundColor: "#fbcfe8", color: isDarkMode ? "#f9a8d4" : "#be185d", padding: "4px 8px", borderRadius: "8px", fontSize: "0.7rem", fontWeight: "700", whiteSpace: "nowrap" }}>분기 {idx + 1}</span>
+                            <span style={{ 
+  backgroundColor: isDarkMode ? "rgba(236, 72, 153, 0.15)" : "#fbcfe8", 
+  color: isDarkMode ? "#f472b6" : "#be185d", 
+  padding: "4px 8px", 
+  borderRadius: "8px", 
+  fontSize: "0.7rem", 
+  fontWeight: "700", 
+  whiteSpace: "nowrap" 
+}}>
+  분기 {idx + 1}
+</span>
                             <input type="text" value={route.routeName} onChange={e => setRouteList(routeList.map(r => r.id === route.id ? { ...r, routeName: e.target.value } : r))} placeholder="분기 설명 (예: 옥상에서 위로한다)" style={{ width: "100%", padding: "8px 10px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.8rem", outline: "none" }} />
                           </div>
                           <div style={{ display: "flex", alignItems: "center", gap: "8px", flex: 1 }}>
