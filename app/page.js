@@ -638,6 +638,10 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
   const [isTabletopOpen, setIsTabletopOpen] = useState(false);
   const [activePhoneContactId, setActivePhoneContactId] = useState(null);
 
+// 🌟 (여기에 추가!) 연애 모드 전용 팝업 스위치
+  const [giftModalNpc, setGiftModalNpc] = useState(null);
+  const [clueModalNpc, setClueModalNpc] = useState(null);
+
  // ── [9. 인게임 진행 상태 관리 및 영구 저장소 연결] ──
   const [sessions, setSessions] = useState([]);
   
@@ -3494,6 +3498,302 @@ color: "#fff", border: "none", cursor: "pointer",
           </nav>
         )}
 
+// ... (이전 코드 동일) ...
+
+            {[
+              { key: "explore", icon: <Search size={20} strokeWidth={2.5} />, label: "시나리오 탐색" },
+              { key: "library", icon: <LibraryBig size={20} strokeWidth={2.5} />, label: "서재" },
+              { key: "lobby", icon: <PenTool size={20} strokeWidth={2.5} />, label: "로비" },
+              { key: "profile", icon: <UserRound size={20} strokeWidth={2.5} />, label: "내정보" }
+            ].map((tab, idx, arr) => {
+              const isSelected = activeTab === tab.key;
+              const isLast = idx === arr.length - 1;
+
+              return (
+                <div
+                  key={tab.key}
+                  onClick={() => setActiveTab(tab.key)}
+                  style={{
+                    flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+                    cursor: "pointer", gap: "4px",
+                    borderRight: isLast ? "none" : `1px solid ${theme.border}`,
+                    backgroundColor: isSelected ? (isDarkMode ? "rgba(235, 227, 218, 0.12)" : "rgba(120, 105, 90, 0.12)") : "transparent",
+                    color: isSelected ? theme.accent : theme.textMuted,
+                    transition: "all 0.2s"
+                  }}
+                >
+                  <div style={{ transform: isSelected ? "scale(1.15)" : "scale(1)", transition: "transform 0.2s", display: "flex", alignItems: "center" }}>
+                    {tab.icon}
+                  </div>
+                  <span style={{ fontSize: "0.65rem", fontWeight: isSelected ? "800" : "600" }}>{tab.label}</span>
+                </div>
+              );
+            })}
+          </nav>
+        )}
+
+      {/* 🎁 선물하기 인앱 모달 */}
+      {giftModalNpc && (() => {
+        const allNpcs = activeSession?.sheet?.npcs || [];
+        return (
+          <div 
+            onClick={() => setGiftModalNpc(null)}
+            style={{ position: "fixed", inset: 0, zIndex: 99999, backgroundColor: "rgba(0,0,0,0.65)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", padding: "20px" }}
+          >
+            <div 
+              onClick={e => e.stopPropagation()}
+              style={{ width: "100%", maxWidth: "360px", backgroundColor: theme.panel, border: `1px solid ${theme.border}`, borderRadius: "20px", padding: "20px", display: "flex", flexDirection: "column", gap: "12px", boxShadow: "0 16px 36px rgba(0,0,0,0.4)" }}
+            >
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: `1px solid ${theme.border}`, paddingBottom: "8px" }}>
+                <div style={{ display: "flex", flexDirection: "column" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                    <Gift size={18} strokeWidth={2.5} color={theme.accent} />
+                    <span style={{ fontWeight: "800", fontSize: "0.95rem", color: theme.text }}>선물 전달</span>
+                  </div>
+                  <div style={{ fontSize: "0.72rem", color: theme.textMuted, marginTop: "2px" }}>누구에게 어떤 물건을 건네시겠습니까?</div>
+                </div>
+                <button type="button" onClick={() => setGiftModalNpc(null)} style={{ background: "none", border: "none", color: theme.textMuted, cursor: "pointer", padding: 0 }}>
+                  <X size={22} strokeWidth={2} />
+                </button>
+              </div>
+
+              {/* 대상 선택 탭 */}
+              {allNpcs.length > 1 && (
+                <div style={{ display: "flex", gap: "6px", overflowX: "auto", paddingBottom: "4px" }}>
+                  {allNpcs.map((npc) => {
+                    const isSelected = giftModalNpc.id === npc.id;
+                    return (
+                      <button
+                        key={npc.id}
+                        type="button"
+                        onClick={() => setGiftModalNpc(npc)}
+                        style={{
+                          padding: "6px 12px", borderRadius: "14px", border: `1.5px solid ${isSelected ? theme.accent : theme.border}`,
+                          backgroundColor: isSelected ? theme.accent : "transparent",
+                          color: isSelected ? (isDarkMode ? "#1a1817" : "#fff") : theme.text,
+                          fontSize: "0.74rem", fontWeight: isSelected ? "800" : "600", cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0
+                        }}
+                      >
+                        {npc.name}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* 소지품 리스트 */}
+              <div style={{ overflowY: "auto", display: "flex", flexDirection: "column", gap: "8px", maxHeight: "38vh" }}>
+                {(!activeSession?.sheet?.items || activeSession.sheet.items.length === 0) ? (
+                  <div style={{ textAlign: "center", padding: "24px 0", fontSize: "0.78rem", color: theme.textMuted, lineHeight: "1.5" }}>
+                    가방이 비어 있습니다.<br />서사를 진행하며 선물을 입수해 보세요.
+                  </div>
+                ) : (
+                  activeSession.sheet.items.map((it, idx) => (
+                    <div key={idx} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 14px", backgroundColor: theme.panelAlt, border: `1px solid ${theme.borderHighlight}`, borderRadius: "12px" }}>
+                      <div style={{ flex: 1, paddingRight: "8px" }}>
+                        <div style={{ fontWeight: "800", fontSize: "0.85rem", color: theme.text }}>{it.name}</div>
+                        {it.desc && <div style={{ fontSize: "0.7rem", color: theme.textMuted, marginTop: "2px" }}>{it.desc}</div>}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const targetNpc = giftModalNpc;
+                          setGiftModalNpc(null);
+                          setIsActionDrawerOpen(false);
+                          if (typeof setInputMsg === "function") setInputMsg(prev => `[${it.name} 선물하기] 품에서 [${it.name}]을(를) 꺼내어 ${targetNpc.name}에게 건넨다.`);
+                        }}
+                        style={{ padding: "8px 14px", backgroundColor: theme.accent, color: isDarkMode ? "#1a1817" : "#fff", border: "none", borderRadius: "8px", fontSize: "0.75rem", fontWeight: "800", cursor: "pointer", flexShrink: 0 }}
+                      >
+                        건네기
+                      </button>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* 💡 취향 수첩 모달 */}
+      {clueModalNpc && (() => {
+        const allNpcs = activeSession?.sheet?.npcs || [];
+        return (
+          <div 
+            onClick={() => setClueModalNpc(null)}
+            style={{ position: "fixed", inset: 0, zIndex: 99999, backgroundColor: "rgba(0,0,0,0.65)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", padding: "20px" }}
+          >
+            <div 
+              onClick={e => e.stopPropagation()}
+              style={{ width: "100%", maxWidth: "360px", backgroundColor: theme.panel, border: `1px solid ${theme.border}`, borderRadius: "20px", padding: "20px", display: "flex", flexDirection: "column", gap: "12px", boxShadow: "0 16px 36px rgba(0,0,0,0.4)" }}
+            >
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: `1px solid ${theme.border}`, paddingBottom: "8px" }}>
+                <div style={{ display: "flex", flexDirection: "column" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                    <BookOpen size={18} strokeWidth={2.5} color={theme.accent} />
+                    <span style={{ fontWeight: "800", fontSize: "0.95rem", color: theme.text }}>취향 수첩</span>
+                  </div>
+                  <div style={{ fontSize: "0.72rem", color: theme.textMuted, marginTop: "2px" }}>서사 속에서 파악된 인물별 관심사</div>
+                </div>
+                <button type="button" onClick={() => setClueModalNpc(null)} style={{ background: "none", border: "none", color: theme.textMuted, cursor: "pointer", padding: 0 }}>
+                  <X size={22} strokeWidth={2} />
+                </button>
+              </div>
+
+              {allNpcs.length > 1 && (
+                <div style={{ display: "flex", gap: "6px", overflowX: "auto", paddingBottom: "4px" }}>
+                  {allNpcs.map((npc) => {
+                    const isSelected = clueModalNpc.id === npc.id;
+                    return (
+                      <button
+                        key={npc.id} type="button" onClick={() => setClueModalNpc(npc)}
+                        style={{ padding: "6px 12px", borderRadius: "14px", border: `1.5px solid ${isSelected ? theme.accent : theme.border}`, backgroundColor: isSelected ? theme.accent : "transparent", color: isSelected ? (isDarkMode ? "#1a1817" : "#fff") : theme.text, fontSize: "0.74rem", fontWeight: isSelected ? "800" : "600", cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0 }}
+                      >
+                        {npc.name}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+
+              <div style={{ overflowY: "auto", display: "flex", flexDirection: "column", gap: "8px", maxHeight: "38vh" }}>
+                {(() => {
+                  const npcClues = (activeSession?.sheet?.clues || []).filter(c => 
+                    c.name.includes(clueModalNpc.name) || c.npcName === clueModalNpc.name || allNpcs.length <= 1
+                  );
+                  if (npcClues.length === 0) {
+                    return (
+                      <div style={{ textAlign: "center", padding: "26px 0", fontSize: "0.78rem", color: theme.textMuted, lineHeight: "1.6" }}>
+                        [{clueModalNpc.name}]의 파악된 취향이 아직 없습니다.<br />대화를 통해 선호하는 것을 파악해 보세요.
+                      </div>
+                    );
+                  }
+                  return npcClues.map((clue, idx) => {
+                    const isDislike = clue.type === "dislike";
+                    return (
+                      <div key={idx} style={{ padding: "12px 14px", backgroundColor: theme.panelAlt, border: `1px solid ${theme.border}`, borderRadius: "12px", borderLeft: `4px solid ${isDislike ? theme.danger : theme.accent}`, display: "flex", flexDirection: "column", gap: "4px" }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                          <span style={{ fontWeight: "800", fontSize: "0.86rem", color: isDislike ? theme.danger : theme.accent, display: "flex", alignItems: "center", gap: "4px" }}>
+                            {isDislike ? <ShieldAlert size={14} /> : <Heart size={14} />} {clue.name}
+                          </span>
+                          <span style={{ fontSize: "0.68rem", color: isDislike ? theme.danger : theme.textMuted, fontWeight: "700" }}>
+                            {isDislike ? "주의 요망" : "선호"}
+                          </span>
+                        </div>
+                        <div style={{ fontSize: "0.76rem", color: theme.text, lineHeight: "1.5" }}>
+                          {clue.desc}
+                        </div>
+                      </div>
+                    );
+                  });
+                })()}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* 📱 메신저 폰 서랍 */}
+      {isPhoneDrawerOpen && activeSession && (
+        <div 
+          onClick={() => {
+            setIsPhoneDrawerOpen(false);
+            setActivePhoneContactId(null);
+          }}
+          style={{ position: "fixed", inset: 0, zIndex: 125, display: "flex", justifyContent: "center", alignItems: "flex-end", backgroundColor: "rgba(0,0,0,0.65)", backdropFilter: "blur(4px)" }}
+        >
+          <div 
+            onClick={e => e.stopPropagation()}
+            style={{
+              width: "100%", maxWidth: "460px", height: "82vh", maxHeight: "740px",
+              backgroundColor: theme.panel, color: theme.text,
+              borderRadius: "24px 24px 0 0", display: "flex", flexDirection: "column",
+              overflow: "hidden", border: `1px solid ${theme.border}`, borderBottom: "none",
+              boxShadow: "0 -8px 36px rgba(0,0,0,0.38)",
+              animation: "slideUp 0.3s cubic-bezier(0.2, 0.8, 0.2, 1)"
+            }}
+          >
+            {/* 상단 헤더 바 */}
+            <div style={{ height: "54px", padding: "0 16px", borderBottom: `1px solid ${theme.border}`, backgroundColor: theme.sidebar, display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
+              <div style={{ width: "60px" }}>
+                {activePhoneContactId !== null && (
+                  <button type="button" onClick={() => setActivePhoneContactId(null)} style={{ background: "none", border: "none", color: theme.text, fontSize: "0.85rem", cursor: "pointer", fontWeight: "800", display: "flex", alignItems: "center", gap: "4px" }}>
+                    <ChevronLeft size={18} /> 목록
+                  </button>
+                )}
+              </div>
+              <div style={{ fontSize: "0.9rem", fontWeight: "800", color: theme.text, display: "flex", alignItems: "center", gap: "6px" }}>
+                <Smartphone size={16} strokeWidth={2.5} />
+                {activePhoneContactId !== null ? ((activeSession.sheet?.npcs || []).find(n => n.id === activePhoneContactId)?.name || "대화") : "메신저"}
+              </div>
+              <div style={{ width: "60px", display: "flex", justifyContent: "flex-end" }}>
+                <button type="button" onClick={() => setIsPhoneDrawerOpen(false)} style={{ background: "none", border: "none", color: theme.textMuted, cursor: "pointer", padding: "4px" }}>
+                  <X size={20} strokeWidth={2.5} />
+                </button>
+              </div>
+            </div>
+
+            {/* 메신저 뷰: 연락처 목록 or 1:1 대화방 */}
+            {activePhoneContactId === null ? (
+              <div style={{ flex: 1, overflowY: "auto", padding: "12px 0", backgroundColor: theme.bg }}>
+                <div style={{ padding: "8px 16px", fontSize: "0.72rem", color: theme.textMuted, fontWeight: "700" }}>대화 가능한 인물</div>
+                {(activeSession.sheet?.npcs || []).map(npc => {
+                  const chats = (activeSession.sheet?.phoneChats || {})[npc.id] || [];
+                  const lastMsg = chats[chats.length - 1];
+                  const unread = chats.filter(m => m.unread).length;
+
+                  return (
+                    <div 
+                      key={npc.id} 
+                      onClick={() => setActivePhoneContactId(npc.id)}
+                      style={{ display: "flex", alignItems: "center", gap: "12px", padding: "14px 16px", cursor: "pointer", borderBottom: `1px solid ${theme.border}`, transition: "background 0.2s" }}
+                      onMouseEnter={e => e.currentTarget.style.backgroundColor = theme.panelAlt}
+                      onMouseLeave={e => e.currentTarget.style.backgroundColor = "transparent"}
+                    >
+                      <div style={{ width: "48px", height: "48px", borderRadius: "50%", overflow: "hidden", border: `1px solid ${theme.borderHighlight}`, flexShrink: 0, backgroundColor: theme.inputBg }}>
+                        {npc.portraitUrl ? <img src={npc.portraitUrl} alt={npc.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <UserRound size={24} style={{ margin: "12px" }} color={theme.textMuted} />}
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "4px" }}>
+                          <span style={{ fontWeight: "800", fontSize: "0.9rem", color: theme.text }}>{npc.name}</span>
+                          {unread > 0 && <span style={{ backgroundColor: theme.danger, color: "#fff", fontSize: "0.65rem", padding: "2px 6px", borderRadius: "10px", fontWeight: "bold" }}>{unread}</span>}
+                        </div>
+                        <div style={{ fontSize: "0.75rem", color: theme.textMuted, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          {lastMsg ? lastMsg.text : (npc.behavior || "새로운 대화를 시작해 보세요.")}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", backgroundColor: theme.bg }}>
+                <div style={{ flex: 1, overflowY: "auto", padding: "16px", display: "flex", flexDirection: "column", gap: "12px" }}>
+                  {((activeSession.sheet?.phoneChats || {})[activePhoneContactId] || []).map((m, idx) => {
+                    const isUser = m.sender === "user";
+                    return (
+                      <div key={idx} style={{ alignSelf: isUser ? "flex-end" : "flex-start", maxWidth: "80%", display: "flex", flexDirection: isUser ? "row-reverse" : "row", alignItems: "flex-end", gap: "8px" }}>
+                        {!isUser && (
+                          <div style={{ width: "32px", height: "32px", borderRadius: "50%", overflow: "hidden", flexShrink: 0, border: `1px solid ${theme.borderHighlight}` }}>
+                            <img src={(activeSession.sheet?.npcs || []).find(n => n.id === activePhoneContactId)?.portraitUrl} alt="상대" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                          </div>
+                        )}
+                        <div style={{ backgroundColor: isUser ? theme.accent : theme.panelAlt, color: isUser ? (isDarkMode ? "#1a1817" : "#fff") : theme.text, border: isUser ? "none" : `1px solid ${theme.border}`, padding: "10px 14px", borderRadius: isUser ? "16px 4px 16px 16px" : "4px 16px 16px 16px", fontSize: "0.85rem", lineHeight: "1.5", whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
+                          {m.text}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                <div style={{ padding: "12px", borderTop: `1px solid ${theme.border}`, backgroundColor: theme.sidebar, textAlign: "center", fontSize: "0.75rem", color: theme.textMuted }}>
+                  메인 대화창에서 메시지를 보내면 여기에 동기화됩니다.
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+                      
 {/* ── 🖼️ 이벤트 CG 모달 (16:9 뷰어 + 연필 아이콘) ── */}
         {showCgModal && (() => {
           const targetCg = cgList.find(c => c.id === activeCgId);
