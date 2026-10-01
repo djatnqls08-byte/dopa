@@ -173,7 +173,8 @@ export default function GamePlatform() {
   const [isLoginLoading, setIsLoginLoading] = useState(false);
   const [loginEmail, setLoginEmail] = useState(""); // 🌟 이메일 입력창 상태
   const [loginPassword, setLoginPassword] = useState(""); // 🌟 비밀번호 입력창 상태
-  const [agreeTerms, setAgreeTerms] = useState(false); // 🌟 (여기에 추가) 개인정보 동의 체크박스 상태!
+  const [agreeTerms, setAgreeTerms] = useState(false); // 🌟 개인정보 동의 체크박스 상태!
+  const [showTermsModal, setShowTermsModal] = useState(false); // 🌟 약관 팝업창 스위치!
   
  // ── [0. 폰트 강제 로드] ──
   useEffect(() => {
@@ -823,17 +824,44 @@ const [showSupportModal, setShowSupportModal] = useState(false);
               style={{ width: "100%", padding: "14px", backgroundColor: theme.inputBg, border: `1px solid ${theme.border}`, borderRadius: "12px", color: theme.text, fontSize: "0.9rem", outline: "none", boxSizing: "border-box" }}
             />
             
-            {/* 🌟 개인정보 동의 체크박스 추가! */}
-            <label style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "0.75rem", color: theme.textMuted, cursor: "pointer", marginTop: "4px", paddingLeft: "4px" }}>
+            {/* 🌟 개인정보 동의 체크박스 및 내용보기 버튼 */}
+            <label style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "0.75rem", color: theme.textMuted, marginTop: "4px", paddingLeft: "4px" }}>
               <input 
                 type="checkbox" 
                 checked={agreeTerms} 
                 onChange={(e) => setAgreeTerms(e.target.checked)} 
                 style={{ width: "16px", height: "16px", accentColor: theme.accent, cursor: "pointer" }} 
               />
-              <span>(필수) 서비스 이용약관 및 개인정보 처리방침 동의</span>
+              <span onClick={() => setAgreeTerms(!agreeTerms)} style={{ cursor: "pointer" }}>(필수) 서비스 이용약관 및 개인정보 처리방침 동의</span>
+              <span 
+                onClick={(e) => { e.preventDefault(); setShowTermsModal(true); }} 
+                style={{ color: theme.accent, fontWeight: "700", cursor: "pointer", textDecoration: "underline", marginLeft: "auto" }}
+              >
+                [내용 보기]
+              </span>
             </label>
           </div>
+
+          {/* 🌟 약관 내용 팝업창 (로그인 박스 위에 덮어씌워짐) */}
+          {showTermsModal && (
+            <div onClick={() => setShowTermsModal(false)} style={{ position: "absolute", inset: 0, backgroundColor: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: "20px", borderRadius: "24px" }}>
+              <div onClick={e => e.stopPropagation()} style={{ width: "100%", backgroundColor: theme.panelAlt, border: `1px solid ${theme.border}`, borderRadius: "16px", padding: "20px", display: "flex", flexDirection: "column", gap: "16px", boxShadow: "0 20px 40px rgba(0,0,0,0.3)" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: `1px solid ${theme.border}`, paddingBottom: "10px" }}>
+                  <span style={{ fontWeight: "800", fontSize: "0.95rem", color: theme.text }}>이용약관 및 개인정보 처리방침</span>
+                  <button onClick={() => setShowTermsModal(false)} style={{ background: "none", border: "none", color: theme.textMuted, cursor: "pointer" }}><X size={20}/></button>
+                </div>
+                <div style={{ maxHeight: "250px", overflowY: "auto", fontSize: "0.75rem", color: theme.text, lineHeight: 1.6, whiteSpace: "pre-wrap" }}>
+                  {`제 1 조 (목적)\n본 약관은 Secret Novel이 제공하는 제반 서비스의 이용과 관련하여 회원과의 권리, 의무 및 책임사항을 규정함을 목적으로 합니다.\n\n제 2 조 (개인정보의 수집 및 이용)\n1. 수집 항목: 이메일 주소, 비밀번호\n2. 이용 목적: 회원 식별, 서비스 제공 및 부정 이용 방지\n3. 보유 기간: 회원 탈퇴 시까지 안전하게 보관됩니다.\n\n제 3 조 (창작물의 권리)\n회원이 서비스 내에 게시한 시나리오 및 창작물의 저작권은 회원에게 귀속되며, 원치 않을 경우 언제든 비공개 및 삭제가 가능합니다.`}
+                </div>
+                <button 
+                  onClick={() => { setAgreeTerms(true); setShowTermsModal(false); }} 
+                  style={{ width: "100%", padding: "12px", backgroundColor: theme.accent, color: "#fff", border: "none", borderRadius: "10px", fontWeight: "700", cursor: "pointer" }}
+                >
+                  동의하고 닫기
+                </button>
+              </div>
+            </div>
+          )}
 
           <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: "8px", marginTop: "4px" }}>
             
