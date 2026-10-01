@@ -10,7 +10,8 @@ import {
   Menu, Moon, Sun, Save, FileUp, HelpCircle, X, ChevronDown, ChevronUp, Image as ImageIcon,
   ClipboardList, Pin, FileSearch, Mailbox, Play,
   FolderOpen, Lock, Settings, Database, ClipboardPaste, LogOut,
-  ArrowUp, Smartphone, BookOpen, Dices, ChevronLeft, ChevronRight
+  ArrowUp, Smartphone, BookOpen, Dices, ChevronLeft, ChevronRight,
+ Brain, Skull, Eye, Activity, ShieldAlert, ToggleLeft, ToggleRight, Plus, Minus, Ghost
 } from "lucide-react";
 
 const THEME_PALETTES = {
@@ -125,8 +126,23 @@ export default function GamePlatform() {
   const [trickDetail, setTrickDetail] = useState("");
   const [hiddenTruth, setHiddenTruth] = useState("");
   const [showHiddenTruth, setShowHiddenTruth] = useState(false);
-  // 🌟 연애 모드 전용 데이터 상태
-  // 🌟 연애 모드 전용 데이터 상태
+// ── [괴담 모드 전용 상태] ──
+const [horrorStats, setHorrorStats] = useState({ 체력: 5, 순발: 5, 관찰: 5, 추론: 5, 정신: 5, 사교: 5 });
+const availableStatPoints = 35 - Object.values(horrorStats).reduce((a, b) => a + b, 0);
+
+const [horrorTraits, setHorrorTraits] = useState(["", ""]);
+const [horrorTraumas, setHorrorTraumas] = useState([]);
+const [horrorInventory, setHorrorInventory] = useState([
+  { id: 1, type: "소모품", name: "", desc: "" },
+  { id: 2, type: "도구", name: "", desc: "" },
+  { id: 3, type: "장비", name: "", desc: "" }
+]);
+
+const [abyssTriggers, setAbyssTriggers] = useState({ 30: "", 60: "", 90: "" });
+const [showAbyss, setShowAbyss] = useState(false);
+
+const [useKpc, setUseKpc] = useState(false);
+const [kpcProfile, setKpcProfile] = useState({ name: "", ageGender: "", job: "", behavior: "", secret: "", showSecret: false });
   const [cgList, setCgList] = useState([
     { id: 1, title: "", condition: "", dialogue: "", imageUrl: "", showDetails: false }
   ]);
@@ -1410,11 +1426,216 @@ color: "#fff", border: "none", cursor: "pointer",
             )}
 
             {selectedMode === "괴담" && (
-              <div style={{ ...GLASS_STYLE, padding: "40px 20px", textAlign: "center", color: theme.textMuted, borderRadius: "16px", border: `1.5px dashed ${theme.border}`, display: "flex", flexDirection: "column", alignItems: "center", gap: "8px" }}>
-                <span style={{ fontSize: "2rem" }}>🕯️</span><span style={{ fontSize: "0.92rem", fontWeight: "600", color: theme.accent }}>괴담 모드 서류철 준비 중</span>
-                <span style={{ fontSize: "0.76rem" }}>재능 3슬롯 장착 칩, 이면 카드, 침식도 HUD가 이곳에 연결됩니다.</span>
+  <>
+    {/* 1. 사건 개요서 */}
+    <section style={{ ...GLASS_STYLE, padding: isMobile ? "16px" : "20px", backgroundColor: theme.panel, borderRadius: "18px", border: `1px solid ${theme.border}`, display: "flex", flexDirection: "column", gap: "12px", marginBottom: "16px" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+        <ClipboardList size={22} strokeWidth={2} color={theme.accent} />
+        <span style={{ fontWeight: "700", fontSize: "0.95rem", color: theme.text }}>사건 개요서</span>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "2fr 1fr", gap: "10px" }}>
+        <input type="text" value={scenarioTitle} onChange={e => setScenarioTitle(e.target.value)} placeholder="사건명 (예: 심야 펜트하우스 괴담)" style={{ padding: "10px 12px", borderRadius: "8px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.85rem", outline: "none" }} />
+        <input type="text" value={victimName} onChange={e => setVictimName(e.target.value)} placeholder="사건 대상 / 조사 목표" style={{ padding: "10px 12px", borderRadius: "8px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.85rem", outline: "none" }} />
+      </div>
+      <textarea rows={2} value={publicSynopsis} onChange={e => setPublicSynopsis(e.target.value)} placeholder="현장 상황 및 초기 배경 설명..." style={{ padding: "10px 12px", borderRadius: "8px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.83rem", resize: "none", outline: "none" }} />
+      <textarea rows={2} value={openingScene} onChange={e => setOpeningScene(e.target.value)} placeholder="첫 오프닝/서막 지문..." style={{ padding: "10px 12px", borderRadius: "8px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.83rem", resize: "none", outline: "none" }} />
+    </section>
+
+    {/* 2. 주인공 코어 스탯 및 특성 */}
+    <section style={{ ...GLASS_STYLE, padding: isMobile ? "16px" : "20px", backgroundColor: theme.panel, borderRadius: "18px", border: `1px solid ${theme.border}`, display: "flex", flexDirection: "column", gap: "16px", marginBottom: "16px" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+        <Skull size={22} strokeWidth={2} color={theme.accent} />
+        <span style={{ fontWeight: "700", fontSize: "0.95rem", color: theme.text }}>탐색자(주인공) 프로필 및 스탯</span>
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1.2fr 1fr 1fr", gap: "8px" }}>
+        <input type="text" value={pcName} onChange={e => setPcName(e.target.value)} placeholder="이름 (예: 엄수빈)" style={{ padding: "8px 10px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.82rem", outline: "none" }} />
+        <input type="text" value={pcAgeGender} onChange={e => setPcAgeGender(e.target.value)} placeholder="나이/성별 (예: 26세 여성)" style={{ padding: "8px 10px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.82rem", outline: "none" }} />
+        <input type="text" value={pcJob} onChange={e => setPcJob(e.target.value)} placeholder="직업/역할" style={{ padding: "8px 10px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.82rem", outline: "none" }} />
+      </div>
+
+      {/* 1D10 스탯 분배기 */}
+      <div style={{ backgroundColor: theme.panelAlt, borderRadius: "12px", padding: "14px", border: `1.5px solid ${theme.borderHighlight || theme.border}` }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
+          <span style={{ fontSize: "0.85rem", fontWeight: "700", color: theme.text }}>1D10 코어 스탯 (1~9 분배)</span>
+          <span style={{ fontSize: "0.75rem", fontWeight: "700", color: availableStatPoints === 0 ? theme.success : theme.danger }}>잔여 포인트: {availableStatPoints} pt</span>
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr 1fr" : "repeat(6, 1fr)", gap: "8px" }}>
+          {Object.entries(horrorStats).map(([key, val]) => (
+            <div key={key} style={{ display: "flex", flexDirection: "column", alignItems: "center", backgroundColor: theme.inputBg, padding: "8px 4px", borderRadius: "8px", border: `1px solid ${theme.border}` }}>
+              <span style={{ fontSize: "0.75rem", fontWeight: "600", color: theme.textMuted, marginBottom: "4px" }}>{key}</span>
+              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                <button onClick={() => setHorrorStats({...horrorStats, [key]: Math.max(1, val - 1)})} style={{ background:"none", border:"none", color: val > 1 ? theme.text : theme.textMuted, cursor: "pointer", padding: 0 }}><Minus size={14}/></button>
+                <span style={{ fontSize: "0.95rem", fontWeight: "800", color: theme.text, width: "16px", textAlign: "center" }}>{val}</span>
+                <button onClick={() => { if(availableStatPoints > 0 && val < 9) setHorrorStats({...horrorStats, [key]: val + 1}) }} style={{ background:"none", border:"none", color: availableStatPoints > 0 && val < 9 ? theme.accent : theme.textMuted, cursor: "pointer", padding: 0 }}><Plus size={14}/></button>
               </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* 시작 소지품 세팅 */}
+      <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+        <span style={{ fontSize: "0.8rem", fontWeight: "700", color: theme.text }}>시작 소지품 세팅 (최대 3개)</span>
+        {horrorInventory.map((item, idx) => (
+          <div key={item.id} style={{ display: "flex", gap: "8px" }}>
+            <select value={item.type} onChange={e => setHorrorInventory(horrorInventory.map((inv, i) => i === idx ? { ...inv, type: e.target.value } : inv))} style={{ flex: 1, padding: "8px 10px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.78rem", outline: "none", cursor: "pointer" }}>
+              <option value="소모품">소모품 (멘탈회복 등)</option>
+              <option value="도구">도구 (특수기믹 패스)</option>
+              <option value="장비">장비 (재굴림/보정)</option>
+            </select>
+            <input type="text" value={item.name} onChange={e => setHorrorInventory(horrorInventory.map((inv, i) => i === idx ? { ...inv, name: e.target.value } : inv))} placeholder="아이템명 (예: 처방받은 약)" style={{ flex: 2, padding: "8px 10px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.78rem", outline: "none" }} />
+          </div>
+        ))}
+      </div>
+
+      {/* 이상 충동 (광기) 세팅 토글 */}
+      <div style={{ backgroundColor: isDarkMode ? "rgba(0,0,0,0.2)" : "rgba(255,255,255,0.6)", borderRadius: "8px", border: `1px solid ${theme.danger}`, padding: "10px 12px", marginTop: "4px" }}>
+        <button type="button" onClick={() => setShowAbyss(!showAbyss)} style={{ width: "100%", textAlign: "left", background: "none", border: "none", fontSize: "0.8rem", color: theme.danger, cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center", padding: 0 }}>
+          <span style={{ fontWeight: "700", display: "flex", alignItems: "center", gap: "6px" }}>
+            <Activity size={16} strokeWidth={2.5} /> 이상 충동 발현 (광기 3단계)
+          </span>
+          <span style={{ display: "flex", alignItems: "center" }}>
+            {showAbyss ? <ChevronUp size={18} strokeWidth={2} /> : <ChevronDown size={18} strokeWidth={2} />}
+          </span>
+        </button>
+        
+        {showAbyss && (
+          <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginTop: "12px" }}>
+            <input type="text" value={abyssTriggers[30]} onChange={e => setAbyssTriggers({...abyssTriggers, 30: e.target.value})} placeholder="침식도 30% 발현 (예: 누군가 날 지켜보는 것 같다)" style={{ padding: "8px 10px", borderRadius: "6px", border: `1px solid ${theme.danger}`, backgroundColor: theme.inputBg, color: theme.danger, fontSize: "0.82rem", outline: "none" }} />
+            <input type="text" value={abyssTriggers[60]} onChange={e => setAbyssTriggers({...abyssTriggers, 60: e.target.value})} placeholder="침식도 60% 발현 (예: 모든 그림자가 기괴하게 일그러진다)" style={{ padding: "8px 10px", borderRadius: "6px", border: `1px solid ${theme.danger}`, backgroundColor: theme.inputBg, color: theme.danger, fontSize: "0.82rem", outline: "none" }} />
+            <input type="text" value={abyssTriggers[90]} onChange={e => setAbyssTriggers({...abyssTriggers, 90: e.target.value})} placeholder="침식도 90% 발현 (예: 타인의 목소리가 기괴한 이명으로 들린다)" style={{ padding: "8px 10px", borderRadius: "6px", border: `1px solid ${theme.danger}`, backgroundColor: theme.inputBg, color: theme.danger, fontSize: "0.82rem", outline: "none" }} />
+          </div>
+        )}
+      </div>
+    </section>
+
+    {/* 3. 메인 파트너 (KPC) 동행 세팅 */}
+    <section style={{ ...GLASS_STYLE, padding: isMobile ? "16px" : "20px", backgroundColor: theme.panel, borderRadius: "18px", border: `1px solid ${theme.border}`, display: "flex", flexDirection: "column", gap: "16px", marginBottom: "16px" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          <UserRound size={22} strokeWidth={2} color={theme.accent} />
+          <span style={{ fontWeight: "700", fontSize: "0.95rem", color: theme.text }}>메인 파트너 (KPC) 설정</span>
+        </div>
+        <button onClick={() => setUseKpc(!useKpc)} style={{ background: "none", border: "none", display: "flex", alignItems: "center", gap: "6px", cursor: "pointer", color: useKpc ? theme.accent : theme.textMuted }}>
+          <span style={{ fontSize: "0.8rem", fontWeight: "700" }}>{useKpc ? "동행 중" : "나홀로 조사"}</span>
+          {useKpc ? <ToggleRight size={26} strokeWidth={2} color={theme.accent} /> : <ToggleLeft size={26} strokeWidth={2} />}
+        </button>
+      </div>
+
+      {useKpc && (
+        <div style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "14px", backgroundColor: theme.panelAlt, borderRadius: "12px", border: `1.5px solid ${theme.borderHighlight || theme.border}` }}>
+          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1.2fr 1fr 1fr", gap: "8px" }}>
+            <input type="text" value={kpcProfile.name} onChange={e => setKpcProfile({...kpcProfile, name: e.target.value})} placeholder="이름" style={{ width: "100%", padding: "8px 10px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.82rem", outline: "none" }} />
+            <input type="text" value={kpcProfile.ageGender} onChange={e => setKpcProfile({...kpcProfile, ageGender: e.target.value})} placeholder="나이/성별" style={{ width: "100%", padding: "8px 10px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.82rem", outline: "none" }} />
+            <input type="text" value={kpcProfile.job} onChange={e => setKpcProfile({...kpcProfile, job: e.target.value})} placeholder="직업/역할" style={{ width: "100%", padding: "8px 10px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.82rem", outline: "none" }} />
+          </div>
+          <textarea rows={2} value={kpcProfile.behavior} onChange={e => setKpcProfile({...kpcProfile, behavior: e.target.value})} placeholder="파트너의 성격 및 주인공과의 관계성..." style={{ width: "100%", padding: "8px 10px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.82rem", outline: "none", resize: "vertical" }} />
+          
+          <div style={{ backgroundColor: isDarkMode ? "rgba(0,0,0,0.2)" : "rgba(255,255,255,0.6)", borderRadius: "8px", border: `1px solid ${theme.danger}`, padding: "10px 12px", marginTop: "4px" }}>
+            <button type="button" onClick={() => setKpcProfile({...kpcProfile, showSecret: !kpcProfile.showSecret})} style={{ width: "100%", textAlign: "left", background: "none", border: "none", fontSize: "0.76rem", color: theme.danger, cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center", padding: 0 }}>
+              <span style={{ fontWeight: "600", display: "flex", alignItems: "center", gap: "6px" }}>
+                <Lock size={15} strokeWidth={2.5} /> 파트너의 숨겨진 이면 / 진심
+              </span>
+              <span style={{ display: "flex", alignItems: "center" }}>
+                {kpcProfile.showSecret ? <ChevronUp size={18} strokeWidth={2} /> : <ChevronDown size={18} strokeWidth={2} />}
+              </span>
+            </button>
+            {kpcProfile.showSecret && (
+              <input type="text" value={kpcProfile.secret} onChange={e => setKpcProfile({...kpcProfile, secret: e.target.value})} placeholder="파트너가 숨기고 있는 충격적인 진실이나 약점..." style={{ width: "100%", padding: "8px 10px", marginTop: "8px", borderRadius: "6px", border: `1px solid ${theme.danger}`, backgroundColor: theme.inputBg, color: theme.danger, fontSize: "0.82rem", outline: "none" }} />
             )}
+          </div>
+        </div>
+      )}
+    </section>
+
+    {/* 4. 등장인물 (엑스트라 NPC) 세팅 */}
+    <section style={{ ...GLASS_STYLE, padding: isMobile ? "16px" : "20px", backgroundColor: theme.panel, borderRadius: "18px", border: `1px solid ${theme.border}`, display: "flex", flexDirection: "column", gap: "16px", marginBottom: "16px" }}>
+       {/* 기존 추리 모드의 <div className="용의자 수사망"> 코드 전체를 복사해서 붙여넣으시면 됩니다. UI 구조가 정확히 동일합니다. */}
+       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+           <Ghost size={22} strokeWidth={2} color={theme.textMuted} />
+           <span style={{ fontSize: "0.95rem", color: theme.text, fontWeight: "700" }}>등장 인물 (엑스트라 NPC)</span>
+         </div>
+         <button type="button" onClick={handleAddSuspect} style={{ padding: "6px 14px", backgroundColor: theme.panelAlt, border: `1px solid ${theme.accent}`, borderRadius: "16px", color: theme.accent, fontSize: "0.76rem", fontWeight: "600", cursor: "pointer" }}>＋ 인물 추가</button>
+       </div>
+       <div style={{ textAlign: "center", color: theme.textMuted, fontSize: "0.8rem", padding: "10px" }}>* 기존 추리 모드 '용의자 수사망' 컴포넌트를 사용합니다.</div>
+    </section>
+
+    {/* 5. 괴담 단서 및 구역 세팅 */}
+    <section style={{ ...GLASS_STYLE, padding: isMobile ? "16px" : "20px", backgroundColor: theme.panel, borderRadius: "18px", border: `1px solid ${theme.border}`, display: "flex", flexDirection: "column", gap: "12px", marginBottom: "16px" }}>
+      <button type="button" onClick={() => setShowEvidence(!showEvidence)} style={{ width: "100%", textAlign: "left", background: "none", border: "none", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer", padding: 0 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          <Search size={22} strokeWidth={2} color={theme.accent} />
+          <span style={{ fontWeight: "700", fontSize: "0.95rem", color: theme.text }}>조사 구역 및 기괴한 단서</span>
+        </div>
+        <span style={{ display: "flex", alignItems: "center", color: theme.textMuted }}>
+          {showEvidence ? <ChevronUp size={18} strokeWidth={2} /> : <ChevronDown size={18} strokeWidth={2} />}
+        </span>
+      </button>
+
+      {showEvidence && (
+        <div style={{ display: "flex", flexDirection: "column", gap: "12px", marginTop: "4px" }}>
+          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: "12px" }}>
+            {evidenceList.map((item, idx) => (
+              <div key={item.id} style={{ backgroundColor: theme.panelAlt, border: `1px solid ${theme.border}`, borderRadius: "12px", padding: "14px", display: "flex", flexDirection: "column", gap: "10px" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "6px" }}>
+                  <input type="text" value={item.name} onChange={e => handleUpdateEvidence(item.id, "name", e.target.value)} placeholder={`단서/구역 ${idx + 1} 명칭`} style={{ flex: 1, padding: "8px 10px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.82rem", fontWeight: "600", outline: "none" }} />
+                  {evidenceList.length > 1 && (
+                    <button type="button" onClick={(e) => handleDeleteEvidence(e, item.id)} style={{ background: "none", border: "none", color: theme.danger, cursor: "pointer", padding: "2px", fontSize: "0.8rem" }}>🗑</button>
+                  )}
+                </div>
+                <input type="text" value={item.overview} onChange={e => handleUpdateEvidence(item.id, "overview", e.target.value)} placeholder="발견 위치 및 표면적 겉모습..." style={{ width: "100%", padding: "8px 10px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.78rem", outline: "none" }} />
+                
+                {/* 이면 해금 및 침식도 패널티 토글 */}
+                <div style={{ backgroundColor: isDarkMode ? "rgba(0,0,0,0.2)" : "rgba(255,255,255,0.6)", borderRadius: "8px", border: `1px solid ${theme.danger}`, padding: "10px 12px" }}>
+                  <button type="button" onClick={() => handleUpdateEvidence(item.id, "showSecret", !item.showSecret)} style={{ width: "100%", textAlign: "left", background: "none", border: "none", fontSize: "0.76rem", color: theme.danger, cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center", padding: 0 }}>
+                    <span style={{ fontWeight: "600", display: "flex", alignItems: "center", gap: "6px" }}>
+                      <Eye size={15} strokeWidth={2.5} /> 숨겨진 이면의 진실 (판정 필요)
+                    </span>
+                    <span style={{ display: "flex", alignItems: "center", color: theme.textMuted }}>
+                      {item.showSecret ? <ChevronUp size={18} strokeWidth={2} /> : <ChevronDown size={18} strokeWidth={2} />}
+                    </span>
+                  </button>
+                  {item.showSecret && (
+                    <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginTop: "10px" }}>
+                      <input type="text" value={item.secret} onChange={e => handleUpdateEvidence(item.id, "secret", e.target.value)} placeholder="해금 성공 시 밝혀질 소름끼치는 이면..." style={{ width: "100%", padding: "6px 10px", borderRadius: "6px", border: `1px solid ${theme.danger}`, backgroundColor: theme.inputBg, color: theme.danger, fontSize: "0.78rem", outline: "none" }} />
+                      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                        <span style={{ fontSize: "0.7rem", color: theme.danger, fontWeight: "600" }}>해금 시 침식도 상승 코스트:</span>
+                        <input type="number" value={item.contradiction || 10} onChange={e => handleUpdateEvidence(item.id, "contradiction", e.target.value)} placeholder="+10" style={{ width: "60px", padding: "4px 8px", borderRadius: "4px", border: `1px solid ${theme.danger}`, backgroundColor: theme.inputBg, color: theme.danger, fontSize: "0.75rem", outline: "none", textAlign: "center" }} />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+          <button type="button" onClick={handleAddEvidence} style={{ width: "100%", padding: "12px", backgroundColor: isDarkMode ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.02)", border: `1.5px dashed ${theme.borderHighlight || theme.border}`, borderRadius: "12px", color: theme.accent, fontSize: "0.82rem", fontWeight: "600", cursor: "pointer", transition: "all 0.2s" }}>
+            ＋ 새로운 구역/단서 추가 ({evidenceList.length} / 15)
+          </button>
+        </div>
+      )}
+    </section>
+    
+    {/* 6. 사건 진상 봉투 */}
+    <section style={{ ...GLASS_STYLE, padding: isMobile ? "16px" : "20px", backgroundColor: theme.panel, borderRadius: "18px", border: `1px solid ${theme.border}`, display: "flex", flexDirection: "column", gap: "12px" }}>
+      {/* 기존 사건 진상 봉투 코드와 완벽히 동일합니다. */}
+      <button type="button" onClick={() => setShowHiddenTruth(!showHiddenTruth)} style={{ width: "100%", textAlign: "left", background: "none", border: "none", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer", padding: 0 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          <Mailbox size={22} strokeWidth={2} color={theme.accent} />
+          <span style={{ fontWeight: "700", fontSize: "0.95rem", color: theme.text }}>사건 진상 봉투</span>
+        </div>
+        <span style={{ display: "flex", alignItems: "center", color: theme.textMuted }}>{showHiddenTruth ? <ChevronUp size={18} strokeWidth={2} /> : <ChevronDown size={18} strokeWidth={2} />}</span>
+      </button>
+      {showHiddenTruth && (
+        <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginTop: "4px" }}>
+          <input type="text" value={culpritName} onChange={e => setCulpritName(e.target.value)} placeholder="원흉 / 괴이의 진짜 정체" style={{ padding: "10px 12px", borderRadius: "8px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.85rem", outline: "none" }} />
+          <textarea rows={3} value={hiddenTruth} onChange={e => setHiddenTruth(e.target.value)} placeholder="사건의 내막, 파훼법 및 엔딩 생존 조건..." style={{ padding: "10px 12px", borderRadius: "8px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.83rem", outline: "none", resize: "vertical" }} />
+        </div>
+      )}
+    </section>
+  </>
+)}
 
             <button 
               onClick={startNewSession} 
