@@ -1079,8 +1079,6 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
       
       let cleanText = data.text || "";
       let suggActions = [];
-      let cleanText = data.text || "";
-      let suggActions = [];
       const suggMatch = cleanText.match(/<!--\s*SUGGESTIONS:\s*(\[[\s\S]*?\])\s*-{1,3}>/i);
       if (suggMatch) {
         try { suggActions = JSON.parse(suggMatch[1]); } catch(e) {}
