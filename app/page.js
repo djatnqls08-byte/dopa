@@ -279,12 +279,15 @@ const [exploreFilter, setExploreFilter] = useState("추천"); // 추천, 추리,
  // ── [글로벌 재화 상태] ──
 const [userInk, setUserInk] = useState(0);
 const [showInkModal, setShowInkModal] = useState(false); // 🌟 잉크 충전소 모달 스위치
+ const [hasClaimedAttendance, setHasClaimedAttendance] = useState(false); // 출석체크 여부
+const [adWatchCount, setAdWatchCount] = useState(5); // 남은 광고 시청 횟수
  // ── [내정보(Profile) 탭 전용 상태] ──
 const [showProfileEdit, setShowProfileEdit] = useState(false);
 const [showHistoryModal, setShowHistoryModal] = useState(false);
 const [showLikedModal, setShowLikedModal] = useState(false);
 const [showReviewModal, setShowReviewModal] = useState(false);
 const [showSupportModal, setShowSupportModal] = useState(false);
+ 
  // ── [11. 관리자 및 추가 기능 상태] ──
   const [isAdmin, setIsAdmin] = useState(true); // 🌟 테스트용 어드민 계정 스위치 (true면 공지 작성 가능)
   const [showNoticeModal, setShowNoticeModal] = useState(false);
@@ -2690,26 +2693,38 @@ color: "#fff", border: "none", cursor: "pointer",
               <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
                 <span style={{ fontSize: "0.9rem", fontWeight: "800", color: theme.text }}>무료 잉크 획득</span>
                 
-                <div onClick={() => { setUserInk(prev => prev + 5); triggerToast("출석체크 완료", "5 잉크가 지급되었습니다!", <CheckCircle2 size={18} color={theme.success}/>); }} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px", backgroundColor: theme.inputBg, borderRadius: "14px", border: `1px solid ${theme.border}`, cursor: "pointer", transition: "transform 0.2s" }} onMouseEnter={e => e.currentTarget.style.transform = "scale(1.02)"} onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}>
+                {/* 출석체크 버튼 */}
+                <div onClick={() => { 
+                  if(hasClaimedAttendance) { triggerToast("수령 완료", "오늘은 이미 출석 보상을 받았습니다.", "💡"); return; }
+                  setHasClaimedAttendance(true);
+                  setUserInk(prev => prev + 5); 
+                  triggerToast("출석체크 완료", "5 잉크가 지급되었습니다!", <CheckCircle2 size={18} color={theme.success}/>); 
+                }} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px", backgroundColor: theme.inputBg, borderRadius: "14px", border: `1px solid ${theme.border}`, cursor: hasClaimedAttendance ? "default" : "pointer", opacity: hasClaimedAttendance ? 0.6 : 1, transition: "transform 0.2s" }} onMouseEnter={e => { if(!hasClaimedAttendance) e.currentTarget.style.transform = "scale(1.02)"}} onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}>
                   <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                    <div style={{ padding: "8px", backgroundColor: "rgba(22, 163, 74, 0.1)", borderRadius: "10px", color: theme.success }}><Gift size={20} strokeWidth={2.5} /></div>
+                    <div style={{ padding: "8px", backgroundColor: hasClaimedAttendance ? theme.border : "rgba(22, 163, 74, 0.1)", borderRadius: "10px", color: hasClaimedAttendance ? theme.textMuted : theme.success }}><Gift size={20} strokeWidth={2.5} /></div>
                     <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
                       <span style={{ fontSize: "0.9rem", fontWeight: "700", color: theme.text }}>오늘의 출석체크</span>
-                      <span style={{ fontSize: "0.75rem", color: theme.textMuted }}>매일 1회 접속 보상</span>
+                      <span style={{ fontSize: "0.75rem", color: theme.textMuted }}>{hasClaimedAttendance ? "내일 다시 와주세요!" : "매일 1회 접속 보상"}</span>
                     </div>
                   </div>
-                  <span style={{ fontWeight: "800", color: theme.accent, fontSize: "0.95rem" }}>+ 5</span>
+                  <span style={{ fontWeight: "800", color: hasClaimedAttendance ? theme.textMuted : theme.accent, fontSize: "0.95rem" }}>{hasClaimedAttendance ? "완료" : "+ 5"}</span>
                 </div>
 
-                <div onClick={() => { setUserInk(prev => prev + 10); triggerToast("시청 완료", "10 잉크가 지급되었습니다!", <Video size={18} color={theme.accent}/>); }} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px", backgroundColor: theme.inputBg, borderRadius: "14px", border: `1px solid ${theme.border}`, cursor: "pointer", transition: "transform 0.2s" }} onMouseEnter={e => e.currentTarget.style.transform = "scale(1.02)"} onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}>
+                {/* 광고 시청 버튼 */}
+                <div onClick={() => { 
+                  if(adWatchCount <= 0) { triggerToast("시청 완료", "오늘치 광고를 모두 시청했습니다.", "💡"); return; }
+                  setAdWatchCount(prev => prev - 1);
+                  setUserInk(prev => prev + 10); 
+                  triggerToast("시청 완료", "10 잉크가 지급되었습니다!", <Video size={18} color={theme.accent}/>); 
+                }} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px", backgroundColor: theme.inputBg, borderRadius: "14px", border: `1px solid ${theme.border}`, cursor: adWatchCount <= 0 ? "default" : "pointer", opacity: adWatchCount <= 0 ? 0.6 : 1, transition: "transform 0.2s" }} onMouseEnter={e => { if(adWatchCount > 0) e.currentTarget.style.transform = "scale(1.02)"}} onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}>
                   <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                    <div style={{ padding: "8px", backgroundColor: "rgba(96, 165, 250, 0.1)", borderRadius: "10px", color: "#60a5fa" }}><Video size={20} strokeWidth={2.5} /></div>
+                    <div style={{ padding: "8px", backgroundColor: adWatchCount <= 0 ? theme.border : "rgba(96, 165, 250, 0.1)", borderRadius: "10px", color: adWatchCount <= 0 ? theme.textMuted : "#60a5fa" }}><Video size={20} strokeWidth={2.5} /></div>
                     <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
                       <span style={{ fontSize: "0.9rem", fontWeight: "700", color: theme.text }}>광고 보고 잉크 받기</span>
-                      <span style={{ fontSize: "0.75rem", color: theme.textMuted }}>남은 횟수: 5/5</span>
+                      <span style={{ fontSize: "0.75rem", color: theme.textMuted }}>남은 횟수: {adWatchCount}/5</span>
                     </div>
                   </div>
-                  <span style={{ fontWeight: "800", color: theme.accent, fontSize: "0.95rem" }}>+ 10</span>
+                  <span style={{ fontWeight: "800", color: adWatchCount <= 0 ? theme.textMuted : theme.accent, fontSize: "0.95rem" }}>{adWatchCount <= 0 ? "완료" : "+ 10"}</span>
                 </div>
               </div>
 
