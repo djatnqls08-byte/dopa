@@ -1015,15 +1015,14 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
       if (!res.ok) throw new Error("서버 응답 오류");
       const data = await res.json();
       
-     let cleanText = data.text || "";
+      let cleanText = data.text || "";
       let suggActions = [];
       const suggMatch = cleanText.match(/<!--\s*SUGGESTIONS:\s*(\[[\s\S]*?\])\s*-{1,3}>/i);
       if (suggMatch) {
         try { suggActions = JSON.parse(suggMatch[1]); } catch(e) {}
       }
-      // 🌟 AI가 뱉어내는 보이지 않아야 할 모든 시스템 태그(AFFECTION 등) 화면 노출 완전 차단!
+      // 🌟 AI 시스템 태그 완전 차단!
       cleanText = cleanText.replace(/<!--[\s\S]*?-->/g, "").trim();
-
       setSessions(prev => prev.map(s => s.id === newId ? {
         ...s,
         messages: [{ role: "model", text: cleanText }],
