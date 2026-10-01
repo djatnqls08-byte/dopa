@@ -242,10 +242,22 @@ export default function GamePlatform() {
     return () => window.removeEventListener("popstate", handlePopState);
   }, []);
 
- const [banners, setBanners] = useState([
-    { id: 1, tag: "이번 주말의 추천 사건", title: "저택의 그림자", desc: "어느 비 오는 밤, 저택에서 울린 한 발의 총성.", imageUrl: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=800&q=80" },
-    { id: 2, tag: "NEW 로맨스", title: "어느 세이렌의 결백", desc: "깊은 바닷속, 그녀가 숨기고 있는 슬픈 진실", imageUrl: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=800&q=80" }
-  ]);
+ // 🌟 (서버 연동 완료!) 메인 배너 데이터 상자 및 안테나
+  const [banners, setBanners] = useState([]);
+  const [showBannerEdit, setShowBannerEdit] = useState(false);
+  const [editingBanner, setEditingBanner] = useState(null); 
+
+  useEffect(() => {
+    // 앱을 처음 켤 때 Supabase 서버에서 현재 전시 중인 배너를 싹 가져옵니다!
+    const fetchBanners = async () => {
+      const { data, error } = await supabase.from('main_banners').select('*').order('id', { ascending: true });
+      if (data && !error) {
+        // 서버의 이름을 프론트엔드 이름으로 살짝 맞춰서 넣기
+        setBanners(data.map(b => ({ id: b.id, tag: b.tag, title: b.title, desc: b.description, imageUrl: b.image_url })));
+      }
+    };
+    fetchBanners();
+  }, []);
   const [showBannerEdit, setShowBannerEdit] = useState(false);
   const [editingBanner, setEditingBanner] = useState(null); // 🌟 (여기에 추가!) 어떤 배너를 수정할지 기억하는 상자
   
@@ -558,17 +570,31 @@ const [showProfileEdit, setShowProfileEdit] = useState(false);
 const [showHistoryModal, setShowHistoryModal] = useState(false);
 const [showLikedModal, setShowLikedModal] = useState(false);
 const [showReviewModal, setShowReviewModal] = useState(false);
+const [showSupportModal, setShowSupportModal] = useState(false);
+ 
+// ── [11. 관리자 및 추가 기능 상태] ──
+  const MY_ADMIN_EMAIL = "usb1201@naver.com"; 
+  const isAdmin = currentUser?.email === MY_ADMIN_EMAIL; // 이메일이 일치할 때만 어드민 권한 부여
 
-  // 🌟 (추가!) 어드민 전용 서버 통신 데이터 상자 & 안테나
+  // ── [11. 관리자 및 추가 기능 상태] ──
+  const MY_ADMIN_EMAIL = "usb1201@naver.com"; 
+  const isAdmin = currentUser?.email === MY_ADMIN_EMAIL; // 이메일이 일치할 때만 어드민 권한 부여
+  
+  // 🌟 [제자리로 이사 옴!] 어드민 계정이면 무한 잉크 즉시 입금!!
+  useEffect(() => {
+    if (isAdmin) {
+      setUserInk(9999999);
+    }
+  }, [isAdmin]);
+
+  // 🌟 (이곳이 제자리입니다!) 어드민 전용 서버 통신 데이터 상자 & 안테나
   const [adminPendingScenarios, setAdminPendingScenarios] = useState([]); 
   const [isReviewFetching, setIsReviewFetching] = useState(false); 
 
   useEffect(() => {
-    // 어드민이 '심사 내역' 창을 열 때만 서버에서 데이터를 긁어옵니다!
     if (showReviewModal && isAdmin) {
       const fetchPendingScenarios = async () => {
         setIsReviewFetching(true);
-        // Supabase의 scenarios 방에서 '심사 대기' 중인 것만 최신순으로 가져오기
         const { data, error } = await supabase
           .from('scenarios')
           .select('*')
@@ -583,12 +609,8 @@ const [showReviewModal, setShowReviewModal] = useState(false);
       fetchPendingScenarios();
     }
   }, [showReviewModal, isAdmin]);
-  
-const [showSupportModal, setShowSupportModal] = useState(false);
- 
-// ── [11. 관리자 및 추가 기능 상태] ──
-  const MY_ADMIN_EMAIL = "usb1201@naver.com"; 
-  const isAdmin = currentUser?.email === MY_ADMIN_EMAIL; // 이메일이 일치할 때만 어드민 권한 부여
+
+  const [showNoticeModal, setShowNoticeModal] = useState(false);
   
   // 🌟 [제자리로 이사 옴!] 어드민 계정이면 무한 잉크 즉시 입금!!
   useEffect(() => {
@@ -3295,12 +3317,26 @@ color: "#fff", border: "none", cursor: "pointer",
                  <textarea rows={2} value={editingBanner.desc} onChange={e => setEditingBanner({...editingBanner, desc: e.target.value})} placeholder="배너 설명" style={{ padding: "12px", borderRadius: "8px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.85rem", outline: "none", resize: "none" }} />
               </div>
 
-              {/* 완료 버튼 */}
+             {/* 완료 버튼 */}
               <button 
-                onClick={() => {
-                  setBanners(banners.map(b => b.id === editingBanner.id ? editingBanner : b));
-                  setShowBannerEdit(false);
-                  triggerToast("교체 완료", "메인 배너가 성공적으로 업데이트되었습니다.", <CheckCircle2 color={theme.success} size={18}/>);
+                onClick={async () => {
+                  triggerToast("저장 중...", "서버에 배너를 업데이트하고 있습니다.", "⏳");
+                  
+                  // 🌟 수빈님이 바꾼 배너 사진과 글씨를 서버(Supabase)에 덮어씌우기!
+                  const { error } = await supabase.from('main_banners').update({
+                    tag: editingBanner.tag,
+                    title: editingBanner.title,
+                    description: editingBanner.desc,
+                    image_url: editingBanner.imageUrl
+                  }).eq('id', editingBanner.id);
+
+                  if (!error) {
+                    setBanners(banners.map(b => b.id === editingBanner.id ? editingBanner : b));
+                    setShowBannerEdit(false);
+                    triggerToast("교체 완료", "모든 유저의 메인 배너가 업데이트되었습니다!", <CheckCircle2 color={theme.success} size={18}/>);
+                  } else {
+                    triggerToast("업데이트 실패", "서버 통신에 문제가 발생했습니다.", "⚠️");
+                  }
                 }} 
                 style={{ width: "100%", padding: "14px", backgroundColor: theme.danger, color: "#fff", border: "none", borderRadius: "12px", fontSize: "0.95rem", fontWeight: "700", cursor: "pointer", marginTop: "4px", boxShadow: "0 4px 12px rgba(220,38,38,0.3)" }}
               >
