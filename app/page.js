@@ -1,5 +1,5 @@
 "use client";
- 
+
 import { useState, useEffect } from "react";
 import SecretBoard from "@/components/SecretBoard";
 import CharacterSheet from "@/components/CharacterSheet";
@@ -13,7 +13,7 @@ import {
   ArrowUp, Smartphone, BookOpen, Dices, ChevronLeft, ChevronRight, UploadCloud, AlertTriangle, CheckCircle2,
   Brain, Skull, Eye, Activity, ShieldAlert, ToggleLeft, ToggleRight, Plus, Minus, Ghost, Gift, Video, CreditCard, Headphones,
   Trash2, Clock, Tag, Droplet, MessageCircle, MessageSquare, Bandage, Clapperboard, Lightbulb, 
-  Fingerprint, Flower2, Tentacle, Compass
+  Fingerprint, Flower2, Tentacle, Compass, Globe
 } from "lucide-react";
 
 const THEME_PALETTES = {
@@ -27,7 +27,7 @@ const GLASS_STYLE = { backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(
 // ==========================================
 // 📑 시크릿 노벨 공식 시나리오 파이프라인 (구글 시트 연동)
 // ==========================================
-const GOOGLE_SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQQEA39XlsqHKGn0GPzmVH42jhimki3yJUIbKHkXjgzmLA5bD66WQvXw3-nHy9PJSxwg727wfSGznYa/pub?gid=0&single=true&output=csv"; // 나중에 웹 게시 CSV 링크로 교체하세요!
+const GOOGLE_SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQQEA39XlsqHKGn0GPzmVH42jhimki3yJUIbKHkXjgzmLA5bD66WQvXw3-nHy9PJSxwg727wfSGznYa/pub?gid=0&single=true&output=csv";
 
 function parseCSV(text) {
   let p = '', c = '', r = [];
@@ -53,17 +53,21 @@ function parseCSV(text) {
   return r;
 }
 
-// 🌟 [수정됨] 2. 체크박스(TRUE/FALSE) 완벽 감지 및 공개 여부 필터링
+function convertRowToPreset(row, index, headers = []) {
+  if (!row || row.length === 0) return null;
+
+  const cleanHeaders = (headers || []).map(h => (h || "").toString().replace(/[\s_]/g, "").toLowerCase());
+  const findIdx = (regex) => cleanHeaders.findIndex(h => regex.test(h));
+
+  // 🌟 체크박스(TRUE/FALSE) 완벽 감지 및 공개 여부 필터링
   const pubIdx = findIdx(/^(공개여부|공개|공개\/비공개|상태|open|public)$/i);
   let isHidden = false;
   const firstColVal = (row[0] || "").toString().trim().toUpperCase();
 
-  // 구글 시트의 체크박스 상태(TRUE/FALSE)를 읽어옵니다.
   if (pubIdx !== -1) {
     const pubVal = (row[pubIdx] || "").toString().trim().toUpperCase();
     isHidden = pubVal === "FALSE" || pubVal === "비공개" || pubVal === "X" || pubVal === "N";
   } else if (firstColVal === "TRUE" || firstColVal === "FALSE") {
-    // 헤더를 못 찾았어도 첫 번째 열이 체크박스라면 그걸 기준으로 삼음
     isHidden = firstColVal === "FALSE";
   }
 
@@ -71,7 +75,7 @@ function parseCSV(text) {
   if (titleIdx === -1) titleIdx = pubIdx !== -1 ? pubIdx + 1 : 2; 
   const title = (row[titleIdx] || "").toString().trim();
 
-  // 🚨 비공개(체크 해제) 상태거나 제목이 없으면 탐색 탭에 절대 띄우지 않고 무시합니다!
+  // 비공개 상태거나 제목이 없으면 탐색 탭에 띄우지 않음
   if (isHidden || !title || title.startsWith("//")) return null;
 
   const getVal = (regex) => {
