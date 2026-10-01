@@ -3957,16 +3957,46 @@ color: "#fff", border: "none", cursor: "pointer",
               </div>
 <button 
                 onClick={() => {
-                  // 1. 서재 카드 상태를 '심사 대기'로 바꾸고, 작성한 소개글/경고문 데이터를 저장함!
+                 <button 
+                // 🌟 (중요) 서버와 통신하려면 함수 앞에 async가 꼭 붙어야 합니다!
+                onClick={async () => {
+                  triggerToast("업로드 중...", "서버로 데이터를 전송하고 있습니다.", "⏳");
+
+                  // 🌟 1. 방금 만든 Supabase 'scenarios' 방에 진짜로 데이터 쏘아 올리기!
+                  const { error } = await supabase
+                    .from('scenarios')
+                    .insert([
+                      {
+                        title: uploadingScenario.title,
+                        mode: uploadingScenario.mode,
+                        author_email: currentUser?.email || "unknown@test.com",
+                        author_name: currentUser?.name || "익명 작가",
+                        image_url: uploadingScenario.imageUrl || "",
+                        data: {
+                          ...uploadingScenario.data,
+                          publicSynopsis: uploadingScenario.uploadSynopsis,
+                          triggerWarning: uploadingScenario.uploadWarning
+                        },
+                        status: '심사 대기'
+                      }
+                    ]);
+
+                  if (error) {
+                    triggerToast("업로드 실패", "서버 연결에 문제가 발생했습니다.", "⚠️");
+                    console.error("Supabase 에러:", error);
+                    return; // 에러 나면 여기서 멈춤!
+                  }
+
+                  // 🌟 2. 서버 전송 성공 후, 내 기기(서재)의 상태도 '심사 대기'로 변경!
                   const updatedLibrary = savedLibrary.map(item => 
                     item.id === uploadingScenario.id ? { ...item, status: "심사 대기", loungeData: { synopsis: uploadingScenario.uploadSynopsis, warning: uploadingScenario.uploadWarning } } : item
                   );
                   setSavedLibrary(updatedLibrary);
                   localStorage.setItem("secret_novel_library", JSON.stringify(updatedLibrary));
 
-                  // 2. 탐색 탭에 올리지 않고 폼 닫기! (어드민이 승인해야 올라감)
+                  // 3. 팝업 닫고 성공 알림 띄우기
                   setUploadingScenario(null);
-                  triggerToast("심사 대기", "어드민에게 라운지 업로드 심사를 요청했습니다.", <CheckCircle2 size={18} color={theme.success} />);
+                  triggerToast("심사 대기", "서버에 라운지 업로드 심사를 요청했습니다!", <CheckCircle2 size={18} color={theme.success} />);
                 }}
                 style={{ padding: "8px 16px", backgroundColor: theme.accent, border: "none", borderRadius: "10px", color: isDarkMode ? "#1a1817" : "#fff", fontWeight: "800", fontSize: "0.85rem", cursor: "pointer", boxShadow: `0 4px 12px ${theme.accentGlow}` }}
               >
