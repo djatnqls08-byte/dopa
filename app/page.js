@@ -991,7 +991,7 @@ export default function GamePlatform() {
                 </section>
 
                 <section style={{ ...GLASS_STYLE, padding: isMobile ? "16px" : "20px", backgroundColor: theme.panel, borderRadius: "18px", border: `1px solid ${theme.border}`, display: "flex", flexDirection: "column", gap: "12px" }}>
-                  <button 
+<button 
                     type="button" 
                     onClick={() => setShowEvidence(!showEvidence)}
                     style={{ width: "100%", textAlign: "left", background: "none", border: "none", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer", padding: 0 }}
@@ -1000,9 +1000,9 @@ export default function GamePlatform() {
                       <FileSearch size={22} strokeWidth={2} color={theme.accent} />
                       <span style={{ fontWeight: "600", fontSize: "0.95rem", color: theme.text }}>사건 단서 및 물증</span>
                     </div>
-                 <span style={{ display: "flex", alignItems: "center", color: theme.textMuted }}>
-  {showEvidence ? <ChevronUp size={18} strokeWidth={2} /> : <ChevronDown size={18} strokeWidth={2} />}
-</span>
+                    {/* 🌟 중복된 span 태그를 제거하고 예쁜 Chevron 아이콘으로 깔끔하게 교체! */}
+                    <span style={{ display: "flex", alignItems: "center", color: theme.textMuted }}>
+                      {showEvidence ? <ChevronUp size={18} strokeWidth={2} /> : <ChevronDown size={18} strokeWidth={2} />}
                     </span>
                   </button>
 
