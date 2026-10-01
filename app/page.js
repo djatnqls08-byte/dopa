@@ -376,6 +376,9 @@ export default function GamePlatform() {
   
   const [showPortraitModal, setShowPortraitModal] = useState(false);
   const [activePortraitSuspectId, setActivePortraitSuspectId] = useState(null);
+// 🌟 (신규 추가!) 세션 카드 팝업 모달 스위치
+  const [showSessionCardModal, setShowSessionCardModal] = useState(false);
+  const [activeCardSessionId, setActiveCardSessionId] = useState(null);
 
   const [evidenceList, setEvidenceList] = useState([
     { id: 1, name: "", overview: "", contradiction: "", secret: "", showSecret: false }
@@ -481,6 +484,7 @@ const handleLoadFromLibrary = (scen) => {
   
   setSelectedMode(scen.mode);
   setScenarioTitle(scen.title);
+  setScenarioImageUrl(scen.imageUrl || ""); // 🌟 표지 증발 방어
   
   // 기본 텍스트 데이터 복원
   setPlayPreference(d.playPreference || ""); 
@@ -968,10 +972,11 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
       partners: deepReplace(mainPartners)      // 🌟 메인 파트너 정보 주입!
     };
     
-    const newId = Date.now();
+   const newId = Date.now();
     const newSession = {
       id: newId,
       title: scenarioTitle,
+      thumbnail: scenarioImageUrl, // 🌟 여기서 세션 카드를 영구 저장합니다!
       ruleMode: selectedMode === "추리" ? "freeform" : selectedMode === "연애" ? "dating" : "horror",
       preference: playPreference.trim(),
       // 🌟 AI에게 치환이 완료된(final) 텍스트를 전달합니다!
@@ -1471,13 +1476,24 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
                 onClick={() => { setActiveSessionId(s.id); setIsDrawerOpen(false); }}
                 style={{ borderRadius: "10px", cursor: "pointer", backgroundColor: activeSessionId === s.id ? theme.panelAlt : theme.panel, border: `1px solid ${activeSessionId === s.id ? theme.accent : theme.border}`, overflow: "hidden", display: "flex", flexDirection: "column" }}
               >
-                {/* 🌟 추가된 세션 카드(썸네일) 영역 */}
-                <div style={{ width: "100%", height: "120px", backgroundColor: theme.inputBg, display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
+                {/* 🌟 16:9 세션 카드 썸네일 & 모달 호출 버튼 */}
+                <div style={{ width: "100%", aspectRatio: "16/9", backgroundColor: theme.inputBg, display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", position: "relative" }}>
                   {s.thumbnail || s.imageUrl ? (
                     <img src={s.thumbnail || s.imageUrl} alt="세션 카드" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                   ) : (
-                    <span style={{ fontSize: "2rem", opacity: 0.2 }}>🖼️</span>
+                    <ImageIcon size={32} color={theme.textMuted} opacity={0.3} />
                   )}
+                  <button 
+                    onClick={(e) => { 
+                      e.stopPropagation(); 
+                      setActiveCardSessionId(s.id); 
+                      setShowSessionCardModal(true); 
+                    }} 
+                    title="세션 카드 이미지 변경"
+                    style={{ position: "absolute", top: "8px", right: "8px", backgroundColor: "rgba(0,0,0,0.65)", color: "#fff", border: "none", borderRadius: "8px", padding: "6px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+                  >
+                    <ImageIcon size={14} />
+                  </button>
                 </div>
                 
                 {/* 하단 텍스트 영역 */}
@@ -1559,16 +1575,16 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
             {activeSession && (
               <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
                 
-                {/* 🌸 연애 모드 */}
+                {/* 🌸 연애 모드 상단 버튼 */}
                 {activeSession.ruleMode?.startsWith("dating") && (
                   <>
-                    <button type="button" onClick={(e) => { e.stopPropagation(); setIsPhoneDrawerOpen(!isPhoneDrawerOpen); }} title="메신저" style={{ background: "none", border: "none", cursor: "pointer", color: theme.text, display: "flex", alignItems: "center" }}>
+                    <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setIsPhoneDrawerOpen(true); setIsSheetOpen(false); }} title="메신저" style={{ background: "none", border: "none", cursor: "pointer", color: theme.text, display: "flex", alignItems: "center" }}>
                       <Smartphone size={22} strokeWidth={2} />
                     </button>
-                    <button type="button" onClick={() => { const currentNpc = (activeSession?.sheet?.npcs || []).find(n => n.id === activeSession?.activeContactId) || activeSession?.sheet?.npcs?.[0]; if (currentNpc) setClueModalNpc(currentNpc); }} title="취향 수첩" style={{ background: "none", border: "none", cursor: "pointer", color: theme.text, display: "flex", alignItems: "center" }}>
+                    <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); const currentNpc = (activeSession?.sheet?.npcs || []).find(n => n.id === activeSession?.activeContactId) || activeSession?.sheet?.npcs?.[0]; if (currentNpc) setClueModalNpc(currentNpc); }} title="취향 수첩" style={{ background: "none", border: "none", cursor: "pointer", color: theme.text, display: "flex", alignItems: "center" }}>
                       <BookOpen size={22} strokeWidth={2} />
                     </button>
-                    <button type="button" onClick={() => { const partner = activeSession.sheet?.npcs?.[0]; if (partner) setGiftModalNpc(partner); }} title="선물하기" style={{ background: "none", border: "none", cursor: "pointer", color: theme.text, display: "flex", alignItems: "center" }}>
+                    <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); const partner = activeSession.sheet?.npcs?.[0]; if (partner) setGiftModalNpc(partner); }} title="선물하기" style={{ background: "none", border: "none", cursor: "pointer", color: theme.text, display: "flex", alignItems: "center" }}>
                       <Gift size={22} strokeWidth={2} />
                     </button>
                   </>
@@ -1740,9 +1756,10 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
                             <span onClick={() => setExploreFilter("전체")} style={{ fontSize: "0.8rem", fontWeight: "700", color: theme.textMuted, cursor: "pointer" }}>전체보기 〉</span>
                           </div>
                           <div style={{ display: "flex", gap: "14px", overflowX: "auto", paddingBottom: "10px", WebkitOverflowScrolling: "touch" }}>
-                            {originalScenarios.map(scen => (
-                              <div key={scen.id} onClick={() => setSelectedExploreScenario(scen)} style={{ width: "140px", flexShrink: 0, display: "flex", flexDirection: "column", gap: "8px", cursor: "pointer" }}>
-                                <div style={{ width: "100%", aspectRatio: "3/4", backgroundColor: theme.panelAlt, borderRadius: "12px", overflow: "hidden", border: `1.5px solid ${theme.accent}`, position: "relative" }}>
+                          {originalScenarios.map(scen => (
+                            // 🌟 width를 240px로 늘리고 비율을 16/9로 통일!
+                            <div key={scen.id} onClick={() => setSelectedExploreScenario(scen)} style={{ width: "240px", flexShrink: 0, display: "flex", flexDirection: "column", gap: "8px", cursor: "pointer" }}>
+                              <div style={{ width: "100%", aspectRatio: "16/9", backgroundColor: theme.panelAlt, borderRadius: "12px", overflow: "hidden", border: `1px solid ${theme.accent}`, position: "relative" }}>
                                   {scen.imageUrl ? <img src={scen.imageUrl} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <ImageIcon size={32} color={theme.textMuted} style={{ margin: "auto", height: "100%" }}/>}
                                   <div style={{ position: "absolute", top: "6px", left: "6px", backgroundColor: theme.accent, color: isDarkMode ? "#000" : "#fff", padding: "2px 6px", borderRadius: "4px", fontSize: "0.6rem", fontWeight: "900" }}>ORIGINAL</div>
                                 </div>
@@ -3182,7 +3199,7 @@ color: "#fff", border: "none", cursor: "pointer",
                   fontWeight: 400
                 }}
               >
-                {(activeSession.messages || []).map((m, idx) => {
+{(activeSession.messages || []).map((m, idx) => {
                   const isUser = m.role === "user";
                   const isLastUserMsg = isUser && idx === activeSession.messages.map(x => x.role).lastIndexOf("user");
                   
@@ -3193,25 +3210,69 @@ color: "#fff", border: "none", cursor: "pointer",
                       padding: isUser ? "16px 0" : "0", borderTop: isUser ? `1px dashed ${theme.border}` : "none",
                       borderBottom: isUser ? `1px dashed ${theme.border}` : "none", margin: isUser ? "10px 0" : "0"
                     }}>
-                      {m.text}
-                      
-                      {/* 🌟 롤백 버튼을 내가 친 문장 아래 중앙에 배치! */}
-                      {isLastUserMsg && (
+                      <div style={{ display: "flex", flexDirection: "column", alignItems: isUser ? "center" : "flex-start", width: "100%" }}>
+                        
+                        <div 
+                          style={{ 
+                            backgroundColor: m.text.includes("[🎲") || m.text.includes("[⚠️") ? "rgba(229, 169, 60, 0.12)" : "transparent", 
+                            color: isUser ? (theme.accent || "#d97706") : theme.text, 
+                            border: m.text.includes("[⚠️") ? `1px solid ${theme.danger}` : m.text.includes("[🎲") ? `1px solid ${theme.warning}` : "none", 
+                            padding: m.role === "user" ? "20px 0" : "4px 0", 
+                            margin: m.role === "user" ? "16px 0" : "0",
+                            borderRadius: "8px", 
+                            width: "100%",
+                            textAlign: m.role === "user" ? "center" : "left",
+                            fontStyle: m.role === "user" ? "italic" : "normal",
+                            fontWeight: m.role === "user" ? "700" : "400",
+                            // 🌟 1 & 2번 해결: 폰트 강제 분기 및 줄바꿈 문단 간격 최적화
+                            fontFamily: isUser ? "'Pretendard', sans-serif" : "'RIDIBatang', serif"
+                          }}
+                        >
+                          {m.cg && (
+                            <div style={{ marginBottom: "14px", borderRadius: "10px", overflow: "hidden", position: "relative", border: "1px solid rgba(245, 158, 11, 0.35)", backgroundColor: "rgba(15, 23, 42, 0.85)" }}>
+                              {(m.cg.imageUrl || m.cg.url) ? (
+                                <img src={m.cg.imageUrl || m.cg.url} alt={m.cg.title || "이벤트 CG"} style={{ width: "100%", maxHeight: "380px", objectFit: "cover", display: "block" }} />
+                              ) : (
+                                <div style={{ padding: "16px 14px", textAlign: "center", background: "linear-gradient(135deg, rgba(30, 41, 59, 0.9), rgba(15, 23, 42, 0.95))" }}>
+                                  <span style={{ fontSize: "1.4rem", display: "block", marginBottom: "4px" }}>🎬</span>
+                                  <span style={{ fontSize: "0.85rem", fontWeight: "800", color: "#fbbf24" }}>[이벤트 씬 개막] {m.cg.title}</span>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                          
+                          {/* 🌟 1번 해결: 텍스트를 문단 단위로 쪼개어 가독성 극대화 */}
+                          <div style={{ display: "flex", flexDirection: "column", gap: "14px", lineHeight: "1.95" }}>
+                            {m.text.split('\n').map((line, lIdx) => (
+                              <span key={lIdx} style={{ minHeight: line.trim() ? "auto" : "0.5rem", display: "block" }}>
+                                {line}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+
+                      </div>
+
+                      {/* 🌟 3번 해결: 취소 버튼 바깥 동그라미(테두리/배경) 완전 제거 */}
+                      {isLastUserMsg && !isLoading && (
                         <div style={{ display: "flex", justifyContent: "center", marginTop: "14px" }}>
                           <button
                             type="button"
                             onClick={() => {
-                              setInputMsg(m.text);
-                              setSessions(prev => prev.map(s => {
-                                if (s.id !== activeSessionId) return s;
-                                return { ...s, sheet: m.prevSheet ? m.prevSheet : s.sheet, messages: s.messages.slice(0, idx), suggestedActions: [], pendingCheck: null };
-                              }));
-                              triggerToast("취소 완료", "대화 전송이 취소되었습니다.", "⎌");
+                              try {
+                                const originalText = m.text || "";
+                                setInputMsg(originalText);
+                                setSessions(prev => prev.map(s => {
+                                  if (s.id !== activeSessionId) return s;
+                                  return { ...s, sheet: m.prevSheet ? m.prevSheet : s.sheet, messages: s.messages.slice(0, idx), suggestedActions: [], pendingCheck: null };
+                                }));
+                                triggerToast("취소 완료", "대화 전송이 취소되었습니다.", "⎌");
+                              } catch (err) {}
                             }}
                             style={{
-                              background: theme.panelAlt, border: `1px solid ${theme.borderHighlight}`, borderRadius: "20px", 
+                              background: "transparent", border: "none", 
                               padding: "6px 16px", color: theme.textMuted, fontSize: "0.8rem", fontWeight: "700", 
-                              cursor: "pointer", display: "flex", alignItems: "center", gap: "6px", transition: "all 0.2s"
+                              cursor: "pointer", display: "flex", alignItems: "center", gap: "6px", transition: "color 0.2s"
                             }}
                           >
                             <span style={{ fontSize: "1.1rem" }}>⎌</span> 대화 전송 취소하기
@@ -3459,6 +3520,8 @@ color: "#fff", border: "none", cursor: "pointer",
           );
         })()}
 
+          
+
         {showPortraitModal && (() => {
           const isPc = activePortraitSuspectId === "pc";
           let target;
@@ -3697,6 +3760,82 @@ color: "#fff", border: "none", cursor: "pointer",
             </div>
           </div>
         )}
+
+{/* 🌟 세션 카드 팝업 모달 (프로필 모달과 동일한 구조) */}
+        {showSessionCardModal && (() => {
+          const targetSession = sessions.find(s => s.id === activeCardSessionId);
+          if (!targetSession) return null;
+
+          return (
+            <div
+              onClick={() => setShowSessionCardModal(false)}
+              style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0, 0, 0, 0.8)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 99999, padding: "16px", animation: "fadeIn 0.2s ease-out" }}
+            >
+              <div
+                onClick={e => e.stopPropagation()}
+                style={{ backgroundColor: theme.panel, border: `1.5px solid ${theme.border}`, width: "100%", maxWidth: "420px", borderRadius: "18px", padding: "20px", color: theme.text, display: "flex", flexDirection: "column", gap: "14px", boxShadow: "0 20px 50px rgba(0,0,0,0.5)" }}
+              >
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: `1px solid ${theme.border}`, paddingBottom: "10px" }}>
+                  <div>
+                    <h3 style={{ margin: 0, fontSize: "1rem", fontWeight: "700", color: theme.accent }}>
+                      {targetSession.title}
+                    </h3>
+                    <div style={{ fontSize: "0.74rem", color: theme.textMuted, marginTop: "2px" }}>
+                      세션 카드(표지) 등록
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowSessionCardModal(false)}
+                    style={{ background: "none", border: "none", color: theme.textMuted, fontSize: "1.2rem", cursor: "pointer", lineHeight: 1 }}
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                <div style={{ width: "100%", aspectRatio: "16/9", borderRadius: "14px", overflow: "hidden", border: `1.5px solid ${theme.border}`, backgroundColor: isDarkMode ? "rgba(0, 0, 0, 0.25)" : "#f0ece4", display: "flex", alignItems: "center", justifyContent: "center", position: "relative" }}>
+                  {targetSession.thumbnail ? (
+                    <img src={targetSession.thumbnail} alt="세션 카드" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                  ) : (
+                    <div style={{ textAlign: "center", color: theme.textMuted, fontSize: "0.85rem", lineHeight: "1.6" }}>
+                      <div style={{ fontSize: "2.4rem", marginBottom: "6px", display: "flex", justifyContent: "center" }}>
+                        <ImageIcon size={48} strokeWidth={1} color={theme.textMuted} />
+                      </div>
+                      등록된 사진이 없습니다.
+                    </div>
+                  )}
+
+                  <label
+                    title="사진 변경/등록"
+                    style={{
+                      position: "absolute", bottom: "12px", right: "12px", width: "38px", height: "38px", borderRadius: "50%",
+                      backgroundColor: "rgba(0,0,0,0.7)", color: "#fff", border: "1.5px solid rgba(255,255,255,0.4)", 
+                      cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 5,
+                      boxShadow: "0 4px 10px rgba(0,0,0,0.5)"
+                    }}
+                  >
+                    <PenTool size={18} strokeWidth={2.5} />
+                    <input 
+                      type="file" 
+                      accept="image/*" 
+                      style={{ display: "none" }} 
+                      onChange={(e) => {
+                        const file = e.target.files[0];
+                        if (!file) return;
+                        const reader = new FileReader();
+                        reader.onload = (ev) => {
+                          setSessions(prev => prev.map(s => s.id === activeCardSessionId ? { ...s, thumbnail: ev.target.result } : s));
+                        };
+                        reader.readAsDataURL(file);
+                        e.target.value = null; 
+                      }} 
+                    />
+                  </label>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
 
 
 {/* 📜 나의 플레이 기록 팝업 */}
@@ -4385,12 +4524,13 @@ color: "#fff", border: "none", cursor: "pointer",
                      setEvidenceList(d.evidenceList?.length ? d.evidenceList : [{ id: Date.now()+2, name: "", overview: "", contradiction: "", secret: "", showSecret: false }]);
                      setCgList(d.cgList?.length ? d.cgList : [{ id: Date.now()+3, title: "", condition: "", dialogue: "", imageUrl: "", showDetails: false }]);
                      setRouteList(d.routeList?.length ? d.routeList : [{ id: Date.now()+4, routeName: "", targetId: "", affectionChange: "+10", requiredCG: "" }]);
-                   }
-
-                   setSelectedExploreScenario(null);
-                   setActiveTab("lobby");
-                   triggerToast("세팅 시작", `[${selectedExploreScenario.title}] 10 잉크가 차감되었습니다.`, <Play size={18} color="#fff"/>);
-                 }}
+                    }
+                    
+                    setScenarioImageUrl(selectedExploreScenario.imageUrl || ""); // 🌟 표지 증발 방어!
+                    setSelectedExploreScenario(null);
+                    setActiveTab("lobby");
+                    triggerToast("세팅 시작", `[${selectedExploreScenario.title}] 10 잉크가 차감되었습니다.`, <Play size={18} color="#fff"/>);
+                  }}
                  style={{ flex: 1, height: "56px", backgroundColor: theme.accent, border: "none", borderRadius: "16px", color: isDarkMode ? "#1a1817" : "#fff", fontSize: "1.05rem", fontWeight: "800", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", cursor: "pointer", boxShadow: `0 8px 24px ${theme.accentGlow}`, transition: "transform 0.2s" }} 
                >
                  <Play size={20} strokeWidth={3} /> 바로 플레이
