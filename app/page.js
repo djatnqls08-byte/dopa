@@ -242,25 +242,6 @@ export default function GamePlatform() {
     return () => window.removeEventListener("popstate", handlePopState);
   }, []);
 
- // 🌟 (서버 연동 완료!) 메인 배너 데이터 상자 및 안테나
-  const [banners, setBanners] = useState([]);
-  const [showBannerEdit, setShowBannerEdit] = useState(false);
-  const [editingBanner, setEditingBanner] = useState(null); 
-
-  useEffect(() => {
-    // 앱을 처음 켤 때 Supabase 서버에서 현재 전시 중인 배너를 싹 가져옵니다!
-    const fetchBanners = async () => {
-      const { data, error } = await supabase.from('main_banners').select('*').order('id', { ascending: true });
-      if (data && !error) {
-        // 서버의 이름을 프론트엔드 이름으로 살짝 맞춰서 넣기
-        setBanners(data.map(b => ({ id: b.id, tag: b.tag, title: b.title, desc: b.description, imageUrl: b.image_url })));
-      }
-    };
-    fetchBanners();
-  }, []);
-  const [showBannerEdit, setShowBannerEdit] = useState(false);
-  const [editingBanner, setEditingBanner] = useState(null); // 🌟 (여기에 추가!) 어떤 배너를 수정할지 기억하는 상자
-  
  // ── [0. 폰트 강제 로드] ──
   useEffect(() => {
     const style = document.createElement("style");
@@ -575,19 +556,15 @@ const [showSupportModal, setShowSupportModal] = useState(false);
 // ── [11. 관리자 및 추가 기능 상태] ──
   const MY_ADMIN_EMAIL = "usb1201@naver.com"; 
   const isAdmin = currentUser?.email === MY_ADMIN_EMAIL; // 이메일이 일치할 때만 어드민 권한 부여
-
-  // ── [11. 관리자 및 추가 기능 상태] ──
-  const MY_ADMIN_EMAIL = "usb1201@naver.com"; 
-  const isAdmin = currentUser?.email === MY_ADMIN_EMAIL; // 이메일이 일치할 때만 어드민 권한 부여
   
-  // 🌟 [제자리로 이사 옴!] 어드민 계정이면 무한 잉크 즉시 입금!!
+  // 🌟 어드민 계정이면 무한 잉크 즉시 입금!!
   useEffect(() => {
     if (isAdmin) {
       setUserInk(9999999);
     }
   }, [isAdmin]);
 
-  // 🌟 (이곳이 제자리입니다!) 어드민 전용 서버 통신 데이터 상자 & 안테나
+  // 🌟 어드민 전용 서버 통신 데이터 상자 & 안테나
   const [adminPendingScenarios, setAdminPendingScenarios] = useState([]); 
   const [isReviewFetching, setIsReviewFetching] = useState(false); 
 
@@ -611,18 +588,10 @@ const [showSupportModal, setShowSupportModal] = useState(false);
   }, [showReviewModal, isAdmin]);
 
   const [showNoticeModal, setShowNoticeModal] = useState(false);
-  
-  // 🌟 [제자리로 이사 옴!] 어드민 계정이면 무한 잉크 즉시 입금!!
-  useEffect(() => {
-    if (isAdmin) {
-      setUserInk(9999999);
-    }
-  }, [isAdmin]);
-
-  const [showNoticeModal, setShowNoticeModal] = useState(false);
   const [notices, setNotices] = useState([
     { id: 1, text: "시크릿 노벨 클로즈 베타 테스트에 오신 것을 환영합니다! 🎉\n버그 제보 및 피드백은 고객센터를 이용해 주세요.", date: "2026-10-01" }
   ]);
+  
   const [newNotice, setNewNotice] = useState("");
   const [likedScenarios, setLikedScenarios] = useState([]); // 💖 관심 시나리오 보관함
 
@@ -3504,7 +3473,7 @@ color: "#fff", border: "none", cursor: "pointer",
           </div>
         )}
 
-        {/* ☁️️ 라운지 심사 및 발행 내역 팝업 */}
+{/* ☁️ 라운지 심사 및 발행 내역 팝업 */}
         {showReviewModal && (
           <div onClick={() => setShowReviewModal(false)} style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 500, padding: "20px", animation: "fadeIn 0.2s ease-out" }}>
             <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: "500px", backgroundColor: theme.panel, border: `1px solid ${theme.border}`, borderRadius: "20px", padding: "24px", display: "flex", flexDirection: "column", gap: "20px", boxShadow: "0 20px 50px rgba(0,0,0,0.5)", maxHeight: "80vh" }}>
@@ -3588,6 +3557,7 @@ color: "#fff", border: "none", cursor: "pointer",
             </div>
           </div>
         )}
+
         {/* 🎧 고객센터 팝업 */}
         {showSupportModal && (
           <div onClick={() => setShowSupportModal(false)} style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 500, padding: "20px", animation: "fadeIn 0.2s ease-out" }}>
