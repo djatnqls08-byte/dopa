@@ -3505,8 +3505,9 @@ color: "#fff", border: "none", cursor: "pointer",
                     
                     const today = new Date().toISOString().split("T")[0];
                     
-                   // 🌟 무조건 뚫고 들어가는 마법의 열쇠! (insert 대신 upsert 사용)
-                    const { data, error } = await supabase.from('notices').upsert([{ text: newNotice, date: today }]).select();
+                  // 🌟 upsert를 다시 insert로 변경! (보안문이 열렸으니 무사 통과됩니다)
+                    const { data, error } = await supabase.from('notices').insert([{ text: newNotice, date: today }]).select();
+                
                     if (!error && data) {
                       setNotices([data[0], ...notices]); // 화면에도 즉시 새 공지 추가
                       setNewNotice("");
@@ -4096,10 +4097,10 @@ color: "#fff", border: "none", cursor: "pointer",
                 onClick={async () => {
                   triggerToast("업로드 중...", "서버로 데이터를 전송하고 있습니다.", "⏳");
 
-                  // 🌟 무적의 업서트! 시나리오 심사 데이터도 강제로 밀어 넣습니다.
+                 // 🌟 여기도 upsert를 다시 insert로 변경!
                   const { error } = await supabase
                     .from('scenarios')
-                    .upsert([
+                    .insert([
                       {
                         title: uploadingScenario.title,
                         mode: uploadingScenario.mode,
