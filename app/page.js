@@ -815,7 +815,7 @@ const [exploreFilter, setExploreFilter] = useState("추천"); // 추천, 추리,
                         style={{ flex: 1, height: "100%", border: "none", backgroundColor: "transparent", color: theme.text, fontSize: "0.9rem", outline: "none", paddingLeft: "10px" }} 
                       />
                     </div>
-                    {/* 💧 잉크 잔액 표시 */}
+                    {/* 잉크 잔액 표시 */}
                     <div style={{ display: "flex", alignItems: "center", gap: "6px", backgroundColor: theme.panelAlt, border: `1px solid ${theme.borderHighlight}`, padding: "0 14px", height: "48px", borderRadius: "16px", fontWeight: "800", fontSize: "0.9rem", color: theme.text }}>
                       <Droplet size={18} strokeWidth={2.5} color={theme.accent} /> 1,200
                     </div>
