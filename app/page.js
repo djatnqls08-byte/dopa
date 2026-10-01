@@ -410,7 +410,7 @@ const [showAbyss, setShowAbyss] = useState(false);
 const [usePartner, setUsePartner] = useState(false);
 // 🌟 다수의 메인 파트너를 지원하는 배열 형태
 const [mainPartners, setMainPartners] = useState([
-  { id: Date.now(), name: "", ageGender: "", job: "", behavior: "", secret: "", showSecret: false, portraitUrl: "" }
+  { id: 1, name: "", ageGender: "", job: "", behavior: "", secret: "", showSecret: false, portraitUrl: "" }
 ]);
 
 // 🌟 특성 및 트라우마 매트릭스 모달 스위치
