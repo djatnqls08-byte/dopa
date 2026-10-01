@@ -1015,13 +1015,14 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
       if (!res.ok) throw new Error("서버 응답 오류");
       const data = await res.json();
       
-      let cleanText = data.text || "";
+     let cleanText = data.text || "";
       let suggActions = [];
       const suggMatch = cleanText.match(/<!--\s*SUGGESTIONS:\s*(\[[\s\S]*?\])\s*-{1,3}>/i);
       if (suggMatch) {
         try { suggActions = JSON.parse(suggMatch[1]); } catch(e) {}
-        cleanText = cleanText.replace(suggMatch[0], "").trim();
       }
+      // 🌟 AI가 뱉어내는 보이지 않아야 할 모든 시스템 태그(AFFECTION 등) 화면 노출 완전 차단!
+      cleanText = cleanText.replace(/<!--[\s\S]*?-->/g, "").trim();
 
       setSessions(prev => prev.map(s => s.id === newId ? {
         ...s,
@@ -1079,11 +1080,14 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
       
       let cleanText = data.text || "";
       let suggActions = [];
+      let cleanText = data.text || "";
+      let suggActions = [];
       const suggMatch = cleanText.match(/<!--\s*SUGGESTIONS:\s*(\[[\s\S]*?\])\s*-{1,3}>/i);
       if (suggMatch) {
         try { suggActions = JSON.parse(suggMatch[1]); } catch(e) {}
-        cleanText = cleanText.replace(suggMatch[0], "").trim();
       }
+      // 🌟 AI가 뱉어내는 보이지 않아야 할 모든 시스템 태그(AFFECTION 등) 화면 노출 완전 차단!
+      cleanText = cleanText.replace(/<!--[\s\S]*?-->/g, "").trim();
 
       setSessions(prev => prev.map(s => s.id === activeSessionId ? {
         ...s,
@@ -1319,10 +1323,33 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
           <button onClick={() => setIsDrawerOpen(false)} style={{ background: "none", border: "none", color: theme.text, fontSize: "1.3rem", cursor: "pointer" }}>✕</button>
         </div>
         
-        <div style={{ flex: 1, padding: "16px", overflowY: "auto" }}>
-          <div style={{ padding: "24px 12px", textAlign: "center", color: theme.textMuted, fontSize: "0.78rem", border: `1px dashed ${theme.border}`, borderRadius: "10px" }}>
-            진행 중인 세션 기록이 없습니다.
-          </div>
+        <div style={{ flex: 1, padding: "16px", overflowY: "auto", display: "flex", flexDirection: "column", gap: "8px" }}>
+          {sessions.length === 0 ? (
+            <div style={{ padding: "24px 12px", textAlign: "center", color: theme.textMuted, fontSize: "0.78rem", border: `1px dashed ${theme.border}`, borderRadius: "10px" }}>
+              진행 중인 세션 기록이 없습니다.
+            </div>
+          ) : (
+            sessions.map(s => (
+              <div 
+                key={s.id} 
+                onClick={() => { setActiveSessionId(s.id); setIsDrawerOpen(false); }}
+                style={{ padding: "12px", backgroundColor: activeSessionId === s.id ? theme.panelAlt : "transparent", border: `1px solid ${activeSessionId === s.id ? theme.accent : theme.border}`, borderRadius: "10px", cursor: "pointer", display: "flex", flexDirection: "column", gap: "6px" }}
+              >
+                <span style={{ fontSize: "0.9rem", fontWeight: "700", color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s.title}</span>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <span style={{ fontSize: "0.75rem", color: theme.textMuted }}>{s.ruleMode === "dating" ? "연애" : s.ruleMode === "horror" ? "괴담" : "추리"} 모드</span>
+                  <button onClick={(e) => { 
+                    e.stopPropagation(); 
+                    const updated = sessions.filter(session => session.id !== s.id);
+                    setSessions(updated); 
+                    if(activeSessionId === s.id) setActiveSessionId(null); 
+                  }} style={{ background: "none", border: "none", color: theme.danger, cursor: "pointer", padding: "2px", display: "flex", alignItems: "center" }}>
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              </div>
+            ))
+          )}
         </div>
 
         <div style={{ padding: "14px", borderTop: `1px solid ${theme.border}`, display: "flex", gap: "8px" }}>
@@ -1438,22 +1465,8 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
                   </>
                 )}
 
-                {/* 공통: 롤백 & 캐릭터 시트 */}
+                {/* 공통: 캐릭터 시트 */}
                 <div style={{ width: "1px", height: "16px", backgroundColor: theme.border, margin: "0 4px" }} />
-                <button type="button" onClick={() => {
-                  const lastUserMsgIndex = (activeSession.messages || []).map(x => x.role).lastIndexOf("user");
-                  if(lastUserMsgIndex !== -1) {
-                      const targetMsg = activeSession.messages[lastUserMsgIndex];
-                      setInputMsg(targetMsg.text);
-                      setSessions(prev => prev.map(s => {
-                          if (s.id !== activeSessionId) return s;
-                          return { ...s, sheet: targetMsg.prevSheet ? targetMsg.prevSheet : s.sheet, messages: s.messages.slice(0, lastUserMsgIndex), suggestedActions: [], pendingCheck: null };
-                      }));
-                      triggerToast("롤백 완료", "마지막 대화가 취소되었습니다.", "⎌");
-                  }
-                }} title="대화 취소" style={{ background: "none", border: "none", cursor: "pointer", color: theme.textMuted, display: "flex", alignItems: "center" }}>
-                   <span style={{fontSize: "1.2rem", fontWeight: "bold"}}>⎌</span>
-                </button>
                 <button type="button" onClick={(e) => { e.stopPropagation(); setIsSheetOpen(!isSheetOpen); }} title="캐릭터 정보" style={{ background: "none", border: "none", cursor: "pointer", color: isSheetOpen ? theme.accent : theme.text, display: "flex", alignItems: "center" }}>
                   {activeSession.ruleMode?.startsWith("dating") ? <UserRound size={22} strokeWidth={2} /> : <ClipboardList size={22} strokeWidth={2} />}
                 </button>
@@ -3004,6 +3017,9 @@ color: "#fff", border: "none", cursor: "pointer",
               >
                 {(activeSession.messages || []).map((m, idx) => {
                   const isUser = m.role === "user";
+                  // 🌟 현재 메시지가 유저가 보낸 '가장 마지막' 메시지인지 확인!
+                  const isLastUserMsg = isUser && idx === activeSession.messages.map(x => x.role).lastIndexOf("user");
+                  
                   return (
                     <div key={idx} style={{ 
                       alignSelf: "stretch",
@@ -3019,9 +3035,36 @@ color: "#fff", border: "none", cursor: "pointer",
                       margin: isUser ? "10px 0" : "0"
                     }}>
                       {m.text}
+                      
+                      {/* 🌟 롤백(되돌리기) 버튼을 내가 친 문장 바로 아래 중앙에 배치! */}
+                      {isLastUserMsg && (
+                        <div style={{ display: "flex", justifyContent: "center", marginTop: "14px" }}>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setInputMsg(m.text);
+                              setSessions(prev => prev.map(s => {
+                                if (s.id !== activeSessionId) return s;
+                                return { ...s, sheet: m.prevSheet ? m.prevSheet : s.sheet, messages: s.messages.slice(0, idx), suggestedActions: [], pendingCheck: null };
+                              }));
+                              triggerToast("취소 완료", "대화 전송이 취소되었습니다.", "⎌");
+                            }}
+                            style={{
+                              background: "none", border: `1px solid ${theme.borderHighlight}`, borderRadius: "20px", 
+                              padding: "6px 16px", color: theme.textMuted, fontSize: "0.8rem", fontWeight: "700", 
+                              cursor: "pointer", display: "flex", alignItems: "center", gap: "6px", transition: "all 0.2s"
+                            }}
+                            onMouseEnter={e => e.currentTarget.style.backgroundColor = theme.panelAlt}
+                            onMouseLeave={e => e.currentTarget.style.backgroundColor = "transparent"}
+                          >
+                            <span style={{ fontSize: "1.1rem" }}>⎌</span> 대화 전송 취소하기
+                          </button>
+                        </div>
+                      )}
                     </div>
                   );
                 })}
+
                 {isLoading && (
                   <div style={{ color: theme.textMuted, fontSize: "0.95rem", fontStyle: "italic", textAlign: "center", padding: "20px 0", animation: "pulse 1.5s infinite" }}>
                     (사건의 이면이 서술되는 중……)
