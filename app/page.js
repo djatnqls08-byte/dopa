@@ -1673,7 +1673,7 @@ color: "#fff", border: "none", cursor: "pointer",
                 <section style={{ ...GLASS_STYLE, padding: isMobile ? "16px" : "20px", backgroundColor: theme.panel, borderRadius: "18px", border: `1px solid ${theme.border}`, display: "flex", flexDirection: "column", gap: "12px" }}>
                   <button type="button" onClick={() => setShowCgGallery(!showCgGallery)} style={{ width: "100%", textAlign: "left", background: "none", border: "none", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer", padding: 0 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                      <FolderOpen "#ec4899"} "#f472b6" : ? color="{isDarkMode" size="{22}" strokeWidth="{2}"/>
+                      <ImageIcon color={isDarkMode ? "#f472b6" : "#ec4899"} size={22} strokeWidth={2} />
                       <span style={{ fontWeight: "700", fontSize: "0.95rem", color: theme.text }}>이벤트 CG 갤러리</span>
                     </div>
                     <span style={{ display: "flex", alignItems: "center", color: theme.textMuted }}>{showCgGallery ? <ChevronUp size="{18}" strokeWidth="{2}"/> : <ChevronDown size="{18}" strokeWidth="{2}"/>}</span>
