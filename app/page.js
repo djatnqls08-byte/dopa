@@ -242,6 +242,31 @@ export default function GamePlatform() {
     return () => window.removeEventListener("popstate", handlePopState);
   }, []);
 
+  // 🌟 (신규) 내 서재의 심사 상태를 서버와 실시간으로 맞추는 안테나!
+  useEffect(() => {
+    if (currentUser?.email && savedLibrary.length > 0) {
+      const syncStatus = async () => {
+        const { data } = await supabase.from('scenarios').select('title, status, reject_reason').eq('author_email', currentUser.email);
+        if (data) {
+          let isChanged = false;
+          const synced = savedLibrary.map(local => {
+            const serverItem = data.find(d => d.title === local.title);
+            if (serverItem && (local.status !== serverItem.status || local.rejectReason !== serverItem.reject_reason)) {
+              isChanged = true;
+              return { ...local, status: serverItem.status, rejectReason: serverItem.reject_reason };
+            }
+            return local;
+          });
+          if (isChanged) {
+            setSavedLibrary(synced);
+            localStorage.setItem("secret_novel_library", JSON.stringify(synced));
+          }
+        }
+      };
+      syncStatus();
+    }
+  }, [currentUser]); // 로그인 완료 시 한 번 싹 맞춰줍니다.
+
  // ── [0. 폰트 강제 로드] ──
   useEffect(() => {
     const style = document.createElement("style");
@@ -517,42 +542,40 @@ const handleDeleteFromLibrary = (id) => {
     fetchBanners();
   }, []);
   
-// ── [탐색 탭 라운지 데이터 (구글 시트 연동)] ──
-const [exploreScenarios, setExploreScenarios] = useState([]); // 처음엔 빈 배열
+// ── [탐색 탭 라운지 데이터 (구글 시트 연동 + 진짜 서버 연동)] ──
+const [exploreScenarios, setExploreScenarios] = useState([]); 
 
-// 마운트 시 구글 시트에서 공식 시나리오 불러오기
 useEffect(() => {
-  if (GOOGLE_SHEET_CSV_URL && GOOGLE_SHEET_CSV_URL.trim() !== "" && !GOOGLE_SHEET_CSV_URL.includes("여기에")) {
+  if (GOOGLE_SHEET_CSV_URL && GOOGLE_SHEET_CSV_URL.trim() !== "") {
     fetch(GOOGLE_SHEET_CSV_URL)
       .then(res => res.text())
-      .then(csvText => {
+      .then(async csvText => { // 🌟 서버 통신을 위해 async 추가!
         const rows = parseCSV(csvText);
         const headers = rows[0] || [];
-        
-        // 시트 데이터를 순회하며 프론트엔드 포맷으로 변환
-        const sheetPresets = rows.slice(1)
-          .map((row, idx) => convertRowToPreset(row, idx, headers))
-          .filter(Boolean); // null(비공개/에러) 제거
+        const sheetPresets = rows.slice(1).map((row, idx) => convertRowToPreset(row, idx, headers)).filter(Boolean);
 
-// 🌟 다른 유저들이 올린 가짜 시나리오 데이터 추가!
-        const dummyUserScenarios = [
-          {
-            id: Date.now() - 10000, title: "기억 상실증에 걸린 악녀", mode: "연애", author: "로맨스장인",
-            likes: "942K", plays: "1.2M", isOriginal: false, imageUrl: "https://images.unsplash.com/photo-1621644265166-417122dfb428?auto=format&fit=crop&w=800&q=80",
-            data: { publicSynopsis: "눈을 떠보니 소설 속 악녀가 되어 있었다. 게다가 기억까지 잃었다고?" }
-          },
-          {
-            id: Date.now() - 20000, title: "폐교의 13번째 계단", mode: "괴담", author: "공포매니아",
-            likes: "856K", plays: "990K", isOriginal: false, imageUrl: "https://images.unsplash.com/photo-1519098901909-b1553a1190fa?auto=format&fit=crop&w=800&q=80",
-            data: { publicSynopsis: "자정이 되면 나타난다는 13번째 계단. 그곳에 발을 디딘 순간..." }
-          }
-        ];
-   
-        if (sheetPresets.length > 0) {
-          setExploreScenarios(sheetPresets);
+        // 🌟 서버(Supabase)에서 '발행 완료'된 진짜 유저 시나리오들 가져오기!
+        const { data } = await supabase.from('scenarios').select('*').eq('status', '발행 완료');
+        let dbScenarios = [];
+        if (data) {
+           dbScenarios = data.map(s => ({
+             id: s.id,
+             title: s.title,
+             mode: s.mode,
+             author: s.author_name,
+             likes: s.likes || 0,
+             plays: s.plays || 0,
+             isOriginal: false,
+             imageUrl: s.image_url,
+             data: s.data
+           }));
+        }
+
+        if (sheetPresets.length > 0 || dbScenarios.length > 0) {
+          setExploreScenarios([...sheetPresets, ...dbScenarios]);
         }
       })
-      .catch(err => console.error("구글 시트 불러오기 실패:", err));
+      .catch(err => console.error("데이터 불러오기 실패:", err));
   }
 }, []);
  
@@ -1688,13 +1711,22 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
                               </div>
                             )}
 
-                            {/* 심사 대기 중 뱃지 */}
+                            {/* 심사 대기 / 반려 / 발행 상태 뱃지 */}
                             {scen.status === "심사 대기" && (
-                              <div style={{ position: "absolute", top: "12px", left: "12px", padding: "4px 8px", backgroundColor: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)", borderRadius: "8px", color: theme.warning, fontSize: "0.7rem", fontWeight: "700", border: `1px solid rgba(245, 158, 11, 0.4)`, display: "flex", alignItems: "center", gap: "4px", zIndex: 5 }}>
-                                <Clock size={12} strokeWidth={2.5} /> 심사 대기 중
+                              <div style={{ position: "absolute", top: "12px", left: "12px", padding: "4px 8px", backgroundColor: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)", borderRadius: "8px", color: theme.warning, fontSize: "0.7rem", fontWeight: "700", border: `1px solid rgba(245, 158, 11, 0.4)`, zIndex: 5 }}>
+                                심사 대기 중
                               </div>
                             )}
-                          </div>
+                            {scen.status === "반려" && (
+                              <div title={`반려 사유: ${scen.rejectReason}`} style={{ position: "absolute", top: "12px", left: "12px", padding: "4px 8px", backgroundColor: "rgba(0,0,0,0.8)", backdropFilter: "blur(4px)", borderRadius: "8px", color: theme.danger, fontSize: "0.7rem", fontWeight: "700", border: `1px solid ${theme.danger}`, zIndex: 5, cursor: "help" }}>
+                                🚫 반려 (터치하여 확인)
+                              </div>
+                            )}
+                            {scen.status === "발행 완료" && (
+                              <div style={{ position: "absolute", top: "12px", left: "12px", padding: "4px 8px", backgroundColor: theme.success, backdropFilter: "blur(4px)", borderRadius: "8px", color: "#fff", fontSize: "0.7rem", fontWeight: "700", zIndex: 5 }}>
+                                🎉 라운지 발행됨
+                              </div>
+                            )}
 
 {/* 🌟 하단 카드 텍스트 정보 영역 */}
                           <div style={{ padding: "16px", display: "flex", flexDirection: "column", gap: "12px" }}>
@@ -3606,16 +3638,26 @@ color: "#fff", border: "none", cursor: "pointer",
                     ))
                   )
                 ) : (
-                  savedLibrary.filter(s => s.status === "심사 대기").length === 0 ? (
-                     <div style={{ padding: "40px", textAlign: "center", color: theme.textMuted, fontSize: "0.9rem" }}>현재 심사 중인 서류철이 없습니다.</div>
+                  savedLibrary.filter(s => s.status).length === 0 ? (
+                     <div style={{ padding: "40px", textAlign: "center", color: theme.textMuted, fontSize: "0.9rem" }}>현재 심사 중이거나 발행된 서류철이 없습니다.</div>
                   ) : (
-                     savedLibrary.filter(s => s.status === "심사 대기").map(s => (
-                       <div key={s.id} style={{ padding: "16px", backgroundColor: theme.inputBg, borderRadius: "12px", border: `1px solid ${theme.warning}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                         <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                           <span style={{ fontWeight: "800", color: theme.text, fontSize: "1.05rem" }}>{s.title}</span>
-                           <span style={{ fontSize: "0.75rem", color: theme.textMuted, fontWeight: "600" }}>{s.date} 신청</span>
+                     savedLibrary.filter(s => s.status).map(s => (
+                       <div key={s.id} style={{ padding: "16px", backgroundColor: theme.inputBg, borderRadius: "12px", border: `1px solid ${s.status === '반려' ? theme.danger : s.status === '발행 완료' ? theme.success : theme.warning}`, display: "flex", flexDirection: "column", gap: "10px" }}>
+                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                           <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                             <span style={{ fontWeight: "800", color: theme.text, fontSize: "1.05rem" }}>{s.title}</span>
+                             <span style={{ fontSize: "0.75rem", color: theme.textMuted, fontWeight: "600" }}>{s.date} 신청</span>
+                           </div>
+                           <span style={{ backgroundColor: s.status === '반려' ? theme.danger : s.status === '발행 완료' ? theme.success : theme.warning, color: "#fff", padding: "6px 10px", borderRadius: "10px", fontSize: "0.75rem", fontWeight: "800" }}>
+                             {s.status}
+                           </span>
                          </div>
-                         <span style={{ backgroundColor: theme.warning, color: "#fff", padding: "6px 10px", borderRadius: "10px", fontSize: "0.75rem", fontWeight: "800", boxShadow: "0 2px 8px rgba(245, 158, 11, 0.4)" }}>심사 대기 중</span>
+                         {/* 반려 시 사유 노출 구역 */}
+                         {s.status === '반려' && s.rejectReason && (
+                           <div style={{ fontSize: "0.8rem", color: theme.danger, backgroundColor: isDarkMode ? "rgba(220,38,38,0.1)" : "#fef2f2", padding: "10px", borderRadius: "8px", lineHeight: 1.5 }}>
+                             <strong style={{ fontWeight: "900" }}>반려 사유:</strong> {s.rejectReason}
+                           </div>
+                         )}
                        </div>
                      ))
                   )
@@ -3703,23 +3745,34 @@ color: "#fff", border: "none", cursor: "pointer",
                 </div>
               </div>
 
-              {/* 💳 잉크 상점 구역 */}
+{/* 💳 잉크 상점 구역 (베타 한정 무료 충전) */}
               <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                <span style={{ fontSize: "0.9rem", fontWeight: "800", color: theme.text }}>스토어 충전</span>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <span style={{ fontSize: "0.9rem", fontWeight: "800", color: theme.text }}>스토어 충전</span>
+                  <span style={{ fontSize: "0.7rem", color: "#fff", backgroundColor: theme.danger, padding: "4px 8px", borderRadius: "8px", fontWeight: "800", boxShadow: "0 2px 8px rgba(220,38,38,0.4)" }}>
+                    🎁 베타 한정 무료!
+                  </span>
+                </div>
                 {[
-                  { amount: 100, price: "₩ 1,200", bonus: "" },
-                  { amount: 500, price: "₩ 5,500", bonus: "+50 방울 보너스" },
-                  { amount: 1200, price: "₩ 12,000", bonus: "+200 방울 보너스" }
+                  { amount: 100, price: "₩ 1,200", bonus: "", bonusAmt: 0 },
+                  { amount: 500, price: "₩ 5,500", bonus: "+50 방울 보너스", bonusAmt: 50 },
+                  { amount: 1200, price: "₩ 12,000", bonus: "+200 방울 보너스", bonusAmt: 200 }
                 ].map((item, i) => (
-                  <div key={i} onClick={() => triggerToast("결제 준비 중", "스토어 결제 모듈이 아직 연결되지 않았습니다.", <CreditCard size={18}/>)} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px", backgroundColor: theme.inputBg, borderRadius: "14px", border: `1px solid ${theme.border}`, cursor: "pointer", transition: "border-color 0.2s" }} onMouseEnter={e => e.currentTarget.style.borderColor = theme.accent} onMouseLeave={e => e.currentTarget.style.borderColor = theme.border}>
+                  <div key={i} onClick={() => {
+                    // 🌟 베타 기간 전면 무료 충전 로직!
+                    setUserInk(prev => prev + item.amount + item.bonusAmt);
+                    triggerToast("베타 지원금 지급!", `${item.amount + item.bonusAmt} 잉크가 무료로 충전되었습니다.`, "🎉");
+                  }} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px", backgroundColor: theme.inputBg, borderRadius: "14px", border: `1px solid ${theme.border}`, cursor: "pointer", transition: "border-color 0.2s" }} onMouseEnter={e => e.currentTarget.style.borderColor = theme.accent} onMouseLeave={e => e.currentTarget.style.borderColor = theme.border}>
                     <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
                       <span style={{ fontSize: "1.05rem", fontWeight: "800", color: theme.text, display: "flex", alignItems: "center", gap: "6px" }}>
                         <Droplet size={16} strokeWidth={3} color={theme.accent} /> {item.amount}
                       </span>
                       {item.bonus && <span style={{ fontSize: "0.75rem", color: theme.accent, fontWeight: "700" }}>{item.bonus}</span>}
                     </div>
-                    <div style={{ padding: "8px 14px", backgroundColor: theme.panel, border: `1px solid ${theme.border}`, borderRadius: "10px", fontSize: "0.85rem", fontWeight: "700", color: theme.text }}>
-                      {item.price}
+                    
+                    {/* 가격표 대신 무료 획득 버튼으로 디자인 변경! */}
+                    <div style={{ padding: "8px 14px", backgroundColor: theme.panel, border: `1px solid ${theme.danger}`, borderRadius: "10px", fontSize: "0.85rem", fontWeight: "800", color: theme.danger }}>
+                      무료 획득
                     </div>
                   </div>
                 ))}
@@ -4049,7 +4102,12 @@ color: "#fff", border: "none", cursor: "pointer",
                    setIsGuestPlay(true);
                    if (userInk < 10) { triggerToast("잉크 부족", "보유한 잉크가 부족합니다.", "💧"); return; }
                    setUserInk(prev => prev - 10);
-                   
+
+// 🌟 데이터베이스의 조회수(plays) 1 올리기! (오리지널이 아닐 때만)
+                   if (!selectedExploreScenario.isOriginal) {
+                     supabase.from('scenarios').update({ plays: selectedExploreScenario.plays + 1 }).eq('id', selectedExploreScenario.id).then();
+                   }
+
                    // 🌟 (핵심 고침!) 로비로 모든 데이터를 쫙 뿌려주는 로직을 가져옵니다.
                    const d = selectedExploreScenario.data;
                    if (d) {
