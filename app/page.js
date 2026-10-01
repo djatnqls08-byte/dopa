@@ -363,6 +363,8 @@ export default function GamePlatform() {
   const [showPcSecret, setShowPcSecret] = useState(false); // 🌟 주인공 비밀 아코디언 스위치
 
   const [scenarioTitle, setScenarioTitle] = useState("");
+  const [scenarioImageUrl, setScenarioImageUrl] = useState(""); // 🌟 표지 이미지 상태 추가!
+
   const [victimName, setVictimName] = useState("");
   const [publicSynopsis, setPublicSynopsis] = useState("");
   const [openingScene, setOpeningScene] = useState("");
@@ -1462,7 +1464,7 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
                   </>
                 )}
 
-                {/* 공통: 캐릭터 시트 */}
+               {/* 공통: 캐릭터 시트 */}
                 <div style={{ width: "1px", height: "16px", backgroundColor: theme.border, margin: "0 4px" }} />
                 <button type="button" onClick={(e) => { e.stopPropagation(); setIsSheetOpen(!isSheetOpen); }} title="캐릭터 정보" style={{ background: "none", border: "none", cursor: "pointer", color: isSheetOpen ? theme.accent : theme.text, display: "flex", alignItems: "center" }}>
                   {activeSession.ruleMode?.startsWith("dating") ? <UserRound size={22} strokeWidth={2} /> : <ClipboardList size={22} strokeWidth={2} />}
@@ -2041,16 +2043,32 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                       <ClipboardList size={22} strokeWidth={2} color={theme.accent} />
-                      <span style={{ fontWeight: "700", fontSize: "0.95rem", color: theme.text }}>사건 개요서</span>
+                      <span style={{ fontWeight: "700", fontSize: "0.95rem", color: theme.text }}>사건 개요서 및 세션 카드</span>
                     </div>
                     <button type="button" onClick={() => handleAIGenerateSynopsis(false)} disabled={isGeneratingSynopsis} style={{ padding: "6px 12px", backgroundColor: theme.panelAlt, border: `1px solid ${theme.borderHighlight}`, borderRadius: "10px", color: theme.accent, fontSize: "0.75rem", fontWeight: "700", cursor: "pointer", display: "flex", alignItems: "center", gap: "4px" }}>
                       {isGeneratingSynopsis ? "작성 중..." : "✨ AI 자동 작성"}
                     </button>
                   </div>
-                  <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "2fr 1fr", gap: "10px", width: "100%", boxSizing: "border-box" }}>
-                    <input type="text" autoComplete="off" value={scenarioTitle} onChange={e => setScenarioTitle(e.target.value)} placeholder="사건명 (예: 심야 펜트하우스 살인사건)" style={{ width: "100%", boxSizing: "border-box", padding: "10px 12px", borderRadius: "8px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.85rem", outline: "none" }} />
-                    <input type="text" autoComplete="off" value={victimName} onChange={e => setVictimName(e.target.value)} placeholder="사건 대상/의뢰인" style={{ width: "100%", boxSizing: "border-box", padding: "10px 12px", borderRadius: "8px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.85rem", outline: "none" }} />
+                  
+                  {/* 🌟 복구된 세션 카드(표지) 등록 영역 */}
+                  <div style={{ display: "flex", gap: "16px", alignItems: "flex-start" }}>
+                    <label style={{ flex: "0 0 90px", aspectRatio: "3/4", backgroundColor: theme.inputBg, border: `1.5px dashed ${theme.borderHighlight}`, borderRadius: "8px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", cursor: "pointer", overflow: "hidden", position: "relative" }}>
+                      {scenarioImageUrl ? <img src={scenarioImageUrl} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <div style={{ textAlign: "center", color: theme.textMuted }}><ImageIcon size={24} /><div style={{ fontSize: "0.65rem", marginTop: "4px", fontWeight: "700" }}>표지 등록</div></div>}
+                      <input type="file" accept="image/*" style={{ display: "none" }} onChange={e => {
+                        const file = e.target.files[0];
+                        if(file) {
+                          const reader = new FileReader();
+                          reader.onload = ev => setScenarioImageUrl(ev.target.result);
+                          reader.readAsDataURL(file);
+                        }
+                      }} />
+                    </label>
+                    <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "10px" }}>
+                      <input type="text" autoComplete="off" value={scenarioTitle} onChange={e => setScenarioTitle(e.target.value)} placeholder="사건명/시나리오 제목" style={{ width: "100%", boxSizing: "border-box", padding: "10px 12px", borderRadius: "8px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.85rem", outline: "none" }} />
+                      <input type="text" autoComplete="off" value={victimName} onChange={e => setVictimName(e.target.value)} placeholder="사건 대상 / 목표 인물" style={{ width: "100%", boxSizing: "border-box", padding: "10px 12px", borderRadius: "8px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.85rem", outline: "none" }} />
+                    </div>
                   </div>
+
                   <textarea rows={2} value={publicSynopsis} onChange={e => setPublicSynopsis(e.target.value)} placeholder="현장 상황 및 사건 발생 개요..." style={{ width: "100%", boxSizing: "border-box", padding: "10px 12px", borderRadius: "8px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.83rem", resize: "none", outline: "none" }} />
                   <textarea rows={2} value={openingScene} onChange={e => setOpeningScene(e.target.value)} placeholder="첫 오프닝/서막 지문..." style={{ width: "100%", boxSizing: "border-box", padding: "10px 12px", borderRadius: "8px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.83rem", resize: "none", outline: "none" }} />
                 </section>
@@ -2295,17 +2313,37 @@ color: "#fff", border: "none", cursor: "pointer",
               <div style={{ display: "flex", flexDirection: "column", gap: "16px", marginBottom: "20px" }}>
 
 {/* 🌟 0. 추가된 사건 개요서 (연애 모드용) */}
-                <section style={{ ...GLASS_STYLE, padding: isMobile ? "16px" : "20px", backgroundColor: theme.panel, borderRadius: "18px", border: `1px solid ${theme.border}`, display: "flex", flexDirection: "column", gap: "12px" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                    <ClipboardList size={22} strokeWidth={2} color={theme.accent} />
-                    <span style={{ fontWeight: "700", fontSize: "0.95rem", color: theme.text }}>사건 개요서</span>
+                <section style={{ ...GLASS_STYLE, padding: isMobile ? "16px" : "20px", backgroundColor: theme.panel, borderRadius: "18px", border: `1px solid ${theme.border}`, display: "flex", flexDirection: "column", gap: "12px", width: "100%", boxSizing: "border-box" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                      <ClipboardList size={22} strokeWidth={2} color={theme.accent} />
+                      <span style={{ fontWeight: "700", fontSize: "0.95rem", color: theme.text }}>사건 개요서 및 세션 카드</span>
+                    </div>
+                    <button type="button" onClick={() => handleAIGenerateSynopsis(false)} disabled={isGeneratingSynopsis} style={{ padding: "6px 12px", backgroundColor: theme.panelAlt, border: `1px solid ${theme.borderHighlight}`, borderRadius: "10px", color: theme.accent, fontSize: "0.75rem", fontWeight: "700", cursor: "pointer", display: "flex", alignItems: "center", gap: "4px" }}>
+                      {isGeneratingSynopsis ? "작성 중..." : "✨ AI 자동 작성"}
+                    </button>
                   </div>
-                  <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "2fr 1fr", gap: "10px" }}>
-                    <input type="text" autoComplete="off" value={scenarioTitle} onChange={e => setScenarioTitle(e.target.value)} placeholder="시나리오 제목 (예: 어느 세이렌의 결백)" style={{ padding: "10px 12px", borderRadius: "8px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.85rem", outline: "none" }} />
-                    <input type="text" autoComplete="off" value={victimName} onChange={e => setVictimName(e.target.value)} placeholder="주요 공략 대상 / 서사 목표" style={{ padding: "10px 12px", borderRadius: "8px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.85rem", outline: "none" }} />
+                  
+                  <div style={{ display: "flex", gap: "16px", alignItems: "flex-start" }}>
+                    <label style={{ flex: "0 0 90px", aspectRatio: "3/4", backgroundColor: theme.inputBg, border: `1.5px dashed ${theme.borderHighlight}`, borderRadius: "8px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", cursor: "pointer", overflow: "hidden", position: "relative" }}>
+                      {scenarioImageUrl ? <img src={scenarioImageUrl} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <div style={{ textAlign: "center", color: theme.textMuted }}><ImageIcon size={24} /><div style={{ fontSize: "0.65rem", marginTop: "4px", fontWeight: "700" }}>표지 등록</div></div>}
+                      <input type="file" accept="image/*" style={{ display: "none" }} onChange={e => {
+                        const file = e.target.files[0];
+                        if(file) {
+                          const reader = new FileReader();
+                          reader.onload = ev => setScenarioImageUrl(ev.target.result);
+                          reader.readAsDataURL(file);
+                        }
+                      }} />
+                    </label>
+                    <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "10px" }}>
+                      <input type="text" autoComplete="off" value={scenarioTitle} onChange={e => setScenarioTitle(e.target.value)} placeholder="시나리오 제목 (예: 어느 세이렌의 결백)" style={{ width: "100%", boxSizing: "border-box", padding: "10px 12px", borderRadius: "8px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.85rem", outline: "none" }} />
+                      <input type="text" autoComplete="off" value={victimName} onChange={e => setVictimName(e.target.value)} placeholder="주요 공략 대상 / 서사 목표" style={{ width: "100%", boxSizing: "border-box", padding: "10px 12px", borderRadius: "8px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.85rem", outline: "none" }} />
+                    </div>
                   </div>
-                  <textarea rows={2} value={publicSynopsis} onChange={e => setPublicSynopsis(e.target.value)} placeholder="시놉시스 및 초기 배경 설명..." style={{ padding: "10px 12px", borderRadius: "8px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.83rem", resize: "none", outline: "none" }} />
-                  <textarea rows={2} value={openingScene} onChange={e => setOpeningScene(e.target.value)} placeholder="첫 오프닝 지문..." style={{ padding: "10px 12px", borderRadius: "8px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.83rem", resize: "none", outline: "none" }} />
+
+                  <textarea rows={2} value={publicSynopsis} onChange={e => setPublicSynopsis(e.target.value)} placeholder="시놉시스 및 초기 배경 설명..." style={{ width: "100%", boxSizing: "border-box", padding: "10px 12px", borderRadius: "8px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.83rem", resize: "none", outline: "none" }} />
+                  <textarea rows={2} value={openingScene} onChange={e => setOpeningScene(e.target.value)} placeholder="첫 오프닝 지문..." style={{ width: "100%", boxSizing: "border-box", padding: "10px 12px", borderRadius: "8px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.83rem", resize: "none", outline: "none" }} />
                 </section>
 
                 {/* 📱 1. 스마트폰 메신저 UI (추리 모드 가이드라인 100% 맞춤 복구!) */}
@@ -2616,17 +2654,37 @@ color: "#fff", border: "none", cursor: "pointer",
             {selectedMode === "괴담" && (
               <>
                 {/* 1. 사건 개요서 */}
-                <section style={{ ...GLASS_STYLE, padding: isMobile ? "16px" : "20px", backgroundColor: theme.panel, borderRadius: "18px", border: `1px solid ${theme.border}`, display: "flex", flexDirection: "column", gap: "12px" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                    <ClipboardList size={22} strokeWidth={2} color={theme.accent} />
-                    <span style={{ fontWeight: "700", fontSize: "0.95rem", color: theme.text }}>사건 개요서</span>
+                <section style={{ ...GLASS_STYLE, padding: isMobile ? "16px" : "20px", backgroundColor: theme.panel, borderRadius: "18px", border: `1px solid ${theme.border}`, display: "flex", flexDirection: "column", gap: "12px", width: "100%", boxSizing: "border-box" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                      <ClipboardList size={22} strokeWidth={2} color={theme.accent} />
+                      <span style={{ fontWeight: "700", fontSize: "0.95rem", color: theme.text }}>사건 개요서 및 세션 카드</span>
+                    </div>
+                    <button type="button" onClick={() => handleAIGenerateSynopsis(false)} disabled={isGeneratingSynopsis} style={{ padding: "6px 12px", backgroundColor: theme.panelAlt, border: `1px solid ${theme.borderHighlight}`, borderRadius: "10px", color: theme.accent, fontSize: "0.75rem", fontWeight: "700", cursor: "pointer", display: "flex", alignItems: "center", gap: "4px" }}>
+                      {isGeneratingSynopsis ? "작성 중..." : "✨ AI 자동 작성"}
+                    </button>
                   </div>
-                  <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "2fr 1fr", gap: "10px" }}>
-                    <input type="text" autoComplete="off" value={scenarioTitle} onChange={e => setScenarioTitle(e.target.value)} placeholder="사건명" style={{ padding: "10px 12px", borderRadius: "8px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.85rem", outline: "none" }} />
-                    <input type="text" autoComplete="off" value={victimName} onChange={e => setVictimName(e.target.value)} placeholder="사건 대상 / 조사 목표" style={{ padding: "10px 12px", borderRadius: "8px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.85rem", outline: "none" }} />
+                  
+                  <div style={{ display: "flex", gap: "16px", alignItems: "flex-start" }}>
+                    <label style={{ flex: "0 0 90px", aspectRatio: "3/4", backgroundColor: theme.inputBg, border: `1.5px dashed ${theme.borderHighlight}`, borderRadius: "8px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", cursor: "pointer", overflow: "hidden", position: "relative" }}>
+                      {scenarioImageUrl ? <img src={scenarioImageUrl} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <div style={{ textAlign: "center", color: theme.textMuted }}><ImageIcon size={24} /><div style={{ fontSize: "0.65rem", marginTop: "4px", fontWeight: "700" }}>표지 등록</div></div>}
+                      <input type="file" accept="image/*" style={{ display: "none" }} onChange={e => {
+                        const file = e.target.files[0];
+                        if(file) {
+                          const reader = new FileReader();
+                          reader.onload = ev => setScenarioImageUrl(ev.target.result);
+                          reader.readAsDataURL(file);
+                        }
+                      }} />
+                    </label>
+                    <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "10px" }}>
+                      <input type="text" autoComplete="off" value={scenarioTitle} onChange={e => setScenarioTitle(e.target.value)} placeholder="사건명 (예: 안개 낀 폐교)" style={{ width: "100%", boxSizing: "border-box", padding: "10px 12px", borderRadius: "8px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.85rem", outline: "none" }} />
+                      <input type="text" autoComplete="off" value={victimName} onChange={e => setVictimName(e.target.value)} placeholder="사건 대상 / 조사 목표" style={{ width: "100%", boxSizing: "border-box", padding: "10px 12px", borderRadius: "8px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.85rem", outline: "none" }} />
+                    </div>
                   </div>
-                  <textarea rows={2} value={publicSynopsis} onChange={e => setPublicSynopsis(e.target.value)} placeholder="현장 상황 및 초기 배경 설명..." style={{ padding: "10px 12px", borderRadius: "8px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.83rem", resize: "none", outline: "none" }} />
-                  <textarea rows={2} value={openingScene} onChange={e => setOpeningScene(e.target.value)} placeholder="첫 오프닝 지문..." style={{ padding: "10px 12px", borderRadius: "8px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.83rem", resize: "none", outline: "none" }} />
+
+                  <textarea rows={2} value={publicSynopsis} onChange={e => setPublicSynopsis(e.target.value)} placeholder="현장 상황 및 초기 배경 설명..." style={{ width: "100%", boxSizing: "border-box", padding: "10px 12px", borderRadius: "8px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.83rem", resize: "none", outline: "none" }} />
+                  <textarea rows={2} value={openingScene} onChange={e => setOpeningScene(e.target.value)} placeholder="첫 오프닝 지문..." style={{ width: "100%", boxSizing: "border-box", padding: "10px 12px", borderRadius: "8px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.83rem", resize: "none", outline: "none" }} />
                 </section>
 
                 {/* 2. 탐색자 프로필 및 스탯 */}
@@ -3014,26 +3072,18 @@ color: "#fff", border: "none", cursor: "pointer",
               >
                 {(activeSession.messages || []).map((m, idx) => {
                   const isUser = m.role === "user";
-                  // 🌟 현재 메시지가 유저가 보낸 '가장 마지막' 메시지인지 확인!
                   const isLastUserMsg = isUser && idx === activeSession.messages.map(x => x.role).lastIndexOf("user");
                   
                   return (
                     <div key={idx} style={{ 
-                      alignSelf: "stretch",
-                      color: isUser ? theme.accent : theme.text,
-                      fontWeight: "400",
-                      opacity: 0.95,
-                      textAlign: isUser ? "center" : "left",
-                      fontStyle: isUser ? "italic" : "normal",
-                      wordBreak: "keep-all",
-                      padding: isUser ? "16px 0" : "0",
-                      borderTop: isUser ? `1px dashed ${theme.border}` : "none",
-                      borderBottom: isUser ? `1px dashed ${theme.border}` : "none",
-                      margin: isUser ? "10px 0" : "0"
+                      alignSelf: "stretch", color: isUser ? theme.accent : theme.text, fontWeight: "400", opacity: 0.95,
+                      textAlign: isUser ? "center" : "left", fontStyle: isUser ? "italic" : "normal", wordBreak: "keep-all",
+                      padding: isUser ? "16px 0" : "0", borderTop: isUser ? `1px dashed ${theme.border}` : "none",
+                      borderBottom: isUser ? `1px dashed ${theme.border}` : "none", margin: isUser ? "10px 0" : "0"
                     }}>
                       {m.text}
                       
-                      {/* 🌟 롤백(되돌리기) 버튼을 내가 친 문장 바로 아래 중앙에 배치! */}
+                      {/* 🌟 롤백 버튼을 내가 친 문장 아래 중앙에 배치! */}
                       {isLastUserMsg && (
                         <div style={{ display: "flex", justifyContent: "center", marginTop: "14px" }}>
                           <button
@@ -3047,12 +3097,10 @@ color: "#fff", border: "none", cursor: "pointer",
                               triggerToast("취소 완료", "대화 전송이 취소되었습니다.", "⎌");
                             }}
                             style={{
-                              background: "none", border: `1px solid ${theme.borderHighlight}`, borderRadius: "20px", 
+                              background: theme.panelAlt, border: `1px solid ${theme.borderHighlight}`, borderRadius: "20px", 
                               padding: "6px 16px", color: theme.textMuted, fontSize: "0.8rem", fontWeight: "700", 
                               cursor: "pointer", display: "flex", alignItems: "center", gap: "6px", transition: "all 0.2s"
                             }}
-                            onMouseEnter={e => e.currentTarget.style.backgroundColor = theme.panelAlt}
-                            onMouseLeave={e => e.currentTarget.style.backgroundColor = "transparent"}
                           >
                             <span style={{ fontSize: "1.1rem" }}>⎌</span> 대화 전송 취소하기
                           </button>
@@ -3094,7 +3142,7 @@ color: "#fff", border: "none", cursor: "pointer",
                 <div style={{
                   width: "100%", maxWidth: "680px", display: "flex", alignItems: "flex-end", gap: "8px",
                   backgroundColor: theme.inputBg, border: `1.5px solid ${theme.border}`, borderRadius: "28px",
-                  padding: "6px 8px 6px 20px", boxShadow: "0 8px 24px rgba(0,0,0,0.08)"
+                  padding: "6px 8px 6px 20px", boxShadow: "0 8px 24px rgba(0,0,0,0.08)", boxSizing: "border-box"
                 }}>
                   <textarea
                     value={inputMsg}
