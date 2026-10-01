@@ -951,7 +951,7 @@ const [showInkModal, setShowInkModal] = useState(false); // 🌟 잉크 충전�
                       {filteredLibrary.map(scen => (
                         <div key={scen.id} style={{ backgroundColor: theme.panel, borderRadius: "16px", overflow: "hidden", border: `1px solid ${theme.border}`, boxShadow: "0 8px 24px rgba(0,0,0,0.06)", display: "flex", flexDirection: "column", position: "relative" }}>
                           
-                          {/* 🌟 썸네일 영역 (연필 아이콘 삭제, 이미지 자체 클릭 시 수정 팝업) */}
+                          {/* 🌟 썸네일 영역 */}
                           <div 
                             title="클릭하여 커버 수정"
                             onClick={() => { setEditingLibItem({ ...scen }); setShowLibEditModal(true); }}
@@ -966,14 +966,14 @@ const [showInkModal, setShowInkModal] = useState(false); // 🌟 잉크 충전�
                               </div>
                             )}
 
-                            {/* 🌟 탐색 탭에서 다운로드한 시나리오 전용 뱃지 */}
+                            {/* 탐색 탭에서 다운로드한 시나리오 전용 뱃지 */}
                             {scen.isDownloaded && (
                               <div style={{ position: "absolute", top: "12px", left: "12px", padding: "4px 8px", backgroundColor: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)", borderRadius: "8px", color: "#60a5fa", fontSize: "0.7rem", fontWeight: "700", border: "1px solid rgba(96, 165, 250, 0.4)", display: "flex", alignItems: "center", gap: "4px" }}>
                                 <FileUp size={12} strokeWidth={2.5} /> 다운로드 됨
                               </div>
                             )}
 
-                            {/* 🌟 심사 대기 중 뱃지 (새로 추가!) */}
+                            {/* 심사 대기 중 뱃지 */}
                             {scen.status === "심사 대기" && (
                               <div style={{ position: "absolute", top: "12px", left: "12px", padding: "4px 8px", backgroundColor: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)", borderRadius: "8px", color: theme.warning, fontSize: "0.7rem", fontWeight: "700", border: `1px solid rgba(245, 158, 11, 0.4)`, display: "flex", alignItems: "center", gap: "4px" }}>
                                 <Clock size={12} strokeWidth={2.5} /> 심사 대기 중
@@ -981,14 +981,27 @@ const [showInkModal, setShowInkModal] = useState(false); // 🌟 잉크 충전�
                             )}
                           </div>
 
-                          {/* 하단 카드 텍스트 정보 영역 (중략...) */}
+                          {/* 🌟 하단 카드 텍스트 정보 영역 (날아갔던 부분 복구 완료) */}
+                          <div style={{ padding: "16px", display: "flex", flexDirection: "column", gap: "12px" }}>
+                            <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                              <div style={{ fontWeight: "800", fontSize: "1.1rem", color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                {scen.title}
+                              </div>
+                              <div style={{ fontSize: "0.75rem", fontWeight: "700", color: theme.textMuted }}>
+                                {scen.mode}
+                              </div>
+                            </div>
 
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingTop: "10px", borderTop: `1px dashed ${theme.borderHighlight || theme.border}` }}>
+                              <div style={{ display: "flex", alignItems: "center", gap: "6px", color: theme.textMuted, fontSize: "0.75rem", fontWeight: "500" }}>
+                                <Clock size={14} strokeWidth={2} /> {scen.date}
+                              </div>
                               <div style={{ display: "flex", gap: "8px" }}>
                                 <button title="로비로 불러와서 세팅/시작하기" onClick={() => handleLoadFromLibrary(scen)} style={{ background: "none", border: "none", color: theme.accent, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: "4px" }}>
                                   <FolderOpen size={18} strokeWidth={2.5} />
                                 </button>
                                 
-                                {/* 🌟 다운로드 받은 게 아니고, 심사 요청도 안 했을 때만 업로드 구름 노출 */}
+                                {/* 다운로드 받은 게 아니고, 심사 요청도 안 했을 때만 업로드 구름 노출 */}
                                 {!scen.isDownloaded && scen.status !== "심사 대기" && (
                                   <button title="라운지에 시나리오 공유/업로드" onClick={() => setUploadingScenario(scen)} style={{ background: "none", border: "none", color: "#60a5fa", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: "4px" }}>
                                     <UploadCloud size={19} strokeWidth={2.5} />
@@ -1001,6 +1014,7 @@ const [showInkModal, setShowInkModal] = useState(false); // 🌟 잉크 충전�
                               </div>
                             </div>
                           </div>
+                          
                         </div>
                       ))}
                     </div>
