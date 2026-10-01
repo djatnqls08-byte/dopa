@@ -653,6 +653,14 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
 
   const [likedScenarios, setLikedScenarios] = useState([]); // 💖 관심 시나리오 보관함
 
+  // 🌟 (버그 픽스!) 앱을 켤 때 내 핸드폰에서 하트 누른 목록을 잊지 않고 불러옵니다!
+  useEffect(() => {
+    const storedLikes = localStorage.getItem("secret_novel_liked");
+    if (storedLikes) {
+      try { setLikedScenarios(JSON.parse(storedLikes)); } catch(e) {}
+    }
+  }, []);
+
   // 🌟 [핵심 해결!] 컴퓨터가 이해할 수 있는 안전한 위치로 이사 온 메인 팝업 로직!
   const [showMainNoticePopup, setShowMainNoticePopup] = useState(false);
   
@@ -4071,24 +4079,25 @@ color: "#fff", border: "none", cursor: "pointer",
                    const isLiked = likedScenarios.some(s => s.id === selectedExploreScenario.id);
                    const isOrg = selectedExploreScenario.isOriginal;
                    let newLikes = Number(selectedExploreScenario.likes || 0);
+                   let updatedLikedList;
 
                    if (isLiked) {
-                     setLikedScenarios(likedScenarios.filter(s => s.id !== selectedExploreScenario.id));
-                     if (!isOrg) {
-                       newLikes = Math.max(0, newLikes - 1); // 🌟 서버 하트 깎기
-                       supabase.from('scenarios').update({ likes: newLikes }).eq('id', selectedExploreScenario.id).then();
-                     }
+                     updatedLikedList = likedScenarios.filter(s => s.id !== selectedExploreScenario.id);
+                     setLikedScenarios(updatedLikedList);
+                     newLikes = Math.max(0, newLikes - 1); // 무조건 화면 숫자 깎기
+                     if (!isOrg) supabase.from('scenarios').update({ likes: newLikes }).eq('id', selectedExploreScenario.id).then(); // 유저작품만 서버 전송
                      triggerToast("관심 해제", "관심 시나리오에서 제외되었습니다.", "💔");
                    } else {
-                     setLikedScenarios([{ ...selectedExploreScenario, likedAt: Date.now() }, ...likedScenarios]);
-                     if (!isOrg) {
-                       newLikes += 1; // 🌟 서버 하트 올리기
-                       supabase.from('scenarios').update({ likes: newLikes }).eq('id', selectedExploreScenario.id).then();
-                     }
+                     updatedLikedList = [{ ...selectedExploreScenario, likedAt: Date.now() }, ...likedScenarios];
+                     setLikedScenarios(updatedLikedList);
+                     newLikes += 1; // 무조건 화면 숫자 올리기
+                     if (!isOrg) supabase.from('scenarios').update({ likes: newLikes }).eq('id', selectedExploreScenario.id).then(); // 유저작품만 서버 전송
                      triggerToast("관심 등록", "관심 시나리오에 추가되었습니다!", <Heart fill={theme.danger} color={theme.danger} size={18}/>);
                    }
                    
-                   // 🌟 (핵심) 누르는 즉시 화면에 숫자 반영!
+                   // 🌟 (버그 픽스) 하트를 누르는 즉시 영구 저장소에 쾅 박아버립니다!
+                   localStorage.setItem("secret_novel_liked", JSON.stringify(updatedLikedList));
+                   
                    setSelectedExploreScenario(prev => ({ ...prev, likes: newLikes }));
                    setExploreScenarios(prev => prev.map(s => s.id === selectedExploreScenario.id ? { ...s, likes: newLikes } : s));
                  }}
@@ -4136,12 +4145,12 @@ color: "#fff", border: "none", cursor: "pointer",
                    if (userInk < 10) { triggerToast("잉크 부족", "보유한 잉크가 부족합니다.", "💧"); return; }
                    setUserInk(prev => prev - 10);
                    
-                   // 🌟 데이터베이스의 조회수(plays) 1 올리기! (오리지널이 아닐 때만)
+                   // 🌟 (버그 픽스) 오리지널이든 아니든 무조건 화면 조회수는 +1 올려줍니다!
+                   const newPlays = Number(selectedExploreScenario.plays || 0) + 1;
+                   setExploreScenarios(prev => prev.map(s => s.id === selectedExploreScenario.id ? { ...s, plays: newPlays } : s));
+                   
                    if (!selectedExploreScenario.isOriginal) {
-                     const newPlays = Number(selectedExploreScenario.plays || 0) + 1;
-                     supabase.from('scenarios').update({ plays: newPlays }).eq('id', selectedExploreScenario.id).then();
-                     // 🌟 (핵심) 플레이 누르는 즉시 화면 리스트에 조회수 숫자 반영!
-                     setExploreScenarios(prev => prev.map(s => s.id === selectedExploreScenario.id ? { ...s, plays: newPlays } : s));
+                     supabase.from('scenarios').update({ plays: newPlays }).eq('id', selectedExploreScenario.id).then(); // 서버는 유저 작품만!
                    }
 
                    const d = selectedExploreScenario.data;
