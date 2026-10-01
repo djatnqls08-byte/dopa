@@ -1081,11 +1081,11 @@ export default function GamePlatform() {
 
 {/* 🌸 연애 모드 전체 구역 */}
             {selectedMode === "연애" && (
-              <div style={{ display: "flex", flexDirection: "column", gap: "16px", marginBottom: "20px", width: "100%" }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: "16px", marginBottom: "20px" }}>
 
-                {/* 📱 1. 스마트폰 메신저 UI (양옆 가이드라인 100% 맞춤) */}
+                {/* 📱 1. 스마트폰 메신저 UI (추리 모드 가이드라인 100% 맞춤 복구!) */}
                 <div style={{
-                  width: "100%", backgroundColor: theme.panel,
+                  width: "100%", maxWidth: "380px", margin: "0 auto", backgroundColor: theme.panel,
                   border: isDarkMode ? "12px solid #3f3f46" : "12px solid #e2e8f0", 
                   borderRadius: "40px", overflow: "hidden", display: "flex", flexDirection: "column",
                   boxShadow: "0 25px 50px -12px rgba(0,0,0,0.25)", position: "relative",
@@ -1257,7 +1257,6 @@ export default function GamePlatform() {
                                 <textarea rows={2} value={cur.behavior} onChange={e => updateCur("behavior", e.target.value)} placeholder="상태 메시지나 성격을 입력하세요..." style={{ ...thinInputStyle, resize: "none" }} />
                               </div>
 
-                              {/* 🌟 연애 모드: 남모르는 비밀 */}
                               <div style={{ backgroundColor: isDarkMode ? "rgba(0,0,0,0.2)" : "#fdf2f8", borderRadius: "12px", border: `1px solid #f9a8d4`, padding: "14px", marginTop: "8px" }}>
                                 <button type="button" onClick={() => {
                                   if (isPcDetail) setShowPcSecret(!showPcSecret);
@@ -1286,8 +1285,8 @@ export default function GamePlatform() {
                   )}
                 </div>
 
-                {/* 🌟 2. 이벤트 CG 갤러리 (가이드라인 맞춤 및 대사 추가) */}
-                <section style={{ width: "100%", ...GLASS_STYLE, padding: isMobile ? "16px" : "20px", backgroundColor: theme.panel, borderRadius: "18px", border: `1px solid ${theme.border}`, display: "flex", flexDirection: "column", gap: "12px" }}>
+                {/* 🌟 2. 이벤트 CG 갤러리 (추리 모드 가이드라인 완벽 복붙 통일) */}
+                <section style={{ ...GLASS_STYLE, padding: isMobile ? "16px" : "20px", backgroundColor: theme.panel, borderRadius: "18px", border: `1px solid ${theme.border}`, display: "flex", flexDirection: "column", gap: "12px" }}>
                   <button type="button" onClick={() => setShowCgGallery(!showCgGallery)} style={{ width: "100%", textAlign: "left", background: "none", border: "none", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer", padding: 0 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                       <ImageIcon size={22} strokeWidth={2} color="#ec4899" />
@@ -1300,31 +1299,46 @@ export default function GamePlatform() {
                     <div style={{ display: "flex", flexDirection: "column", gap: "12px", marginTop: "4px" }}>
                       <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: "12px" }}>
                         {cgList.map((item, idx) => (
-                          <div key={item.id} style={{ backgroundColor: theme.panelAlt, border: `1px solid ${theme.border}`, borderRadius: "12px", padding: "14px", display: "flex", flexDirection: "column", gap: "10px" }}>
+                          <div key={item.id} style={{ backgroundColor: theme.panelAlt, border: `1px solid ${theme.border}`, borderRadius: "12px", padding: "14px", display: "flex", flexDirection: "column", gap: "12px" }}>
                             
-                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "6px" }}>
-                              <input type="text" value={item.title} onChange={e => setCgList(cgList.map(c => c.id === item.id ? { ...c, title: e.target.value } : c))} placeholder={`CG ${idx + 1} 명칭`} style={{ flex: 1, padding: "8px 10px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.82rem", fontWeight: "800", outline: "none" }} />
-                              {cgList.length > 1 && <button type="button" onClick={() => setCgList(cgList.filter(c => c.id !== item.id))} style={{ background: "none", border: "none", color: theme.danger, cursor: "pointer" }}>🗑</button>}
+                            {/* 1. 🌟 이미지 상단 꽉 차게 배치 (16:9 비율 유지) */}
+                            <div 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setActiveCgId(item.id);
+                                setShowCgModal(true);
+                              }}
+                              title="CG 확대 및 등록" 
+                              style={{ width: "100%", aspectRatio: "16/9", backgroundColor: theme.inputBg, border: `1px dashed ${theme.borderHighlight}`, borderRadius: "8px", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", position: "relative", boxShadow: "0 4px 10px rgba(0,0,0,0.05)", transition: "opacity 0.2s" }}
+                              onMouseEnter={e => e.currentTarget.style.opacity = 0.85}
+                              onMouseLeave={e => e.currentTarget.style.opacity = 1}
+                            >
+                              {item.imageUrl ? (
+                                <img src={item.imageUrl} alt="CG" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                              ) : (
+                                <div style={{ color: theme.textMuted, fontSize: "0.75rem", display: "flex", flexDirection: "column", alignItems: "center", gap: "6px" }}>
+                                  <ImageIcon size={24} strokeWidth={1.5} color={theme.accent} />
+                                  <span style={{ fontWeight: "700" }}>터치하여 이미지 등록</span>
+                                </div>
+                              )}
+                            </div>
+
+                            {/* 2. CG 명칭 및 삭제 버튼 */}
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "8px" }}>
+                              <input type="text" value={item.title} onChange={e => setCgList(cgList.map(c => c.id === item.id ? { ...c, title: e.target.value } : c))} placeholder={`CG ${idx + 1} 명칭`} style={{ flex: 1, padding: "10px 12px", borderRadius: "8px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.85rem", fontWeight: "800", outline: "none" }} />
+                              {cgList.length > 1 && (
+                                <button type="button" onClick={() => setCgList(cgList.filter(c => c.id !== item.id))} style={{ background: "none", border: "none", color: theme.danger, cursor: "pointer", padding: "4px" }}>
+                                  🗑
+                                </button>
+                              )}
                             </div>
                             
-                            {/* 🌟 16:9 썸네일과 대사/상황 묘사 입력칸 */}
-                            <div style={{ display: "flex", gap: "10px", alignItems: "flex-start" }}>
-                              <div 
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setActiveCgId(item.id);
-                                  setShowCgModal(true);
-                                }}
-                                title="CG 확대 및 등록" 
-                                style={{ flex: "0 0 120px", aspectRatio: "16/9", backgroundColor: theme.inputBg, border: `1px dashed ${theme.border}`, borderRadius: "8px", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", position: "relative", boxShadow: "0 4px 10px rgba(0,0,0,0.05)" }}
-                              >
-                                {item.imageUrl ? <img src={item.imageUrl} alt="CG" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <div style={{ color: theme.textMuted, fontSize: "0.65rem", display: "flex", flexDirection: "column", alignItems: "center" }}><ImageIcon size={18} /><span>이미지</span></div>}
-                              </div>
-                              <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "8px" }}>
-                                <input type="text" value={item.condition} onChange={e => setCgList(cgList.map(c => c.id === item.id ? { ...c, condition: e.target.value } : c))} placeholder="해금 조건 (예: 옥상 이벤트 성공)" style={{ width: "100%", boxSizing: "border-box", padding: "8px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.78rem", outline: "none" }} />
-                                <textarea rows={2} value={item.dialogue} onChange={e => setCgList(cgList.map(c => c.id === item.id ? { ...c, dialogue: e.target.value } : c))} placeholder="대사 및 상황 묘사를 입력하세요..." style={{ width: "100%", boxSizing: "border-box", padding: "8px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.78rem", outline: "none", resize: "vertical" }} />
-                              </div>
+                            {/* 3. 해금 조건 & 대사 묘사 */}
+                            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                              <input type="text" value={item.condition} onChange={e => setCgList(cgList.map(c => c.id === item.id ? { ...c, condition: e.target.value } : c))} placeholder="해금 조건 (예: 옥상 이벤트 성공)" style={{ width: "100%", boxSizing: "border-box", padding: "10px 12px", borderRadius: "8px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.82rem", outline: "none" }} />
+                              <textarea rows={2} value={item.dialogue} onChange={e => setCgList(cgList.map(c => c.id === item.id ? { ...c, dialogue: e.target.value } : c))} placeholder="대사 및 상황 묘사를 입력하세요..." style={{ width: "100%", boxSizing: "border-box", padding: "10px 12px", borderRadius: "8px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.82rem", outline: "none", resize: "vertical" }} />
                             </div>
+
                           </div>
                         ))}
                       </div>
@@ -1336,8 +1350,8 @@ export default function GamePlatform() {
                   )}
                 </section>
 
-                {/* 🌟 3. 선택지 분기 및 루트 설계 */}
-                <section style={{ width: "100%", ...GLASS_STYLE, padding: isMobile ? "16px" : "20px", backgroundColor: theme.panel, borderRadius: "18px", border: `1px solid ${theme.border}`, display: "flex", flexDirection: "column", gap: "12px" }}>
+                {/* 🌟 3. 선택지 분기 및 루트 설계 (추리 모드 가이드라인 완벽 복붙 통일) */}
+                <section style={{ ...GLASS_STYLE, padding: isMobile ? "16px" : "20px", backgroundColor: theme.panel, borderRadius: "18px", border: `1px solid ${theme.border}`, display: "flex", flexDirection: "column", gap: "12px" }}>
                   <button type="button" onClick={() => setShowRouteList(!showRouteList)} style={{ width: "100%", textAlign: "left", background: "none", border: "none", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer", padding: 0 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                       <FolderOpen size={22} strokeWidth={2} color="#ec4899" />
