@@ -972,14 +972,14 @@ export default function GamePlatform() {
                         </div>
 
                         <div style={{ backgroundColor: isDarkMode ? "rgba(0,0,0,0.2)" : "rgba(255,255,255,0.6)", borderRadius: "8px", border: `1px solid ${theme.danger}`, padding: "10px 12px", marginTop: "4px" }}>
-                          <button type="button" onClick={() => handleUpdateSuspect(cur.id, "showSecret", !cur.showSecret)} style={{ width: "100%", textAlign: "left", background: "none", border: "none", fontSize: "0.76rem", color: theme.danger, cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                            <span style={{ fontWeight: "800", display: "flex", alignItems: "center", gap: "6px" }}>
-                              <Lock size={15} strokeWidth={2.5} /> 숨겨진 비밀 / 약점
-                            </span>
-                            <span style={{ display: "flex", alignItems: "center", color: theme.textMuted }}>
-  {showEvidence ? <ChevronUp size={18} strokeWidth={2} /> : <ChevronDown size={18} strokeWidth={2} />}
-</span>
-                          </button>
+                          <button type="button" onClick={() => handleUpdateSuspect(cur.id, "showSecret", !cur.showSecret)} style={{ width: "100%", textAlign: "left", background: "none", border: "none", fontSize: "0.76rem", color: theme.danger, cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center", padding: 0 }}>
+                          <span style={{ fontWeight: "800", display: "flex", alignItems: "center", gap: "6px" }}>
+                            <Lock size={15} strokeWidth={2.5} /> 숨겨진 비밀 / 약점
+                          </span>
+                          <span style={{ display: "flex", alignItems: "center" }}>
+                                       {cur.showSecret ? <ChevronUp size={18} strokeWidth={2} /> : <ChevronDown size={18} strokeWidth={2} />}
+                          </span>
+                        </button>
                           
                           {cur.showSecret && (
                             <input type="text" value={cur.secret} onChange={e => handleUpdateSuspect(cur.id, "secret", e.target.value)} placeholder="결정적 진실 또는 알리바이 허점..." style={{ width: "100%", boxSizing: "border-box", padding: "8px 10px", marginTop: "8px", borderRadius: "6px", border: `1px solid ${theme.danger}`, backgroundColor: theme.inputBg, color: theme.danger, fontSize: "0.82rem", outline: "none" }} />
