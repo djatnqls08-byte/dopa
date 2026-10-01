@@ -5,11 +5,11 @@ import SecretBoard from "@/components/SecretBoard";
 import CharacterSheet from "@/components/CharacterSheet";
 import { createClient } from '@supabase/supabase-js'; 
 
-// 🌟 Vercel 에러 원천 차단! 금고(process.env) 거치지 않고 직접 꽂아넣기
-const supabase = createClient(
-  "https://qytikqvngyvrszjygbbn.supabase.co",
-  "sb_publishable_h-nZS3_gVKpcLxgowjGK_Q_mr4bFXAp"
-);
+// 🌟 이제 금고(Vercel 환경 변수)에서 안전하게 꺼내옵니다! (NEXT_PUBLIC_이 붙어야 화면에서 쓸 수 있어요!)
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 import { 
   Search, Heart, Flame, LayoutGrid, LibraryBig, PenTool, UserRound, 
