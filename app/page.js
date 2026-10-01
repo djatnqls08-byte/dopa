@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import SecretBoard from "@/components/SecretBoard";
 import CharacterSheet from "@/components/CharacterSheet";
 import { createClient } from '@supabase/supabase-js'; 
@@ -691,8 +691,24 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
   const [isTabletopOpen, setIsTabletopOpen] = useState(false);
   const [activePhoneContactId, setActivePhoneContactId] = useState(null);
 
-  // ── [9. 인게임 진행 상태 관리] ──
+ // ── [9. 인게임 진행 상태 관리 및 영구 저장소 연결] ──
   const [sessions, setSessions] = useState([]);
+  
+  // 🌟 (버그 픽스!) 앱을 켤 때 내 핸드폰에 저장된 '진행 중인 게임(세션)' 목록을 불러옵니다.
+  useEffect(() => {
+    const storedSessions = localStorage.getItem("secret_novel_sessions");
+    if (storedSessions) {
+      try { setSessions(JSON.parse(storedSessions)); } catch(e) {}
+    }
+  }, []);
+
+  // 🌟 세션에 변화(대화, 새로운 게임 시작 등)가 생길 때마다 영구 저장!
+  useEffect(() => {
+    if (sessions.length > 0) {
+      localStorage.setItem("secret_novel_sessions", JSON.stringify(sessions));
+    }
+  }, [sessions]);
+
   const [activeSessionId, setActiveSessionId] = useState(null);
   const [abortController, setAbortController] = useState(null);
   const [inputMsg, setInputMsg] = useState("");
