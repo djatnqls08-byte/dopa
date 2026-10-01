@@ -797,7 +797,16 @@ const [showSupportModal, setShowSupportModal] = useState(false);
 // 🌟 진짜 Supabase 로그인 / 회원가입 화면
   if (!currentUser) {
     return (
-      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", width: "100vw", height: "100dvh", backgroundColor: theme.bg, color: theme.text, padding: "20px" }}>
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", width: "100vw", height: "100dvh", backgroundColor: theme.bg, color: theme.text, padding: "20px", position: "relative" }}>
+        
+        {/* 🌟 로그인 화면용 토스트 알림창 추가!! (이게 없어서 안 보였던 거였어요!) */}
+        {toast && (
+          <div onClick={() => setToast(null)} style={{ ...GLASS_STYLE, position: "absolute", top: "20px", left: "50%", transform: "translateX(-50%)", zIndex: 99999, backgroundColor: isDarkMode ? "rgba(35, 30, 28, 0.96)" : "rgba(255, 255, 255, 0.96)", border: `1.5px solid ${theme.accent}`, color: theme.text, padding: "12px 20px", borderRadius: "24px", display: "flex", alignItems: "center", gap: "10px", boxShadow: "0 10px 30px rgba(0,0,0,0.15)", cursor: "pointer", animation: "fadeIn 0.2s ease-out", width: "max-content", maxWidth: "90vw" }}>
+            <span style={{ display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontSize: "1.15rem" }}>{toast.icon}</span>
+            <span style={{ fontSize: "0.85rem", fontWeight: "700", color: theme.accent, whiteSpace: "nowrap", flexShrink: 0 }}>{toast.title}</span>
+            {toast.message && <span style={{ fontSize: "0.8rem", opacity: 0.85, wordBreak: "keep-all" }}>{toast.message}</span>}
+          </div>
+        )}
         <div style={{ ...GLASS_STYLE, backgroundColor: theme.panel, border: `1px solid ${theme.border}`, borderRadius: "24px", padding: "40px 30px", display: "flex", flexDirection: "column", alignItems: "center", gap: "24px", width: "100%", maxWidth: "380px", boxShadow: "0 20px 50px rgba(0,0,0,0.1)" }}>
           
           <div style={{ textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center" }}>
@@ -911,6 +920,23 @@ const [showSupportModal, setShowSupportModal] = useState(false);
             >
               회원가입
             </button>
+                {/* 🌟👇 여기에 추가! 비밀번호 찾기 (준비 중) */}
+            <div style={{ display: "flex", justifyContent: "center", marginTop: "12px" }}>
+              <span 
+                onClick={() => triggerToast("안내", "비밀번호 초기화 기능은 준비 중입니다. 고객센터(support@secretnovel.com)로 문의해주세요.", "💌")}
+                style={{ fontSize: "0.8rem", color: theme.textMuted, cursor: "pointer", borderBottom: `1px solid ${theme.textMuted}`, paddingBottom: "2px", transition: "color 0.2s" }}
+                onMouseEnter={e => e.currentTarget.style.color = theme.text}
+                onMouseLeave={e => e.currentTarget.style.color = theme.textMuted}
+              >
+                비밀번호를 잊으셨나요?
+              </span>
+            </div>
+            
+          </div>
+        </div>
+      </div>
+    );
+  }
           </div>
         </div>
       </div>
