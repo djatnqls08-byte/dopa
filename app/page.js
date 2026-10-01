@@ -808,33 +808,29 @@ const [showInkModal, setShowInkModal] = useState(false); // 🌟 잉크 충전�
                   <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
                     <div style={{ flex: 1, display: "flex", alignItems: "center", backgroundColor: theme.panel, border: `1px solid ${theme.border}`, borderRadius: "16px", padding: "0 14px", height: "48px", boxShadow: "0 4px 12px rgba(0,0,0,0.03)" }}>
                       <Search size={18} color={theme.textMuted} />
-                     <input 
+                      <input 
                         type="text" 
                         autoComplete="off" 
                         value={exploreSearchQuery}
                         onChange={(e) => setExploreSearchQuery(e.target.value)}
                         onKeyDown={(e) => {
-                          if (e.key === "Enter") e.currentTarget.blur(); // 모바일 환경에서 엔터 시 키보드 내리기
+                          if (e.key === "Enter") e.currentTarget.blur();
                         }}
                         placeholder="어떤 사건을 찾으시나요?" 
                         style={{ flex: 1, height: "100%", border: "none", backgroundColor: "transparent", color: theme.text, fontSize: "0.9rem", outline: "none", paddingLeft: "10px" }} 
                       />
-                      {/* 🌟 검색어 초기화 X 버튼 */}
                       {exploreSearchQuery && (
                         <button onClick={() => setExploreSearchQuery("")} style={{ background: "none", border: "none", color: theme.textMuted, cursor: "pointer", padding: "4px", display: "flex", alignItems: "center" }}>
                           <X size={16} strokeWidth={2.5} />
                         </button>
                       )}
                     </div>
-                    {/* 💧 잉크 잔액 표시 */}
-                    <div 
-                      onClick={() => setShowInkModal(true)} 
-                      style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: "6px", backgroundColor: theme.panelAlt, padding: "0 14px", height: "48px", borderRadius: "16px", fontWeight: "800", fontSize: "0.9rem", color: theme.text }}
-                    >
+                    <div onClick={() => setShowInkModal(true)} style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: "6px", backgroundColor: theme.panelAlt, padding: "0 14px", height: "48px", borderRadius: "16px", fontWeight: "800", fontSize: "0.9rem", color: theme.text }}>
                       <Droplet size={18} strokeWidth={2.5} color={theme.accent} /> {userInk.toLocaleString()}
                     </div>
+                  </div>
 
-                  {/* 2. 히어로 배너 (그림자 잘림 방지를 위해 마진 조정) */}
+                  {/* 2. 히어로 배너 */}
                   {exploreFilter === "추천" && !exploreSearchQuery && (
                     <div style={{ margin: "0 2px", ...GLASS_STYLE, width: "calc(100% - 4px)", aspectRatio: "16/9", backgroundColor: theme.panel, borderRadius: "20px", overflow: "hidden", position: "relative", border: `1px solid ${theme.borderHighlight}`, boxShadow: "0 8px 24px rgba(0,0,0,0.12)", cursor: "pointer" }}>
                       <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.2) 50%, transparent 100%)", zIndex: 1 }} />
@@ -851,7 +847,7 @@ const [showInkModal, setShowInkModal] = useState(false); // 🌟 잉크 충전�
 
                   {/* 3. 카테고리 필터 탭 */}
                   <div style={{ display: "flex", gap: "8px", overflowX: "auto", paddingBottom: "4px", WebkitOverflowScrolling: "touch" }}>
-                    {["추천", "추리", "연애", "괴담"].map((f, i) => (
+                    {["추천", "추리", "연애", "괴담"].map((f) => (
                       <button 
                         key={f} 
                         onClick={() => setExploreFilter(f)}
@@ -868,7 +864,6 @@ const [showInkModal, setShowInkModal] = useState(false); // 🌟 잉크 충전�
                       <span style={{ fontSize: "1.1rem", fontWeight: "800", color: theme.text }}>
                         {exploreSearchQuery ? `'${exploreSearchQuery}' 검색 결과` : exploreFilter === "추천" ? "실시간 인기 서류철" : `${exploreFilter} 시나리오`}
                       </span>
-                      {/* 🌟 전체보기 클릭 이벤트 활성화 */}
                       {!exploreSearchQuery && (
                         <span onClick={() => triggerToast("전체보기", "모든 목록을 불러옵니다.", "💡")} style={{ fontSize: "0.8rem", fontWeight: "700", color: theme.textMuted, cursor: "pointer", display: "flex", alignItems: "center" }}>
                           전체보기 <ChevronRight size={16} strokeWidth={2.5} />
@@ -1382,7 +1377,9 @@ color: "#fff", border: "none", cursor: "pointer",
                             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "6px" }}>
                               <input type="text" autoComplete="off" value={item.name} onChange={e => handleUpdateEvidence(item.id, "name", e.target.value)} placeholder={`단서 ${idx + 1} 명칭`} style={{ flex: 1, padding: "8px 10px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.82rem", fontWeight: "600", outline: "none" }} />
                               {evidenceList.length > 1 && (
-                                <button type="button" onClick={(e) => handleDeleteEvidence(e, item.id)} style={{ background: "none", border: "none", color: theme.danger, cursor: "pointer", padding: "2px", fontSize: "0.8rem" }}><Trash2 size="{16}" strokeWidth="{2}"/></button>
+                                <button type="button" onClick={(e) => handleDeleteEvidence(e, item.id)} style={{ background: "none", border: "none", color: theme.danger, cursor: "pointer", padding: "2px", fontSize: "0.8rem", display: "flex", alignItems: "center" }}>
+                                  <Trash2 size={16} strokeWidth={2.5} />
+                                </button>
                               )}
                             </div>
                             <input type="text" autoComplete="off" value={item.overview} onChange={e => handleUpdateEvidence(item.id, "overview", e.target.value)} placeholder="발견 위치 및 겉모습..." style={{ width: "100%", boxSizing: "border-box", padding: "8px 10px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.78rem", outline: "none" }} />
@@ -1699,9 +1696,9 @@ color: "#fff", border: "none", cursor: "pointer",
                             {/* 2. CG 명칭 및 삭제 버튼 */}
                             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "8px" }}>
                               <input type="text" autoComplete="off" value={item.title} onChange={e => setCgList(cgList.map(c => c.id === item.id ? { ...c, title: e.target.value } : c))} placeholder={`CG ${idx + 1} 명칭`} style={{ flex: 1, padding: "10px 12px", borderRadius: "8px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.85rem", fontWeight: "600", outline: "none" }} />
-                              {cgList.length > 1 && (
-                                <button type="button" onClick={() => setCgList(cgList.filter(c => c.id !== item.id))} style={{ background: "none", border: "none", color: theme.danger, cursor: "pointer", padding: "4px" }}>
-                                  <Trash2 size="{16}" strokeWidth="{2}"/>
+                             {cgList.length > 1 && (
+                                <button type="button" onClick={() => setCgList(cgList.filter(c => c.id !== item.id))} style={{ background: "none", border: "none", color: theme.danger, cursor: "pointer", padding: "4px", display: "flex", alignItems: "center" }}>
+                                  <Trash2 size={16} strokeWidth={2.5} />
                                 </button>
                               )}
                             </div>
