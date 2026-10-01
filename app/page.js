@@ -243,15 +243,6 @@ export default function GamePlatform() {
     return () => window.removeEventListener("popstate", handlePopState);
   }, []);
 
-
-// 🌟 채팅 추가 시 자동 스크롤
-  useEffect(() => {
-    if (chatContainerRef.current) {
-      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
-    }
-  }, [sessions, activeSessionId]);
-
-  
   // 🌟 (신규) 내 서재의 심사 상태를 서버와 실시간으로 맞추는 안테나!
   useEffect(() => {
     if (currentUser?.email && savedLibrary.length > 0) {
@@ -376,7 +367,7 @@ export default function GamePlatform() {
   const [publicSynopsis, setPublicSynopsis] = useState("");
   const [openingScene, setOpeningScene] = useState("");
 
-  const [suspects, setSuspects] = useState([
+ const [suspects, setSuspects] = useState([
     { id: 1, name: "", ageGender: "", job: "", behavior: "", secret: "", portraitUrl: "", showSecret: false }
   ]);
   const [selectedSuspectId, setSelectedSuspectId] = useState(1);
@@ -416,7 +407,7 @@ const [mainPartners, setMainPartners] = useState([
 // 🌟 특성 및 트라우마 매트릭스 모달 스위치
 const [showTraitModal, setShowTraitModal] = useState(false);
 
-// 🌟 특성 및 트라우마 매트릭스 리스트 (크툴루/인세인 탈피 버전, Max 4글자 20/20)
+// 🌟 특성 및 트라우마 매트릭스 리스트 (Max 4글자 20/20)
 const TRAIT_LIST = [
   "위화감지", "이면간파", "사물투영", "절대침착", "감정동화",
   "가면쓰기", "기척숨김", "시선유도", "맥락추론", "공간기억",
@@ -734,6 +725,13 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
   const [abortController, setAbortController] = useState(null);
   const [inputMsg, setInputMsg] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+
+// 🌟 (수정완료) sessions 변수가 탄생한 이후에 스크롤 코드를 배치해야 에러가 안 납니다!
+  useEffect(() => {
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+    }
+  }, [sessions, activeSessionId]);
   
   // 🌟 (복구완료!) AI 시놉시스 자동 생성 상태 및 함수
   const [isGeneratingSynopsis, setIsGeneratingSynopsis] = useState(false);
