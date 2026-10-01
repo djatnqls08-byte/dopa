@@ -13,7 +13,7 @@ import {
   ArrowUp, Smartphone, BookOpen, Dices, ChevronLeft, ChevronRight, UploadCloud, AlertTriangle, CheckCircle2,
   Brain, Skull, Eye, Activity, ShieldAlert, ToggleLeft, ToggleRight, Plus, Minus, Ghost, Gift, Video, CreditCard, Headphones,
   Trash2, Clock, Tag, Droplet, MessageCircle, MessageSquare, Bandage, Clapperboard, Lightbulb, 
-  Fingerprint, Flower2, Tentacle, Compass, Globe
+  Fingerprint, Flower2, Tentacle, Compass, Globe, Key
 } from "lucide-react";
 
 const THEME_PALETTES = {
@@ -162,6 +162,9 @@ function convertRowToPreset(row, index, headers = []) {
 }
 
 export default function GamePlatform() {
+ // ── [3. 상태 관리] ──
+  const [currentUser, setCurrentUser] = useState(null); // 🌟 로그인한 유저 정보 저장소
+  const [isLoginLoading, setIsLoginLoading] = useState(false); // 🌟 로딩 뱅글뱅글 상태
  // ── [0. 폰트 강제 로드] ──
   useEffect(() => {
     const style = document.createElement("style");
@@ -778,6 +781,49 @@ const [showSupportModal, setShowSupportModal] = useState(false);
     if (!inputMsg.trim() || isLoading) return;
     executeMessage(inputMsg);
   };
+
+// 🌟 (여기에 추가!) 로그인되어 있지 않으면 로그인 화면부터 보여줍니다.
+  if (!currentUser) {
+    return (
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", width: "100vw", height: "100dvh", backgroundColor: theme.bg, color: theme.text, padding: "20px" }}>
+        <div style={{ ...GLASS_STYLE, backgroundColor: theme.panel, border: `1px solid ${theme.border}`, borderRadius: "24px", padding: "40px 30px", display: "flex", flexDirection: "column", alignItems: "center", gap: "30px", width: "100%", maxWidth: "400px", boxShadow: "0 20px 50px rgba(0,0,0,0.1)" }}>
+          
+          <div style={{ textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center" }}>
+            <div style={{ marginBottom: "16px", padding: "16px", backgroundColor: theme.panelAlt, borderRadius: "50%", border: `1px solid ${theme.borderHighlight}`, boxShadow: "0 4px 12px rgba(0,0,0,0.05)" }}>
+              {/* 🗝️ 이모지 대신 세련된 Key 아이콘! */}
+              <Key size={42} strokeWidth={1.5} color={theme.accent} />
+            </div>
+            <h1 style={{ margin: "0 0 8px 0", fontSize: "1.8rem", fontWeight: "900", letterSpacing: "-0.5px" }}>Secret Novel</h1>
+            <p style={{ margin: 0, fontSize: "0.85rem", color: theme.textMuted }}>당신만의 은밀한 서사가 시작되는 곳</p>
+          </div>
+
+          <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: "12px", marginTop: "20px" }}>
+            <button 
+              onClick={() => triggerToast("안내", "아직 데이터베이스 연결 전입니다! 게스트로 접속해주세요.", <Lightbulb size={18} color="#000" />)}
+              style={{ width: "100%", padding: "16px", backgroundColor: "#FEE500", color: "#000", border: "none", borderRadius: "14px", fontSize: "0.95rem", fontWeight: "800", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}
+            >
+              {/* 💬 이모지 대신 카카오톡 느낌의 MessageCircle 아이콘! */}
+              <MessageCircle size={20} strokeWidth={2.5} fill="#000" color="#000" /> 카카오로 시작하기
+            </button>
+
+            <button 
+              onClick={() => {
+                setIsLoginLoading(true);
+                setTimeout(() => {
+                  setCurrentUser({ uid: "guest_999", name: "방랑하는 탐색자" });
+                  setIsLoginLoading(false);
+                }, 800); // 0.8초 딜레이 후 입장!
+              }}
+              style={{ width: "100%", padding: "16px", backgroundColor: theme.panelAlt, color: theme.text, border: `1px solid ${theme.borderHighlight}`, borderRadius: "14px", fontSize: "0.95rem", fontWeight: "700", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}
+            >
+              {isLoginLoading ? "문이 열리는 중..." : "게스트로 둘러보기"} <ChevronRight size={18} strokeWidth={2.5} />
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   
   return (
     <div style={{ display: "flex", height: "100dvh", width: "100vw", backgroundColor: theme.bg, color: theme.text, overflow: "hidden", position: "relative" }}>
@@ -978,11 +1024,15 @@ const [showSupportModal, setShowSupportModal] = useState(false);
 
 {/* 🧭 탐색 (Explore) 탭 화면 */}
             {activeTab === "explore" && (() => {
+              // 🌟 '전체보기'를 위한 '전체' 필터 추가 및 데이터 분류
               const filteredExplore = exploreScenarios.filter(scen => {
-                const matchFilter = exploreFilter === "추천" || scen.mode === exploreFilter;
+                const matchFilter = exploreFilter === "추천" || exploreFilter === "전체" || scen.mode === exploreFilter;
                 const matchSearch = scen.title.toLowerCase().includes(exploreSearchQuery.toLowerCase()) || scen.author.toLowerCase().includes(exploreSearchQuery.toLowerCase());
                 return matchFilter && matchSearch;
               });
+
+              // 오리지널 작품 필터링 (가로 스와이프용)
+              const originalScenarios = exploreScenarios.filter(s => s.isOriginal);
 
               return (
                 <div style={{ display: "flex", flexDirection: "column", gap: "24px", animation: "fadeIn 0.2s ease-out", padding: "4px 4px 20px 4px" }}>
@@ -993,101 +1043,130 @@ const [showSupportModal, setShowSupportModal] = useState(false);
                       <Search size={18} color={theme.textMuted} />
                       <input 
                         type="text" 
-                        autoComplete="off" 
                         value={exploreSearchQuery}
                         onChange={(e) => setExploreSearchQuery(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") e.currentTarget.blur();
-                        }}
                         placeholder="어떤 사건을 찾으시나요?" 
                         style={{ flex: 1, height: "100%", border: "none", backgroundColor: "transparent", color: theme.text, fontSize: "0.9rem", outline: "none", paddingLeft: "10px" }} 
                       />
-                      {exploreSearchQuery && (
-                        <button onClick={() => setExploreSearchQuery("")} style={{ background: "none", border: "none", color: theme.textMuted, cursor: "pointer", padding: "4px", display: "flex", alignItems: "center" }}>
-                          <X size={16} strokeWidth={2.5} />
-                        </button>
-                      )}
                     </div>
                     <div onClick={() => setShowInkModal(true)} style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: "6px", backgroundColor: theme.panelAlt, padding: "0 14px", height: "48px", borderRadius: "16px", fontWeight: "800", fontSize: "0.9rem", color: theme.text }}>
                       <Droplet size={18} strokeWidth={2.5} color={theme.accent} /> {userInk.toLocaleString()}
                     </div>
                   </div>
 
-                  {/* 2. 히어로 배너 */}
-                  {exploreFilter === "추천" && !exploreSearchQuery && (
-                    <div style={{ margin: "0 2px", ...GLASS_STYLE, width: "calc(100% - 4px)", aspectRatio: "16/9", backgroundColor: theme.panel, borderRadius: "20px", overflow: "hidden", position: "relative", border: `1px solid ${theme.borderHighlight}`, boxShadow: "0 8px 24px rgba(0,0,0,0.12)", cursor: "pointer" }}>
-                      <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.2) 50%, transparent 100%)", zIndex: 1 }} />
-                      <div style={{ width: "100%", height: "100%", backgroundColor: isDarkMode ? "#292524" : "#e7e5e4", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                        <ImageIcon size={48} color={theme.textMuted} opacity={0.3} />
-                      </div>
-                      <div style={{ position: "absolute", bottom: "0", left: "0", right: "0", padding: "20px", zIndex: 2, display: "flex", flexDirection: "column", gap: "8px" }}>
-                        <span style={{ backgroundColor: theme.accent, color: "#fff", padding: "4px 10px", borderRadius: "8px", fontSize: "0.7rem", fontWeight: "800", width: "fit-content" }}>에디터 추천</span>
-                        <h2 style={{ margin: 0, color: "#fff", fontSize: "1.4rem", fontWeight: "800", textShadow: "0 2px 4px rgba(0,0,0,0.5)" }}>천명, 하늘이 정한 삶</h2>
-                        <p style={{ margin: 0, color: "rgba(255,255,255,0.85)", fontSize: "0.85rem", textShadow: "0 1px 2px rgba(0,0,0,0.5)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>소년 앞의 남은 목숨은 1년이다.</p>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* 3. 카테고리 필터 탭 */}
-                  <div style={{ display: "flex", gap: "8px", overflowX: "auto", paddingBottom: "4px", WebkitOverflowScrolling: "touch" }}>
-                    {["추천", "추리", "연애", "괴담"].map((f) => (
+                  {/* 2. 카테고리 필터 탭 (전체 추가!) */}
+                  <div style={{ display: "flex", gap: "8px", overflowX: "auto", paddingBottom: "4px", WebkitOverflowScrolling: "touch", whiteSpace: "nowrap" }}>
+                    {["추천", "전체", "추리", "연애", "괴담"].map((f) => (
                       <button 
                         key={f} 
                         onClick={() => setExploreFilter(f)}
-                        style={{ padding: "10px 18px", borderRadius: "20px", border: `1px solid ${exploreFilter === f ? theme.accent : theme.border}`, backgroundColor: exploreFilter === f ? theme.accent : theme.panel, color: exploreFilter === f ? (isDarkMode ? "#1a1817" : "#fff") : theme.text, fontSize: "0.85rem", fontWeight: "700", cursor: "pointer", whiteSpace: "nowrap", transition: "all 0.2s", boxShadow: exploreFilter === f ? `0 4px 12px ${theme.accentGlow}` : "none" }}
+                        style={{ padding: "10px 18px", borderRadius: "20px", border: `1px solid ${exploreFilter === f ? theme.accent : theme.border}`, backgroundColor: exploreFilter === f ? theme.accent : theme.panel, color: exploreFilter === f ? (isDarkMode ? "#1a1817" : "#fff") : theme.text, fontSize: "0.85rem", fontWeight: "700", cursor: "pointer", transition: "all 0.2s" }}
                       >
                         {f}
                       </button>
                     ))}
                   </div>
 
-                  {/* 4. 섹션: 시나리오 리스트 */}
-                  <div style={{ display: "flex", flexDirection: "column", gap: "16px", marginTop: "8px" }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0 4px" }}>
-                      <span style={{ fontSize: "1.1rem", fontWeight: "800", color: theme.text }}>
-                        {exploreSearchQuery ? `'${exploreSearchQuery}' 검색 결과` : exploreFilter === "추천" ? "실시간 인기 서류철" : `${exploreFilter} 시나리오`}
-                      </span>
-                      {!exploreSearchQuery && (
-                        <span onClick={() => triggerToast("전체보기", "모든 목록을 불러옵니다.", "💡")} style={{ fontSize: "0.8rem", fontWeight: "700", color: theme.textMuted, cursor: "pointer", display: "flex", alignItems: "center" }}>
-                          전체보기 <ChevronRight size={16} strokeWidth={2.5} />
+                  {/* 🌟 추천 탭일 때는 웹툰 앱처럼 '가로 스크롤' 레이아웃을 보여줌 */}
+                  {exploreFilter === "추천" && !exploreSearchQuery ? (
+                    <div style={{ display: "flex", flexDirection: "column", gap: "32px" }}>
+                      
+                      {/* A. 히어로 배너 */}
+                      <div style={{ ...GLASS_STYLE, width: "100%", aspectRatio: "16/9", backgroundColor: theme.panel, borderRadius: "20px", overflow: "hidden", position: "relative", border: `1px solid ${theme.borderHighlight}` }}>
+                        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.1) 60%, transparent 100%)", zIndex: 1 }} />
+                        <img src="https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=800&q=80" alt="배너" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                        <div style={{ position: "absolute", bottom: "0", left: "0", right: "0", padding: "24px 20px", zIndex: 2, display: "flex", flexDirection: "column", gap: "6px" }}>
+                          <span style={{ color: theme.accent, fontSize: "0.75rem", fontWeight: "900", letterSpacing: "1px" }}>이번 주말의 추천 사건</span>
+                          <h2 style={{ margin: 0, color: "#fff", fontSize: "1.6rem", fontWeight: "800" }}>저택의 그림자</h2>
+                          <p style={{ margin: 0, color: "rgba(255,255,255,0.7)", fontSize: "0.85rem" }}>어느 비 오는 밤, 저택에서 울린 한 발의 총성.</p>
+                        </div>
+                      </div>
+
+                      {/* B. 오직 시크릿 노벨에서만! 오리지널 시리즈 (가로 스크롤) */}
+                      {originalScenarios.length > 0 && (
+                        <div>
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px", padding: "0 4px" }}>
+                            <span style={{ fontSize: "1.1rem", fontWeight: "800", color: theme.text }}>👑 공식 대표 작품! 오리지널</span>
+                            <span onClick={() => setExploreFilter("전체")} style={{ fontSize: "0.8rem", fontWeight: "700", color: theme.textMuted, cursor: "pointer" }}>전체보기 〉</span>
+                          </div>
+                          <div style={{ display: "flex", gap: "14px", overflowX: "auto", paddingBottom: "10px", WebkitOverflowScrolling: "touch" }}>
+                            {originalScenarios.map(scen => (
+                              <div key={scen.id} onClick={() => setSelectedExploreScenario(scen)} style={{ width: "140px", flexShrink: 0, display: "flex", flexDirection: "column", gap: "8px", cursor: "pointer" }}>
+                                <div style={{ width: "100%", aspectRatio: "3/4", backgroundColor: theme.panelAlt, borderRadius: "12px", overflow: "hidden", border: `1.5px solid ${theme.accent}`, position: "relative" }}>
+                                  {scen.imageUrl ? <img src={scen.imageUrl} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <ImageIcon size={32} color={theme.textMuted} style={{ margin: "auto", height: "100%" }}/>}
+                                  <div style={{ position: "absolute", top: "6px", left: "6px", backgroundColor: theme.accent, color: isDarkMode ? "#000" : "#fff", padding: "2px 6px", borderRadius: "4px", fontSize: "0.6rem", fontWeight: "900" }}>ORIGINAL</div>
+                                </div>
+                                <div style={{ fontSize: "0.9rem", fontWeight: "800", color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{scen.title}</div>
+                                <div style={{ fontSize: "0.75rem", color: theme.textMuted }}>{scen.mode} · {scen.author}</div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* C. 실시간 인기 서류철 (가로 스크롤) */}
+                      <div>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px", padding: "0 4px" }}>
+                          <span style={{ fontSize: "1.1rem", fontWeight: "800", color: theme.text }}>🔥 지금 뜨는 인기 사건</span>
+                          <span onClick={() => setExploreFilter("전체")} style={{ fontSize: "0.8rem", fontWeight: "700", color: theme.textMuted, cursor: "pointer" }}>전체보기 〉</span>
+                        </div>
+                        <div style={{ display: "flex", gap: "14px", overflowX: "auto", paddingBottom: "10px", WebkitOverflowScrolling: "touch" }}>
+                          {exploreScenarios.slice(0, 6).map(scen => (
+                            <div key={scen.id} onClick={() => setSelectedExploreScenario(scen)} style={{ width: "240px", flexShrink: 0, display: "flex", flexDirection: "column", gap: "10px", cursor: "pointer" }}>
+                              <div style={{ width: "100%", aspectRatio: "16/9", backgroundColor: theme.panelAlt, borderRadius: "12px", overflow: "hidden", border: `1px solid ${theme.border}`, position: "relative" }}>
+                                {scen.imageUrl ? <img src={scen.imageUrl} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <ImageIcon size={32} color={theme.textMuted} style={{ margin: "auto", height: "100%" }}/>}
+                                <div style={{ position: "absolute", top: "8px", right: "8px", backgroundColor: "rgba(0,0,0,0.6)", padding: "4px 8px", borderRadius: "8px", color: "#fff", fontSize: "0.65rem", fontWeight: "800" }}>{scen.mode}</div>
+                              </div>
+                              <div>
+                                <div style={{ fontSize: "0.95rem", fontWeight: "800", color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{scen.title}</div>
+                                <div style={{ display: "flex", gap: "10px", marginTop: "4px", fontSize: "0.75rem", color: theme.textMuted, fontWeight: "600" }}>
+                                  <span style={{ display: "flex", gap: "3px", alignItems: "center" }}><Heart size={12}/> {scen.likes}</span>
+                                  <span style={{ display: "flex", gap: "3px", alignItems: "center" }}><Play size={12}/> {scen.plays}</span>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    /* 🌟 검색했거나, 추천 탭이 아닌 다른 탭(전체, 추리 등)일 때 보여주는 리스트형 뷰 */
+                    <div style={{ display: "flex", flexDirection: "column", gap: "16px", marginTop: "8px" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0 4px" }}>
+                        <span style={{ fontSize: "1.1rem", fontWeight: "800", color: theme.text }}>
+                          {exploreSearchQuery ? `'${exploreSearchQuery}' 검색 결과` : `${exploreFilter} 시나리오`}
                         </span>
+                      </div>
+                      
+                      {filteredExplore.length === 0 ? (
+                         <div style={{ padding: "40px 20px", textAlign: "center", color: theme.textMuted, fontSize: "0.9rem", backgroundColor: theme.panelAlt, borderRadius: "16px", border: `1px dashed ${theme.border}` }}>
+                           조건에 맞는 시나리오가 없습니다.
+                         </div>
+                      ) : (
+                        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(4, 1fr)", gap: "14px" }}>
+                          {filteredExplore.map(scen => (
+                            <div key={scen.id} onClick={() => setSelectedExploreScenario(scen)} style={{ display: "flex", flexDirection: "column", gap: "10px", cursor: "pointer" }}>
+                              <div style={{ width: "100%", aspectRatio: "16/9", backgroundColor: theme.panelAlt, borderRadius: "14px", overflow: "hidden", border: `1px solid ${theme.border}`, position: "relative" }}>
+                                {scen.imageUrl ? <img src={scen.imageUrl} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <ImageIcon size={28} strokeWidth={1.5} color={theme.textMuted} style={{ margin: "auto", height: "100%" }} />}
+                                <div style={{ position: "absolute", top: "8px", left: "8px", backgroundColor: "rgba(0,0,0,0.6)", padding: "4px 8px", borderRadius: "6px", color: "#fff", fontSize: "0.65rem", fontWeight: "700" }}>
+                                  {scen.mode}
+                                </div>
+                                {scen.isOriginal && (
+                                  <div style={{ position: "absolute", top: "8px", right: "8px", backgroundColor: theme.accent, color: isDarkMode ? "#1a1817" : "#fff", padding: "4px 6px", borderRadius: "6px", fontSize: "0.6rem", fontWeight: "800" }}>
+                                    ORIGINAL
+                                  </div>
+                                )}
+                              </div>
+                              <div style={{ display: "flex", flexDirection: "column", gap: "4px", padding: "0 4px" }}>
+                                <span style={{ fontSize: "0.95rem", fontWeight: "800", color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{scen.title}</span>
+                                <span style={{ fontSize: "0.75rem", color: theme.textMuted, fontWeight: "600" }}>{scen.author}</span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
                       )}
                     </div>
-                    
-                    {filteredExplore.length === 0 ? (
-                       <div style={{ padding: "40px 20px", textAlign: "center", color: theme.textMuted, fontSize: "0.9rem", backgroundColor: theme.panelAlt, borderRadius: "16px", border: `1px dashed ${theme.border}` }}>
-                         조건에 맞는 시나리오가 없습니다.
-                       </div>
-                    ) : (
-                      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(4, 1fr)", gap: "14px" }}>
-                        {filteredExplore.map(scen => (
-                          <div key={scen.id} onClick={() => setSelectedExploreScenario(scen)} style={{ display: "flex", flexDirection: "column", gap: "10px", cursor: "pointer" }}>
-                            <div style={{ width: "100%", aspectRatio: "16/9", backgroundColor: theme.panelAlt, borderRadius: "14px", overflow: "hidden", border: `1px solid ${theme.border}`, position: "relative", boxShadow: "0 4px 12px rgba(0,0,0,0.04)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                              <ImageIcon size={28} strokeWidth={1.5} color={theme.textMuted} opacity={0.4} />
-                              <div style={{ position: "absolute", top: "8px", left: "8px", backgroundColor: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)", padding: "4px 8px", borderRadius: "6px", color: "#fff", fontSize: "0.65rem", fontWeight: "700", display: "flex", alignItems: "center", gap: "4px" }}>
-                                {scen.mode === "추리" ? <Search size={10} strokeWidth={3} /> : scen.mode === "연애" ? <Heart size={10} strokeWidth={3} /> : <Flame size={10} strokeWidth={3} />}
-                                {scen.mode}
-                              </div>
-                              {scen.isOriginal && (
-                                <div style={{ position: "absolute", top: "8px", right: "8px", backgroundColor: theme.accent, padding: "4px 6px", borderRadius: "6px", color: isDarkMode ? "#1a1817" : "#fff", fontSize: "0.6rem", fontWeight: "800" }}>
-                                  ORIGINAL
-                                </div>
-                              )}
-                            </div>
-                            <div style={{ display: "flex", flexDirection: "column", gap: "4px", padding: "0 4px" }}>
-                              <span style={{ fontSize: "0.95rem", fontWeight: "800", color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{scen.title}</span>
-                              <span style={{ fontSize: "0.75rem", color: theme.textMuted, fontWeight: "600" }}>{scen.author}</span>
-                              <div style={{ display: "flex", alignItems: "center", gap: "10px", marginTop: "2px", fontSize: "0.72rem", color: theme.textMuted, fontWeight: "700" }}>
-                                <span style={{ display: "flex", alignItems: "center", gap: "3px" }}><Heart size={13} strokeWidth={2.5} /> {scen.likes}</span>
-                                <span style={{ display: "flex", alignItems: "center", gap: "3px" }}><Play size={13} strokeWidth={2.5} /> {scen.plays}</span>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
+                  )}
                 </div>
               );
             })()}
