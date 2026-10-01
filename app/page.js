@@ -237,11 +237,15 @@ const handleLoadFromLibrary = (scen) => {
 };
 
 // <Trash2 size="{16}" strokeWidth="{2}"/> 서재에서 삭제하는 함수
+// 🗑 서재에서 삭제하는 함수 (확인창 추가)
 const handleDeleteFromLibrary = (id) => {
-   const updated = savedLibrary.filter(item => item.id !== id);
-   setSavedLibrary(updated);
-   localStorage.setItem("secret_novel_library", JSON.stringify(updated));
-}; 
+   if (window.confirm("정말로 이 서류를 서재에서 폐기하시겠습니까?\n삭제 후에는 복구할 수 없습니다.")) {
+     const updated = savedLibrary.filter(item => item.id !== id);
+     setSavedLibrary(updated);
+     localStorage.setItem("secret_novel_library", JSON.stringify(updated));
+     triggerToast("폐기 완료", "서류가 안전하게 파기되었습니다.", <Trash2 size={18} strokeWidth={2.5}/>);
+   }
+};
 
  const [cgList, setCgList] = useState([
     { id: 1, title: "", condition: "", dialogue: "", imageUrl: "", showDetails: false }
@@ -275,6 +279,12 @@ const [exploreFilter, setExploreFilter] = useState("추천"); // 추천, 추리,
  // ── [글로벌 재화 상태] ──
 const [userInk, setUserInk] = useState(0);
 const [showInkModal, setShowInkModal] = useState(false); // 🌟 잉크 충전소 모달 스위치
+ // ── [내정보(Profile) 탭 전용 상태] ──
+const [showProfileEdit, setShowProfileEdit] = useState(false);
+const [showHistoryModal, setShowHistoryModal] = useState(false);
+const [showLikedModal, setShowLikedModal] = useState(false);
+const [showReviewModal, setShowReviewModal] = useState(false);
+const [showSupportModal, setShowSupportModal] = useState(false);
  
   // ── [7. 인게임 UI 토글 상태 관리 (누락된 변수 추가)] ──
   const [isPhoneDrawerOpen, setIsPhoneDrawerOpen] = useState(false);
@@ -600,10 +610,10 @@ const [showInkModal, setShowInkModal] = useState(false); // 🌟 잉크 충전�
     <div style={{ display: "flex", height: "100dvh", width: "100vw", backgroundColor: theme.bg, color: theme.text, overflow: "hidden", position: "relative" }}>
       
       {toast && (
-        <div onClick={() => setToast(null)} style={{ ...GLASS_STYLE, position: "fixed", top: "20px", left: "50%", transform: "translateX(-50%)", zIndex: 99999, backgroundColor: isDarkMode ? "rgba(35, 30, 28, 0.96)" : "rgba(255, 255, 255, 0.96)", border: `1.5px solid ${theme.accent}`, color: theme.text, padding: "10px 18px", borderRadius: "24px", display: "flex", alignItems: "center", gap: "8px", boxShadow: "0 10px 30px rgba(0,0,0,0.15)", cursor: "pointer", animation: "fadeIn 0.2s ease-out" }}>
-          <span style={{ fontSize: "1.15rem" }}>{toast.icon}</span>
-          <span style={{ fontSize: "0.84rem", fontWeight: "600", color: theme.accent }}>{toast.title}</span>
-          {toast.message && <span style={{ fontSize: "0.76rem", opacity: 0.85 }}>{toast.message}</span>}
+        <div onClick={() => setToast(null)} style={{ ...GLASS_STYLE, position: "fixed", top: "20px", left: "50%", transform: "translateX(-50%)", zIndex: 99999, backgroundColor: isDarkMode ? "rgba(35, 30, 28, 0.96)" : "rgba(255, 255, 255, 0.96)", border: `1.5px solid ${theme.accent}`, color: theme.text, padding: "12px 20px", borderRadius: "24px", display: "flex", alignItems: "center", gap: "10px", boxShadow: "0 10px 30px rgba(0,0,0,0.15)", cursor: "pointer", animation: "fadeIn 0.2s ease-out", width: "max-content", maxWidth: "90vw" }}>
+          <span style={{ display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontSize: "1.15rem" }}>{toast.icon}</span>
+          <span style={{ fontSize: "0.85rem", fontWeight: "700", color: theme.accent, whiteSpace: "nowrap", flexShrink: 0 }}>{toast.title}</span>
+          {toast.message && <span style={{ fontSize: "0.8rem", opacity: 0.85, wordBreak: "keep-all" }}>{toast.message}</span>}
         </div>
       )}
 
@@ -966,16 +976,23 @@ const [showInkModal, setShowInkModal] = useState(false); // 🌟 잉크 충전�
                               </div>
                             )}
 
-                            {/* 탐색 탭에서 다운로드한 시나리오 전용 뱃지 */}
+                            {/* 🌟 뱃지 모음 (다운로드 됨 + 업데이트 가능) */}
                             {scen.isDownloaded && (
-                              <div style={{ position: "absolute", top: "12px", left: "12px", padding: "4px 8px", backgroundColor: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)", borderRadius: "8px", color: "#60a5fa", fontSize: "0.7rem", fontWeight: "700", border: "1px solid rgba(96, 165, 250, 0.4)", display: "flex", alignItems: "center", gap: "4px" }}>
-                                <FileUp size={12} strokeWidth={2.5} /> 다운로드 됨
+                              <div style={{ position: "absolute", top: "12px", left: "12px", display: "flex", flexDirection: "column", gap: "6px", zIndex: 5 }}>
+                                <div style={{ padding: "4px 8px", backgroundColor: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)", borderRadius: "8px", color: "#60a5fa", fontSize: "0.7rem", fontWeight: "700", border: "1px solid rgba(96, 165, 250, 0.4)", display: "flex", alignItems: "center", gap: "4px", width: "fit-content" }}>
+                                  <FileUp size={12} strokeWidth={2.5} /> 다운로드 됨
+                                </div>
+                                
+                                {/* 백엔드 연동 후 scen.hasUpdate 가 true일 때만 뜨도록 설계 (지금은 확인을 위해 노출) */}
+                                <div style={{ padding: "4px 8px", backgroundColor: "rgba(22, 163, 74, 0.9)", backdropFilter: "blur(4px)", borderRadius: "8px", color: "#fff", fontSize: "0.7rem", fontWeight: "700", border: "1px solid rgba(255, 255, 255, 0.3)", display: "flex", alignItems: "center", gap: "4px", width: "fit-content", animation: "pulse 2s infinite" }}>
+                                  <ArrowUp size={12} strokeWidth={3} /> 업데이트 가능
+                                </div>
                               </div>
                             )}
 
                             {/* 심사 대기 중 뱃지 */}
                             {scen.status === "심사 대기" && (
-                              <div style={{ position: "absolute", top: "12px", left: "12px", padding: "4px 8px", backgroundColor: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)", borderRadius: "8px", color: theme.warning, fontSize: "0.7rem", fontWeight: "700", border: `1px solid rgba(245, 158, 11, 0.4)`, display: "flex", alignItems: "center", gap: "4px" }}>
+                              <div style={{ position: "absolute", top: "12px", left: "12px", padding: "4px 8px", backgroundColor: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)", borderRadius: "8px", color: theme.warning, fontSize: "0.7rem", fontWeight: "700", border: `1px solid rgba(245, 158, 11, 0.4)`, display: "flex", alignItems: "center", gap: "4px", zIndex: 5 }}>
                                 <Clock size={12} strokeWidth={2.5} /> 심사 대기 중
                               </div>
                             )}
@@ -2441,6 +2458,138 @@ color: "#fff", border: "none", cursor: "pointer",
           </div>
         )}
 
+{/* 👤 프로필 수정 팝업 */}
+        {showProfileEdit && (
+          <div onClick={() => setShowProfileEdit(false)} style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 400, padding: "20px", animation: "fadeIn 0.2s ease-out" }}>
+            <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: "400px", backgroundColor: theme.panel, border: `1px solid ${theme.border}`, borderRadius: "20px", padding: "24px", display: "flex", flexDirection: "column", gap: "24px", boxShadow: "0 20px 50px rgba(0,0,0,0.5)" }}>
+              
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <span style={{ fontWeight: "800", fontSize: "1.1rem", color: theme.text }}>프로필 편집</span>
+                <button onClick={() => setShowProfileEdit(false)} style={{ background: "none", border: "none", color: theme.text, fontSize: "1.2rem", cursor: "pointer" }}><X size={24}/></button>
+              </div>
+
+              {/* 프사 변경 구역 */}
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "12px" }}>
+                <div style={{ width: "90px", height: "90px", borderRadius: "50%", backgroundColor: theme.panelAlt, border: `2px solid ${theme.borderHighlight}`, display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", position: "relative" }}>
+                  {pcPortraitUrl ? <img src={pcPortraitUrl} alt="프로필" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <UserRound size={40} color={theme.textMuted} />}
+                  <label style={{ position: "absolute", inset: 0, backgroundColor: "rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center", opacity: 0, cursor: "pointer", transition: "opacity 0.2s" }} onMouseEnter={e => e.currentTarget.style.opacity = 1} onMouseLeave={e => e.currentTarget.style.opacity = 0}>
+                    <PenTool size={24} color="#fff" />
+                    <input type="file" accept="image/*" style={{ display: "none" }} onChange={(e) => {
+                        const file = e.target.files[0];
+                        if (file) {
+                          const reader = new FileReader();
+                          reader.onload = (ev) => setPcPortraitUrl(ev.target.result);
+                          reader.readAsDataURL(file);
+                        }
+                    }} />
+                  </label>
+                </div>
+                <span style={{ fontSize: "0.75rem", color: theme.textMuted, fontWeight: "600" }}>터치하여 사진 변경</span>
+              </div>
+
+              {/* 닉네임 변경 */}
+              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                <label style={{ fontSize: "0.8rem", fontWeight: "700", color: theme.textMuted }}>닉네임</label>
+                <input type="text" value={pcName} onChange={e => setPcName(e.target.value)} placeholder="새 닉네임을 입력하세요" style={{ width: "100%", boxSizing: "border-box", padding: "12px 14px", borderRadius: "12px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.95rem", outline: "none", fontWeight: "600" }} />
+              </div>
+
+              <button onClick={() => { setShowProfileEdit(false); triggerToast("변경 완료", "프로필 정보가 업데이트되었습니다.", <CheckCircle2 color={theme.success} size={18}/>); }} style={{ width: "100%", padding: "14px", backgroundColor: theme.accent, color: isDarkMode ? "#1a1817" : "#fff", border: "none", borderRadius: "14px", fontSize: "0.95rem", fontWeight: "800", cursor: "pointer", marginTop: "8px", boxShadow: `0 4px 12px ${theme.accentGlow}` }}>
+                저장하기
+              </button>
+              
+            </div>
+          </div>
+        )}
+{/* 📜 나의 플레이 기록 팝업 */}
+        {showHistoryModal && (
+          <div onClick={() => setShowHistoryModal(false)} style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 500, padding: "20px", animation: "fadeIn 0.2s ease-out" }}>
+            <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: "500px", backgroundColor: theme.panel, border: `1px solid ${theme.border}`, borderRadius: "20px", padding: "24px", display: "flex", flexDirection: "column", gap: "20px", boxShadow: "0 20px 50px rgba(0,0,0,0.5)", maxHeight: "80vh" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: `1px solid ${theme.border}`, paddingBottom: "12px" }}>
+                <span style={{ fontWeight: "800", fontSize: "1.1rem", display: "flex", alignItems: "center", gap: "8px", color: theme.text }}><Clock size={20} color={theme.accent}/> 나의 플레이 기록</span>
+                <button onClick={() => setShowHistoryModal(false)} style={{ background: "none", border: "none", color: theme.textMuted, cursor: "pointer" }}><X size={24}/></button>
+              </div>
+              <div style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: "12px", paddingRight: "4px" }}>
+                {sessions.length === 0 ? (
+                  <div style={{ padding: "40px", textAlign: "center", color: theme.textMuted, fontSize: "0.9rem" }}>아직 진행한 플레이 기록이 없습니다.<br/>로비에서 새로운 사건을 시작해보세요!</div>
+                ) : (
+                  sessions.map(s => (
+                    <div key={s.id} style={{ padding: "16px", backgroundColor: theme.inputBg, borderRadius: "12px", border: `1px solid ${theme.border}` }}>
+                      <div style={{ fontWeight: "800", color: theme.text, fontSize: "1.05rem", marginBottom: "6px" }}>{s.title}</div>
+                      <div style={{ fontSize: "0.8rem", color: theme.textMuted, display: "flex", gap: "10px" }}>
+                        <span>모드: {s.ruleMode === "dating" ? "연애" : s.ruleMode === "insane" ? "괴담" : "추리"}</span>
+                        <span>·</span>
+                        <span>{new Date(s.id).toLocaleString()}</span>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ❤️ 관심 시나리오 팝업 */}
+        {showLikedModal && (
+          <div onClick={() => setShowLikedModal(false)} style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 500, padding: "20px", animation: "fadeIn 0.2s ease-out" }}>
+            <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: "500px", backgroundColor: theme.panel, border: `1px solid ${theme.border}`, borderRadius: "20px", padding: "24px", display: "flex", flexDirection: "column", gap: "20px", boxShadow: "0 20px 50px rgba(0,0,0,0.5)", maxHeight: "80vh" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: `1px solid ${theme.border}`, paddingBottom: "12px" }}>
+                <span style={{ fontWeight: "800", fontSize: "1.1rem", display: "flex", alignItems: "center", gap: "8px", color: theme.text }}><Heart size={20} color={theme.danger} fill={theme.danger} /> 관심 시나리오</span>
+                <button onClick={() => setShowLikedModal(false)} style={{ background: "none", border: "none", color: theme.textMuted, cursor: "pointer" }}><X size={24}/></button>
+              </div>
+              <div style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: "12px" }}>
+                 <div style={{ padding: "40px", textAlign: "center", color: theme.textMuted, fontSize: "0.9rem" }}>관심 등록한 시나리오가 아직 없습니다.<br/>라운지에서 하트를 눌러보세요!</div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ☁️ 라운지 심사 및 발행 내역 팝업 */}
+        {showReviewModal && (
+          <div onClick={() => setShowReviewModal(false)} style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 500, padding: "20px", animation: "fadeIn 0.2s ease-out" }}>
+            <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: "500px", backgroundColor: theme.panel, border: `1px solid ${theme.border}`, borderRadius: "20px", padding: "24px", display: "flex", flexDirection: "column", gap: "20px", boxShadow: "0 20px 50px rgba(0,0,0,0.5)", maxHeight: "80vh" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: `1px solid ${theme.border}`, paddingBottom: "12px" }}>
+                <span style={{ fontWeight: "800", fontSize: "1.1rem", display: "flex", alignItems: "center", gap: "8px", color: theme.text }}><UploadCloud size={20} color="#60a5fa"/> 라운지 심사 및 발행 내역</span>
+                <button onClick={() => setShowReviewModal(false)} style={{ background: "none", border: "none", color: theme.textMuted, cursor: "pointer" }}><X size={24}/></button>
+              </div>
+              <div style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: "12px", paddingRight: "4px" }}>
+                {savedLibrary.filter(s => s.status === "심사 대기").length === 0 ? (
+                   <div style={{ padding: "40px", textAlign: "center", color: theme.textMuted, fontSize: "0.9rem" }}>현재 심사 중이거나 발행된 서류철이 없습니다.</div>
+                ) : (
+                   savedLibrary.filter(s => s.status === "심사 대기").map(s => (
+                     <div key={s.id} style={{ padding: "16px", backgroundColor: theme.inputBg, borderRadius: "12px", border: `1px solid ${theme.warning}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                       <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                         <span style={{ fontWeight: "800", color: theme.text, fontSize: "1.05rem" }}>{s.title}</span>
+                         <span style={{ fontSize: "0.75rem", color: theme.textMuted, fontWeight: "600" }}>{s.date} 신청</span>
+                       </div>
+                       <span style={{ backgroundColor: theme.warning, color: "#fff", padding: "6px 10px", borderRadius: "10px", fontSize: "0.75rem", fontWeight: "800", boxShadow: "0 2px 8px rgba(245, 158, 11, 0.4)" }}>심사 대기 중</span>
+                     </div>
+                   ))
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* 🎧 고객센터 팝업 */}
+        {showSupportModal && (
+          <div onClick={() => setShowSupportModal(false)} style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 500, padding: "20px", animation: "fadeIn 0.2s ease-out" }}>
+            <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: "400px", backgroundColor: theme.panel, border: `1px solid ${theme.border}`, borderRadius: "20px", padding: "24px", display: "flex", flexDirection: "column", gap: "20px", boxShadow: "0 20px 50px rgba(0,0,0,0.5)" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: `1px solid ${theme.border}`, paddingBottom: "12px" }}>
+                <span style={{ fontWeight: "800", fontSize: "1.1rem", display: "flex", alignItems: "center", gap: "8px", color: theme.text }}><Headphones size={20} color={theme.textMuted}/> 고객센터</span>
+                <button onClick={() => setShowSupportModal(false)} style={{ background: "none", border: "none", color: theme.textMuted, cursor: "pointer" }}><X size={24}/></button>
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                <div style={{ fontSize: "0.9rem", color: theme.text, lineHeight: 1.6, fontWeight: "500" }}>이용 중 불편하신 점이 있나요?<br/>아래 이메일로 문의해 주시면 빠르게 답변해 드리겠습니다.</div>
+                <div style={{ padding: "16px", backgroundColor: theme.inputBg, borderRadius: "12px", border: `1px dashed ${theme.borderHighlight}`, textAlign: "center", fontWeight: "800", color: theme.accent, fontSize: "1rem" }}>
+                  support@secretnovel.com
+                </div>
+                <button onClick={() => { setShowSupportModal(false); triggerToast("복사 완료", "이메일 주소가 클립보드에 복사되었습니다.", "📋"); }} style={{ padding: "14px", backgroundColor: theme.panelAlt, border: `1px solid ${theme.borderHighlight}`, borderRadius: "12px", color: theme.text, fontWeight: "800", cursor: "pointer", transition: "background 0.2s" }} onMouseEnter={e => e.currentTarget.style.backgroundColor = theme.inputBg} onMouseLeave={e => e.currentTarget.style.backgroundColor = theme.panelAlt}>
+                  이메일 주소 복사
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
 {/* 💧 잉크 충전소 팝업 (무료 획득 및 상점) */}
         {showInkModal && (
@@ -2659,86 +2808,87 @@ color: "#fff", border: "none", cursor: "pointer",
           </div>
         )}
 
-{/* 👤 내정보 (Profile) 탭 화면 */}
+{/* 👤 내정보 (Profile) 탭 화면 (세련된 리스트 UI) */}
             {activeTab === "profile" && (
-              <div style={{ display: "flex", flexDirection: "column", gap: "24px", animation: "fadeIn 0.2s ease-out", paddingBottom: "20px" }}>
+              <div style={{ display: "flex", flexDirection: "column", animation: "fadeIn 0.2s ease-out", paddingBottom: "40px" }}>
                 
-                {/* 1. 유저 계정 프로필 카드 */}
-                <div style={{ display: "flex", alignItems: "center", gap: "16px", padding: "24px", backgroundColor: theme.panel, borderRadius: "20px", border: `1px solid ${theme.borderHighlight}`, boxShadow: "0 10px 30px rgba(0,0,0,0.05)" }}>
-                  <div style={{ width: "72px", height: "72px", borderRadius: "50%", overflow: "hidden", backgroundColor: theme.panelAlt, border: `2px solid ${theme.border}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    <UserRound size={36} color={theme.textMuted} />
+                {/* 1. 상단 프로필 영역 */}
+                <div style={{ display: "flex", alignItems: "center", gap: "18px", padding: "30px 20px", backgroundColor: theme.panel }}>
+                  <div style={{ width: "80px", height: "80px", borderRadius: "50%", overflow: "hidden", backgroundColor: theme.panelAlt, border: `1px solid ${theme.borderHighlight}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    {pcPortraitUrl ? <img src={pcPortraitUrl} alt="프로필" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <UserRound size={36} color={theme.textMuted} />}
                   </div>
                   <div style={{ display: "flex", flexDirection: "column", gap: "6px", flex: 1 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                      <span style={{ fontSize: "1.3rem", fontWeight: "800", color: theme.text }}>탐색자_8921</span>
-                      <span style={{ fontSize: "0.7rem", color: theme.accent, fontWeight: "800", backgroundColor: theme.inputBg, padding: "2px 8px", borderRadius: "8px", border: `1px solid ${theme.borderHighlight}` }}>LV. 3</span>
+                      <span style={{ fontSize: "1.3rem", fontWeight: "800", color: theme.text, letterSpacing: "-0.5px" }}>{pcName || "탐색자_8921"}</span>
+                      <span style={{ fontSize: "0.7rem", color: theme.accent, fontWeight: "800", backgroundColor: isDarkMode ? "rgba(163, 146, 116, 0.15)" : "#f5f0eb", padding: "2px 8px", borderRadius: "8px" }}>LV. 3</span>
                     </div>
-                    <span style={{ fontSize: "0.85rem", color: theme.textMuted, fontWeight: "500" }}>user_8921@secretnovel.com</span>
+                    <span style={{ fontSize: "0.85rem", color: theme.textMuted }}>user_8921@secretnovel.com</span>
                   </div>
-                  <button onClick={() => triggerToast("프로필 수정", "준비 중입니다.", <PenTool size={16}/>)} style={{ background: "none", border: "none", color: theme.textMuted, cursor: "pointer", padding: "8px" }}>
-                    <Settings size={22} strokeWidth={2} />
+                  <button onClick={() => setShowProfileEdit(true)} style={{ padding: "8px 16px", backgroundColor: theme.panelAlt, border: `1px solid ${theme.border}`, borderRadius: "12px", color: theme.text, fontSize: "0.8rem", fontWeight: "700", cursor: "pointer", transition: "background 0.2s" }} onMouseEnter={e => e.currentTarget.style.backgroundColor = theme.inputBg} onMouseLeave={e => e.currentTarget.style.backgroundColor = theme.panelAlt}>
+                    수정
                   </button>
                 </div>
 
-                {/* 2. 내 지갑 (클릭 시 잉크 충전소 오픈) */}
+                {/* 2. 내 지갑 (굵은 구분선으로 분리) */}
+                <div style={{ borderTop: `8px solid ${theme.sidebar}` }} />
                 <div 
                   onClick={() => setShowInkModal(true)}
-                  style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "20px 24px", backgroundColor: isDarkMode ? "rgba(163, 146, 116, 0.1)" : "#fefcf9", borderRadius: "20px", border: `1.5px solid ${theme.accent}`, cursor: "pointer", transition: "transform 0.2s" }}
-                  onMouseEnter={e => e.currentTarget.style.transform = "scale(1.02)"} 
-                  onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}
+                  style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "24px 20px", backgroundColor: theme.panel, cursor: "pointer", transition: "background 0.2s" }}
+                  onMouseEnter={e => e.currentTarget.style.backgroundColor = theme.panelAlt} onMouseLeave={e => e.currentTarget.style.backgroundColor = theme.panel}
                 >
                   <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
                     <span style={{ fontSize: "0.85rem", fontWeight: "700", color: theme.accent, display: "flex", alignItems: "center", gap: "6px" }}>
                       <Droplet size={16} strokeWidth={2.5} /> 보유 잉크
                     </span>
-                    <span style={{ fontSize: "1.6rem", fontWeight: "800", color: theme.text, letterSpacing: "-0.5px" }}>
-                      {userInk.toLocaleString()} <span style={{ fontSize: "0.9rem", color: theme.textMuted, fontWeight: "600" }}>방울</span>
+                    <span style={{ fontSize: "1.8rem", fontWeight: "800", color: theme.text, letterSpacing: "-0.5px" }}>
+                      {userInk.toLocaleString()} <span style={{ fontSize: "0.95rem", color: theme.textMuted, fontWeight: "600" }}>방울</span>
                     </span>
                   </div>
-                  <div style={{ padding: "10px 16px", backgroundColor: theme.accent, color: isDarkMode ? "#1a1817" : "#fff", borderRadius: "12px", fontWeight: "800", fontSize: "0.9rem", display: "flex", alignItems: "center", gap: "6px", boxShadow: `0 4px 12px ${theme.accentGlow}` }}>
+                  <div style={{ padding: "12px 18px", backgroundColor: theme.accent, color: isDarkMode ? "#1a1817" : "#fff", borderRadius: "14px", fontWeight: "800", fontSize: "0.9rem", display: "flex", alignItems: "center", gap: "6px", boxShadow: `0 4px 12px ${theme.accentGlow}` }}>
                     <Plus size={16} strokeWidth={3} /> 충전 / 무료 획득
                   </div>
                 </div>
 
-                {/* 3. 내 활동 메뉴 */}
-                <div style={{ display: "flex", flexDirection: "column", gap: "4px", backgroundColor: theme.panel, borderRadius: "20px", padding: "8px", border: `1px solid ${theme.border}` }}>
+                {/* 3. 내 활동 메뉴 리스트 */}
+                <div style={{ borderTop: `8px solid ${theme.sidebar}` }} />
+                <div style={{ backgroundColor: theme.panel, display: "flex", flexDirection: "column" }}>
                   {[
-                    { icon: <Clock size={20} strokeWidth={2} color={theme.accent} />, title: "나의 플레이 기록", count: `${sessions.length}건` },
-                    { icon: <Heart size={20} strokeWidth={2} color={theme.danger} />, title: "관심 시나리오", count: "12건" },
-                    { icon: <UploadCloud size={20} strokeWidth={2} color="#60a5fa" />, title: "라운지 심사 및 발행 내역", count: "1건 대기중" }
+                    { icon: <Clock size={20} color={theme.accent} />, title: "나의 플레이 기록", count: `${sessions.length}건`, onClick: () => setShowHistoryModal(true) },
+                    { icon: <Heart size={20} color={theme.danger} />, title: "관심 시나리오", count: "12건", onClick: () => setShowLikedModal(true) },
+                    { icon: <UploadCloud size={20} color="#60a5fa" />, title: "라운지 심사 및 발행 내역", count: "1건 대기중", onClick: () => setShowReviewModal(true) }
                   ].map((menu, i) => (
-                    <div key={i} onClick={() => triggerToast(menu.title, "세부 페이지 준비 중입니다.", "🚀")} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 12px", cursor: "pointer", borderRadius: "12px", transition: "background 0.2s" }} onMouseEnter={e => e.currentTarget.style.backgroundColor = theme.panelAlt} onMouseLeave={e => e.currentTarget.style.backgroundColor = "transparent"}>
-                      <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                    <div key={i} onClick={menu.onClick} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "18px 20px", cursor: "pointer", borderBottom: `1px solid ${theme.sidebar}`, transition: "background 0.2s" }} onMouseEnter={e => e.currentTarget.style.backgroundColor = theme.panelAlt} onMouseLeave={e => e.currentTarget.style.backgroundColor = "transparent"}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
                         {menu.icon}
-                        <span style={{ fontSize: "0.95rem", fontWeight: "700", color: theme.text }}>{menu.title}</span>
+                        <span style={{ fontSize: "0.95rem", fontWeight: "600", color: theme.text }}>{menu.title}</span>
                       </div>
                       <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                         <span style={{ fontSize: "0.8rem", color: theme.textMuted, fontWeight: "600" }}>{menu.count}</span>
-                        <ChevronRight size={18} color={theme.textMuted} />
+                        <ChevronRight size={18} color={theme.textMuted} opacity={0.6} />
                       </div>
                     </div>
                   ))}
                 </div>
 
-                {/* 4. 고객 지원 메뉴 */}
-                <div style={{ display: "flex", flexDirection: "column", gap: "4px", backgroundColor: theme.panel, borderRadius: "20px", padding: "8px", border: `1px solid ${theme.border}` }}>
+                {/* 4. 고객 지원 메뉴 리스트 */}
+                <div style={{ borderTop: `8px solid ${theme.sidebar}` }} />
+                <div style={{ backgroundColor: theme.panel, display: "flex", flexDirection: "column" }}>
                   {[
-                    { icon: <Headphones size={20} strokeWidth={2} color={theme.textMuted} />, title: "고객센터 / 문의하기" },
-                    { icon: <AlertTriangle size={20} strokeWidth={2} color={theme.textMuted} />, title: "공지사항" }
+                    { icon: <Headphones size={20} color={theme.textMuted} />, title: "고객센터 / 문의하기", onClick: () => setShowSupportModal(true) },
+                    { icon: <AlertTriangle size={20} color={theme.textMuted} />, title: "공지사항", onClick: () => triggerToast("공지사항", "현재 새로운 공지가 없습니다.", "📢") }
                   ].map((menu, i) => (
-                    <div key={i} onClick={() => triggerToast(menu.title, "준비 중입니다.", "🎧")} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 12px", cursor: "pointer", borderRadius: "12px", transition: "background 0.2s" }} onMouseEnter={e => e.currentTarget.style.backgroundColor = theme.panelAlt} onMouseLeave={e => e.currentTarget.style.backgroundColor = "transparent"}>
-                      <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                    <div key={i} onClick={menu.onClick} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "18px 20px", cursor: "pointer", borderBottom: `1px solid ${theme.sidebar}`, transition: "background 0.2s" }} onMouseEnter={e => e.currentTarget.style.backgroundColor = theme.panelAlt} onMouseLeave={e => e.currentTarget.style.backgroundColor = "transparent"}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
                         {menu.icon}
-                        <span style={{ fontSize: "0.95rem", fontWeight: "700", color: theme.text }}>{menu.title}</span>
+                        <span style={{ fontSize: "0.95rem", fontWeight: "600", color: theme.text }}>{menu.title}</span>
                       </div>
-                      <ChevronRight size={18} color={theme.textMuted} />
+                      <ChevronRight size={18} color={theme.textMuted} opacity={0.6} />
                     </div>
                   ))}
                 </div>
 
               </div>
             )}
-
 
 {/* 🧭 탐색 탭: 시나리오 상세 페이지 전체 화면 오버레이 */}
         {selectedExploreScenario && (
@@ -2844,13 +2994,20 @@ color: "#fff", border: "none", cursor: "pointer",
             </div>
 
             <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "16px 20px max(16px, env(safe-area-inset-bottom))", background: `linear-gradient(to top, ${theme.panel} 70%, transparent 100%)`, display: "flex", gap: "12px", zIndex: 20 }}>
-               
+               {/* 🌟 하단 플로팅 액션 바 */}
                <button 
                  onClick={() => {
                    if (savedLibrary.some(s => s.title === selectedExploreScenario.title)) {
                      triggerToast("다운로드 안내", "이미 내 서재에 보관된 서류철입니다.", "💡");
                      return;
                    }
+                   // 🌟 잉크 30방울 차감 로직 추가
+                   if (userInk < 30) {
+                     triggerToast("잉크 부족", "서재에 영구 소장하려면 30 잉크가 필요합니다.", "💧");
+                     return;
+                   }
+                   setUserInk(prev => prev - 30);
+                   
                    const newDownloadedScenario = {
                      id: Date.now(),
                      title: selectedExploreScenario.title,
@@ -2860,17 +3017,19 @@ color: "#fff", border: "none", cursor: "pointer",
                      isDownloaded: true, 
                      data: { publicSynopsis: "라운지에서 다운로드한 시나리오입니다." }
                    };
+                   
                    const updatedLibrary = [newDownloadedScenario, ...savedLibrary];
                    setSavedLibrary(updatedLibrary);
                    localStorage.setItem("secret_novel_library", JSON.stringify(updatedLibrary));
-                   triggerToast("다운로드 완료", "성공적으로 내 서재에 보관되었습니다.", <FileUp size={18} color={theme.accent} />);
+                   triggerToast("다운로드 완료", "30 잉크를 소모하여 서재에 보관했습니다.", <FileUp size={18} color={theme.accent} />);
                  }} 
-                 title="서재에 담기" 
-                 style={{ width: "56px", height: "56px", display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: theme.panelAlt, border: `1.5px solid ${theme.borderHighlight}`, borderRadius: "16px", cursor: "pointer", flexShrink: 0, color: theme.text, transition: "background 0.2s" }} 
+                 title="서재에 영구 소장 (30 잉크)" 
+                 style={{ width: "72px", height: "56px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "2px", backgroundColor: theme.panelAlt, border: `1.5px solid ${theme.borderHighlight}`, borderRadius: "16px", cursor: "pointer", flexShrink: 0, color: theme.text, transition: "background 0.2s" }} 
                  onMouseEnter={e => e.currentTarget.style.backgroundColor = theme.inputBg} 
                  onMouseLeave={e => e.currentTarget.style.backgroundColor = theme.panelAlt}
                >
-                 <FileUp size={24} strokeWidth={2} />
+                 <FileUp size={22} strokeWidth={2} />
+                 <span style={{ fontSize: "0.6rem", fontWeight: "800", color: theme.accent }}>30 잉크</span>
                </button>
                
                {/* 🌟 바로 플레이 버튼: 잉크 차감 + 로비에 데이터 밀어넣기 + 화면 이동 */}
