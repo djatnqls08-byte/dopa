@@ -229,11 +229,12 @@ export default function GamePlatform() {
     return () => window.removeEventListener("popstate", handlePopState);
   }, []);
 
-  const [banners, setBanners] = useState([
+ const [banners, setBanners] = useState([
     { id: 1, tag: "이번 주말의 추천 사건", title: "저택의 그림자", desc: "어느 비 오는 밤, 저택에서 울린 한 발의 총성.", imageUrl: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=800&q=80" },
     { id: 2, tag: "NEW 로맨스", title: "어느 세이렌의 결백", desc: "깊은 바닷속, 그녀가 숨기고 있는 슬픈 진실", imageUrl: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=800&q=80" }
   ]);
   const [showBannerEdit, setShowBannerEdit] = useState(false);
+  const [editingBanner, setEditingBanner] = useState(null); // 🌟 (여기에 추가!) 어떤 배너를 수정할지 기억하는 상자
   
  // ── [0. 폰트 강제 로드] ──
   useEffect(() => {
@@ -383,6 +384,22 @@ const [libSearchQuery, setLibSearchQuery] = useState("");
 const [libFilter, setLibFilter] = useState("전체"); // 전체, 추리, 연애, 괴담
 const [showLibEditModal, setShowLibEditModal] = useState(false);
 const [editingLibItem, setEditingLibItem] = useState(null);
+const [itemToDelete, setItemToDelete] = useState(null); // 🌟 추가: 예쁜 삭제 팝업 스위치
+
+  // 마운트 시 로컬 스토리지에서 저장된 서재 데이터 불러오기
+  useEffect(() => {
+    const stored = localStorage.getItem("secret_novel_library");
+    if (stored) {
+      try { setSavedLibrary(JSON.parse(stored)); } catch(e) {}
+    }
+  }, []);
+
+  // 🌟 추가: 어드민 계정이면 무한 잉크 즉시 입금!!
+  useEffect(() => {
+    if (isAdmin) {
+      setUserInk(9999999);
+    }
+  }, [isAdmin]);
 
 // 마운트 시 로컬 스토리지에서 저장된 서재 데이터 불러오기
 useEffect(() => {
@@ -456,6 +473,9 @@ const handleLoadFromLibrary = (scen) => {
 // <Trash2 size="{16}" strokeWidth="{2}"/> 서재에서 삭제하는 함수
 // 🗑 서재에서 삭제하는 함수 (확인창 추가)
 const handleDeleteFromLibrary = (id) => {
+   // window.confirm 대신, 지울 아이디를 기억하고 예쁜 팝업창을 띄웁니다!
+   setItemToDelete(id);
+};
    if (window.confirm("정말로 이 서류를 서재에서 폐기하시겠습니까?\n삭제 후에는 복구할 수 없습니다.")) {
      const updated = savedLibrary.filter(item => item.id !== id);
      setSavedLibrary(updated);
@@ -944,6 +964,42 @@ const [showSupportModal, setShowSupportModal] = useState(false);
           </div>
         )}
 
+{/* 🚨 커스텀 삭제 확인 팝업 (못생긴 시스템 창 대체) */}
+        {itemToDelete && (
+          <div onClick={() => setItemToDelete(null)} style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 99999, padding: "20px", animation: "fadeIn 0.2s ease-out" }}>
+            <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: "340px", backgroundColor: theme.panel, border: `1px solid ${theme.border}`, borderRadius: "24px", padding: "28px 24px", display: "flex", flexDirection: "column", gap: "24px", boxShadow: "0 20px 50px rgba(0,0,0,0.5)" }}>
+              
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", gap: "14px" }}>
+                <div style={{ width: "64px", height: "64px", borderRadius: "50%", backgroundColor: isDarkMode ? "rgba(220, 38, 38, 0.15)" : "#fef2f2", display: "flex", alignItems: "center", justifyContent: "center", color: theme.danger }}>
+                  <AlertTriangle size={32} strokeWidth={2.5} />
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                  <h3 style={{ margin: 0, fontSize: "1.15rem", fontWeight: "800", color: theme.text, letterSpacing: "-0.5px" }}>서류를 폐기하시겠습니까?</h3>
+                  <p style={{ margin: 0, fontSize: "0.85rem", color: theme.textMuted, lineHeight: 1.6 }}>
+                    서재에서 이 시나리오를 완전히 삭제합니다.<br/>삭제 후에는 <strong style={{color: theme.danger}}>절대 복구할 수 없습니다.</strong>
+                  </p>
+                </div>
+              </div>
+
+              <div style={{ display: "flex", gap: "10px" }}>
+                <button onClick={() => setItemToDelete(null)} style={{ flex: 1, padding: "14px", backgroundColor: theme.panelAlt, border: `1px solid ${theme.border}`, borderRadius: "14px", color: theme.text, fontSize: "0.95rem", fontWeight: "700", cursor: "pointer", transition: "background 0.2s" }}>
+                  취소
+                </button>
+                <button onClick={() => {
+                   const updated = savedLibrary.filter(item => item.id !== itemToDelete);
+                   setSavedLibrary(updated);
+                   localStorage.setItem("secret_novel_library", JSON.stringify(updated));
+                   triggerToast("폐기 완료", "서류가 안전하게 파기되었습니다.", <Trash2 size={18} strokeWidth={2.5}/>);
+                   setItemToDelete(null); // 🌟 지운 다음에 팝업 닫기!
+                }} style={{ flex: 1, padding: "14px", backgroundColor: theme.danger, border: "none", borderRadius: "14px", color: "#fff", fontSize: "0.95rem", fontWeight: "800", cursor: "pointer", boxShadow: "0 8px 20px rgba(220, 38, 38, 0.3)", transition: "transform 0.2s" }}>
+                  삭제하기
+                </button>
+              </div>
+
+            </div>
+          </div>
+        )}
+
         {/* 🌟 약관 내용 팝업창 */}
         {showTermsModal && (
           <div onClick={() => setShowTermsModal(false)} style={{ position: "absolute", inset: 0, backgroundColor: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: "20px", borderRadius: "24px" }}>
@@ -1341,9 +1397,9 @@ const [showSupportModal, setShowSupportModal] = useState(false);
                               <p style={{ margin: 0, color: "rgba(255,255,255,0.7)", fontSize: "0.85rem" }}>{banner.desc}</p>
                             </div>
                             
-                            {/* 👑 어드민 전용 배너 편집 버튼 */} 
+                            {/* 👑 어드민 전용 배너 편집 버튼 */}
                             {isAdmin && (
-                              <button onClick={() => triggerToast("어드민 기능", "배너 교체 기능은 준비 중입니다.", "🛠️")} style={{ position: "absolute", top: "16px", right: "16px", zIndex: 10, padding: "6px 12px", backgroundColor: theme.danger, color: "#fff", border: "none", borderRadius: "8px", fontWeight: "800", fontSize: "0.75rem", cursor: "pointer", boxShadow: "0 4px 12px rgba(0,0,0,0.3)" }}>
+                              <button onClick={() => { setEditingBanner({ ...banner }); setShowBannerEdit(true); }} style={{ position: "absolute", top: "16px", right: "16px", zIndex: 10, padding: "6px 12px", backgroundColor: theme.danger, color: "#fff", border: "none", borderRadius: "8px", fontWeight: "800", fontSize: "0.75rem", cursor: "pointer", boxShadow: "0 4px 12px rgba(0,0,0,0.3)" }}>
                                 <PenTool size={14} style={{ marginRight: "4px", verticalAlign: "middle" }} /> 배너 교체
                               </button>
                             )}
@@ -2047,7 +2103,7 @@ color: "#fff", border: "none", cursor: "pointer",
                 <section style={{ ...GLASS_STYLE, padding: isMobile ? "16px" : "20px", backgroundColor: theme.panel, borderRadius: "18px", border: `1px solid ${theme.border}`, display: "flex", flexDirection: "column", gap: "12px" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                     <ClipboardList size={22} strokeWidth={2} color={theme.accent} />
-                    <span style={{ fontWeight: "700", fontSize: "0.95rem", color: theme.text }}>사건 개요서 (로맨스 서사)</span>
+                    <span style={{ fontWeight: "700", fontSize: "0.95rem", color: theme.text }}>사건 개요서</span>
                   </div>
                   <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "2fr 1fr", gap: "10px" }}>
                     <input type="text" autoComplete="off" value={scenarioTitle} onChange={e => setScenarioTitle(e.target.value)} placeholder="시나리오 제목 (예: 어느 세이렌의 결백)" style={{ padding: "10px 12px", borderRadius: "8px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.85rem", outline: "none" }} />
@@ -2716,7 +2772,7 @@ color: "#fff", border: "none", cursor: "pointer",
                 {/* 3. 고객 지원 메뉴 카드 */}
                 <div style={{ display: "flex", flexDirection: "column", backgroundColor: theme.panel, borderRadius: "20px", border: `1px solid ${theme.border}`, overflow: "hidden", boxShadow: "0 8px 24px rgba(0,0,0,0.04)" }}>
                   {[
-                    { icon: <Headphones size={20} color={theme.textMuted} />, title: "고객센터 / 문의하기", onClick: () => setShowSupportModal(true) },
+                    { icon: <Headphones size={20} color={theme.textMuted} />, title: "문의하기", onClick: () => setShowSupportModal(true) },
                     { icon: <AlertTriangle size={20} color={theme.textMuted} />, title: "공지사항", onClick: () => setShowNoticeModal(true) }
                   ].map((menu, i, arr) => (
                     <div key={i} onClick={menu.onClick} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "18px 20px", cursor: "pointer", borderBottom: i === arr.length - 1 ? "none" : `1px solid ${theme.border}`, transition: "background 0.2s" }} onMouseEnter={e => e.currentTarget.style.backgroundColor = theme.panelAlt} onMouseLeave={e => e.currentTarget.style.backgroundColor = "transparent"}>
@@ -3114,6 +3170,63 @@ color: "#fff", border: "none", cursor: "pointer",
                   서류철에 자동 배치 <ChevronRight size={16} strokeWidth={2.5} />
                 </button>
               </div>
+            </div>
+          </div>
+        )}
+
+{/* 👑 어드민 전용 메인 배너 교체 팝업 */}
+        {showBannerEdit && editingBanner && (
+          <div onClick={() => setShowBannerEdit(false)} style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 99999, padding: "20px", animation: "fadeIn 0.2s ease-out" }}>
+            <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: "440px", backgroundColor: theme.panel, border: `1px solid ${theme.border}`, borderRadius: "20px", padding: "24px", display: "flex", flexDirection: "column", gap: "20px", boxShadow: "0 20px 50px rgba(0,0,0,0.5)" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: `1px solid ${theme.border}`, paddingBottom: "12px" }}>
+                <span style={{ fontWeight: "800", fontSize: "1.1rem", color: theme.text, display: "flex", alignItems: "center", gap: "8px" }}>
+                  <PenTool size={20} color={theme.danger} /> 메인 배너 교체
+                </span>
+                <button onClick={() => setShowBannerEdit(false)} style={{ background: "none", border: "none", color: theme.textMuted, cursor: "pointer" }}><X size={24}/></button>
+              </div>
+
+              {/* 이미지 등록 구역 */}
+              <div style={{ width: "100%", aspectRatio: "16/9", backgroundColor: theme.inputBg, border: `1.5px dashed ${theme.borderHighlight}`, borderRadius: "12px", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", position: "relative", cursor: "pointer" }}>
+                 {editingBanner.imageUrl ? (
+                   <img src={editingBanner.imageUrl} alt="배너" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                 ) : (
+                   <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "8px", color: theme.textMuted }}>
+                     <ImageIcon size={32} strokeWidth={1.5} />
+                     <span style={{ fontSize: "0.8rem", fontWeight: "600" }}>터치하여 배너 이미지 업로드</span>
+                   </div>
+                 )}
+                 <label style={{ position: "absolute", inset: 0, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                   <input type="file" accept="image/*" style={{ display: "none" }} onChange={(e) => {
+                       const file = e.target.files[0];
+                       if (file) {
+                           const reader = new FileReader();
+                           reader.onload = (ev) => {
+                               setEditingBanner({...editingBanner, imageUrl: ev.target.result});
+                           };
+                           reader.readAsDataURL(file);
+                       }
+                   }} />
+                 </label>
+              </div>
+
+              {/* 텍스트 변경 구역 */}
+              <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                 <input type="text" value={editingBanner.tag} onChange={e => setEditingBanner({...editingBanner, tag: e.target.value})} placeholder="태그 (예: 추천 사건)" style={{ padding: "12px", borderRadius: "8px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.85rem", outline: "none", fontWeight: "700" }} />
+                 <input type="text" value={editingBanner.title} onChange={e => setEditingBanner({...editingBanner, title: e.target.value})} placeholder="배너 제목" style={{ padding: "12px", borderRadius: "8px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "1rem", outline: "none", fontWeight: "800" }} />
+                 <textarea rows={2} value={editingBanner.desc} onChange={e => setEditingBanner({...editingBanner, desc: e.target.value})} placeholder="배너 설명" style={{ padding: "12px", borderRadius: "8px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.85rem", outline: "none", resize: "none" }} />
+              </div>
+
+              {/* 완료 버튼 */}
+              <button 
+                onClick={() => {
+                  setBanners(banners.map(b => b.id === editingBanner.id ? editingBanner : b));
+                  setShowBannerEdit(false);
+                  triggerToast("교체 완료", "메인 배너가 성공적으로 업데이트되었습니다.", <CheckCircle2 color={theme.success} size={18}/>);
+                }} 
+                style={{ width: "100%", padding: "14px", backgroundColor: theme.danger, color: "#fff", border: "none", borderRadius: "12px", fontSize: "0.95rem", fontWeight: "700", cursor: "pointer", marginTop: "4px", boxShadow: "0 4px 12px rgba(220,38,38,0.3)" }}
+              >
+                배너 업데이트 적용
+              </button>
             </div>
           </div>
         )}
