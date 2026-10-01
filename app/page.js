@@ -3,7 +3,13 @@
 import { useState, useEffect } from "react";
 import SecretBoard from "@/components/SecretBoard";
 import CharacterSheet from "@/components/CharacterSheet";
-// 🌟 ArrowUp 중복 제거 완료!
+import { createClient } from '@supabase/supabase-js'; 
+
+// 🌟 2. 내 프로젝트의 열쇠로 수파베이스와 연결!
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+);
 
 import { 
   Search, Heart, Flame, LayoutGrid, LibraryBig, PenTool, UserRound, 
@@ -162,9 +168,12 @@ function convertRowToPreset(row, index, headers = []) {
 }
 
 export default function GamePlatform() {
- // ── [3. 상태 관리] ──
-  const [currentUser, setCurrentUser] = useState(null); // 🌟 로그인한 유저 정보 저장소
-  const [isLoginLoading, setIsLoginLoading] = useState(false); // 🌟 로딩 뱅글뱅글 상태
+// ── [3. 상태 관리] ──
+  const [currentUser, setCurrentUser] = useState(null);
+  const [isLoginLoading, setIsLoginLoading] = useState(false);
+  const [loginEmail, setLoginEmail] = useState(""); // 🌟 이메일 입력창 상태
+  const [loginPassword, setLoginPassword] = useState(""); // 🌟 비밀번호 입력창 상태
+  
  // ── [0. 폰트 강제 로드] ──
   useEffect(() => {
     const style = document.createElement("style");
@@ -446,8 +455,9 @@ const [showLikedModal, setShowLikedModal] = useState(false);
 const [showReviewModal, setShowReviewModal] = useState(false);
 const [showSupportModal, setShowSupportModal] = useState(false);
  
- // ── [11. 관리자 및 추가 기능 상태] ──
-  const [isAdmin, setIsAdmin] = useState(true); // 🌟 테스트용 어드민 계정 스위치 (true면 공지 작성 가능)
+// ── [11. 관리자 및 추가 기능 상태] ──
+  const MY_ADMIN_EMAIL = "subin@secretnovel.com"; 
+  const isAdmin = currentUser?.email === MY_ADMIN_EMAIL; // 이메일이 일치할 때만 어드민 권한 부여
   const [showNoticeModal, setShowNoticeModal] = useState(false);
   const [notices, setNotices] = useState([
     { id: 1, text: "시크릿 노벨 클로즈 베타 테스트에 오신 것을 환영합니다! 🎉\n버그 제보 및 피드백은 고객센터를 이용해 주세요.", date: "2026-10-01" }
@@ -782,41 +792,85 @@ const [showSupportModal, setShowSupportModal] = useState(false);
     executeMessage(inputMsg);
   };
 
-// 🌟 (여기에 추가!) 로그인되어 있지 않으면 로그인 화면부터 보여줍니다.
+// 🌟 진짜 Supabase 로그인 / 회원가입 화면
   if (!currentUser) {
     return (
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", width: "100vw", height: "100dvh", backgroundColor: theme.bg, color: theme.text, padding: "20px" }}>
-        <div style={{ ...GLASS_STYLE, backgroundColor: theme.panel, border: `1px solid ${theme.border}`, borderRadius: "24px", padding: "40px 30px", display: "flex", flexDirection: "column", alignItems: "center", gap: "30px", width: "100%", maxWidth: "400px", boxShadow: "0 20px 50px rgba(0,0,0,0.1)" }}>
+        <div style={{ ...GLASS_STYLE, backgroundColor: theme.panel, border: `1px solid ${theme.border}`, borderRadius: "24px", padding: "40px 30px", display: "flex", flexDirection: "column", alignItems: "center", gap: "24px", width: "100%", maxWidth: "380px", boxShadow: "0 20px 50px rgba(0,0,0,0.1)" }}>
           
           <div style={{ textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center" }}>
             <div style={{ marginBottom: "16px", padding: "16px", backgroundColor: theme.panelAlt, borderRadius: "50%", border: `1px solid ${theme.borderHighlight}`, boxShadow: "0 4px 12px rgba(0,0,0,0.05)" }}>
-              {/* 🗝️ 이모지 대신 세련된 Key 아이콘! */}
               <Key size={42} strokeWidth={1.5} color={theme.accent} />
             </div>
             <h1 style={{ margin: "0 0 8px 0", fontSize: "1.8rem", fontWeight: "900", letterSpacing: "-0.5px" }}>Secret Novel</h1>
             <p style={{ margin: 0, fontSize: "0.85rem", color: theme.textMuted }}>당신만의 은밀한 서사가 시작되는 곳</p>
           </div>
 
-          <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: "12px", marginTop: "20px" }}>
+          {/* 🌟 이메일 & 비밀번호 입력칸 */}
+          <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: "10px", marginTop: "10px" }}>
+            <input 
+              type="email" 
+              value={loginEmail}
+              onChange={(e) => setLoginEmail(e.target.value)}
+              placeholder="이메일 주소" 
+              style={{ width: "100%", padding: "14px", backgroundColor: theme.inputBg, border: `1px solid ${theme.border}`, borderRadius: "12px", color: theme.text, fontSize: "0.9rem", outline: "none", boxSizing: "border-box" }}
+            />
+            <input 
+              type="password" 
+              value={loginPassword}
+              onChange={(e) => setLoginPassword(e.target.value)}
+              placeholder="비밀번호 (6자리 이상)" 
+              style={{ width: "100%", padding: "14px", backgroundColor: theme.inputBg, border: `1px solid ${theme.border}`, borderRadius: "12px", color: theme.text, fontSize: "0.9rem", outline: "none", boxSizing: "border-box" }}
+            />
+          </div>
+
+          <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: "8px" }}>
+            {/* 🌟 진짜 로그인 버튼 */}
             <button 
-              onClick={() => triggerToast("안내", "아직 데이터베이스 연결 전입니다! 게스트로 접속해주세요.", <Lightbulb size={18} color="#000" />)}
-              style={{ width: "100%", padding: "16px", backgroundColor: "#FEE500", color: "#000", border: "none", borderRadius: "14px", fontSize: "0.95rem", fontWeight: "800", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}
+              disabled={isLoginLoading || !loginEmail || !loginPassword}
+              onClick={async () => {
+                setIsLoginLoading(true);
+                const { data, error } = await supabase.auth.signInWithPassword({
+                  email: loginEmail,
+                  password: loginPassword,
+                });
+                setIsLoginLoading(false);
+                
+                if (error) {
+                  triggerToast("로그인 실패", "이메일이나 비밀번호가 맞지 않습니다.", <AlertTriangle color={theme.danger} size={18}/>);
+                } else {
+                  // 성공 시 유저 정보 저장
+                  const userObj = { uid: data.user.id, email: data.user.email, name: data.user.email.split('@')[0] };
+                  setCurrentUser(userObj);
+                  localStorage.setItem("secret_novel_user", JSON.stringify(userObj));
+                  triggerToast("환영합니다!", "시크릿 노벨에 접속했습니다.", "✨");
+                }
+              }}
+              style={{ width: "100%", padding: "14px", backgroundColor: theme.accent, color: "#fff", border: "none", borderRadius: "12px", fontSize: "0.95rem", fontWeight: "800", cursor: "pointer", transition: "opacity 0.2s", opacity: (isLoginLoading || !loginEmail || !loginPassword) ? 0.6 : 1 }}
             >
-              {/* 💬 이모지 대신 카카오톡 느낌의 MessageCircle 아이콘! */}
-              <MessageCircle size={20} strokeWidth={2.5} fill="#000" color="#000" /> 카카오로 시작하기
+              {isLoginLoading ? "확인 중..." : "로그인"}
             </button>
 
+            {/* 🌟 진짜 회원가입 버튼 */}
             <button 
-              onClick={() => {
+              disabled={isLoginLoading || !loginEmail || !loginPassword}
+              onClick={async () => {
                 setIsLoginLoading(true);
-                setTimeout(() => {
-                  setCurrentUser({ uid: "guest_999", name: "방랑하는 탐색자" });
-                  setIsLoginLoading(false);
-                }, 800); // 0.8초 딜레이 후 입장!
+                const { data, error } = await supabase.auth.signUp({
+                  email: loginEmail,
+                  password: loginPassword,
+                });
+                setIsLoginLoading(false);
+
+                if (error) {
+                  triggerToast("가입 실패", error.message, <AlertTriangle color={theme.danger} size={18}/>);
+                } else {
+                  triggerToast("가입 성공!", "이제 로그인 버튼을 눌러 접속해주세요.", <CheckCircle2 color={theme.success} size={18}/>);
+                }
               }}
-              style={{ width: "100%", padding: "16px", backgroundColor: theme.panelAlt, color: theme.text, border: `1px solid ${theme.borderHighlight}`, borderRadius: "14px", fontSize: "0.95rem", fontWeight: "700", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}
+              style={{ width: "100%", padding: "14px", backgroundColor: "transparent", color: theme.text, border: `1px solid ${theme.borderHighlight}`, borderRadius: "12px", fontSize: "0.95rem", fontWeight: "700", cursor: "pointer" }}
             >
-              {isLoginLoading ? "문이 열리는 중..." : "게스트로 둘러보기"} <ChevronRight size={18} strokeWidth={2.5} />
+              회원가입
             </button>
           </div>
         </div>
@@ -3185,13 +3239,19 @@ color: "#fff", border: "none", cursor: "pointer",
                   </div>
                   <div style={{ display: "flex", flexDirection: "column", gap: "6px", flex: 1 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                      <span style={{ fontSize: "1.3rem", fontWeight: "800", color: theme.text, letterSpacing: "-0.5px" }}>{pcName || "탐색자_8921"}</span>
-                      {/* 🌟 뱃지를 누르면 어드민(Admin) 모드가 켜졌다 꺼집니다! */}
-                      <span onClick={() => { setIsAdmin(!isAdmin); triggerToast("개발자 모드", isAdmin ? "어드민 모드 해제" : "어드민 모드 활성화", "⚙️"); }} style={{ fontSize: "0.7rem", color: theme.accent, fontWeight: "800", backgroundColor: isDarkMode ? "rgba(163, 146, 116, 0.15)" : "#f5f0eb", padding: "2px 8px", borderRadius: "8px", cursor: "pointer" }}>
-                        LV. 3 {isAdmin && "👑"}
+                      {/* 🌟 진짜 내 닉네임 노출 */}
+                      <span style={{ fontSize: "1.3rem", fontWeight: "800", color: theme.text, letterSpacing: "-0.5px" }}>
+                        {currentUser?.name || pcName || "탐색자"}
+                      </span>
+                      {/* 🌟 어드민일 때만 왕관 뱃지 노출 (클릭 토글 제거) */}
+                      <span style={{ fontSize: "0.7rem", color: isAdmin ? theme.danger : theme.accent, fontWeight: "800", backgroundColor: isDarkMode ? "rgba(163, 146, 116, 0.15)" : "#f5f0eb", padding: "4px 8px", borderRadius: "8px" }}>
+                        {isAdmin ? "👑 관리자" : "LV. 1 탐색자"}
                       </span>
                     </div>
-                    <span style={{ fontSize: "0.85rem", color: theme.textMuted }}>user_8921@secretnovel.com</span>
+                    {/* 🌟 진짜 내 이메일 노출 */}
+                    <span style={{ fontSize: "0.85rem", color: theme.textMuted }}>
+                      {currentUser?.email || "이메일 정보 없음"}
+                    </span>
                   </div>
                   <button onClick={() => setShowProfileEdit(true)} style={{ padding: "8px 16px", backgroundColor: theme.panelAlt, border: `1px solid ${theme.border}`, borderRadius: "12px", color: theme.text, fontSize: "0.8rem", fontWeight: "700", cursor: "pointer", transition: "background 0.2s" }} onMouseEnter={e => e.currentTarget.style.backgroundColor = theme.inputBg} onMouseLeave={e => e.currentTarget.style.backgroundColor = theme.panelAlt}>
                     수정
