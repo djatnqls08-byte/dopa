@@ -405,6 +405,7 @@ export default function GamePlatform() {
   return (
     <div style={{ display: "flex", height: "100dvh", width: "100vw", backgroundColor: theme.bg, color: theme.text, overflow: "hidden", position: "relative" }}>
       
+      {/* 🍞 글로벌 토스트 */}
       {toast && (
         <div onClick={() => setToast(null)} style={{ ...GLASS_STYLE, position: "fixed", top: "20px", left: "50%", transform: "translateX(-50%)", zIndex: 99999, backgroundColor: isDarkMode ? "rgba(35, 30, 28, 0.96)" : "rgba(255, 255, 255, 0.96)", border: `1.5px solid ${theme.accent}`, color: theme.text, padding: "10px 18px", borderRadius: "24px", display: "flex", alignItems: "center", gap: "8px", boxShadow: "0 10px 30px rgba(0,0,0,0.15)", cursor: "pointer", animation: "fadeIn 0.2s ease-out" }}>
           <span style={{ fontSize: "1.15rem" }}>{toast.icon}</span>
@@ -413,6 +414,7 @@ export default function GamePlatform() {
         </div>
       )}
 
+      {/* ── ☰ 좌측 세션 서랍 ── */}
       {isDrawerOpen && <div onClick={() => setIsDrawerOpen(false)} style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.65)", backdropFilter: "blur(4px)", zIndex: 100 }} />}
       
       <aside style={{ position: "fixed", top: 0, bottom: 0, left: 0, zIndex: 110, width: isMobile ? "100vw" : "320px", transform: isDrawerOpen ? "translateX(0)" : "translateX(-100%)", transition: "transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1)", backgroundColor: theme.sidebar, borderRight: `1px solid ${theme.border}`, display: "flex", flexDirection: "column", boxShadow: isDrawerOpen ? "10px 0 40px rgba(0,0,0,0.5)" : "none" }}>
@@ -443,11 +445,11 @@ export default function GamePlatform() {
           ) : (
             <>
               <button onClick={() => triggerToast("환경 설정", "준비 중입니다.", <Settings size={18} color={theme.accent} />)} style={{ flex: 1, padding: "10px", backgroundColor: theme.panel, border: `1px solid ${theme.border}`, borderRadius: "8px", color: theme.text, fontSize: "0.78rem", fontWeight: "700", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}>
-  <Settings size={16} strokeWidth={2.5} /> 설정
-</button>
-<button onClick={() => triggerToast("데이터 관리", "준비 중입니다.", <Database size={18} color={theme.accent} />)} style={{ flex: 1, padding: "10px", backgroundColor: theme.panel, border: `1px solid ${theme.border}`, borderRadius: "8px", color: theme.text, fontSize: "0.78rem", fontWeight: "700", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}>
-  <Database size={16} strokeWidth={2.5} /> 데이터
-</button>
+                <Settings size={16} strokeWidth={2.5} /> 설정
+              </button>
+              <button onClick={() => triggerToast("데이터 관리", "준비 중입니다.", <Database size={18} color={theme.accent} />)} style={{ flex: 1, padding: "10px", backgroundColor: theme.panel, border: `1px solid ${theme.border}`, borderRadius: "8px", color: theme.text, fontSize: "0.78rem", fontWeight: "700", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}>
+                <Database size={16} strokeWidth={2.5} /> 데이터
+              </button>
             </>
           )}
         </div>
@@ -470,21 +472,17 @@ export default function GamePlatform() {
             )}
           </div>
 
-          {/* 🌟 우측 액션 아이콘 바 */}
           <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
             
-            {/* 1. 로비 상태일 때 (불러오기는 서재로 이동, 세팅 저장만 남김) */}
             {!activeSession && (
               <button onClick={() => triggerToast("세팅 저장", "현재 작성 중인 서류가 로컬에 저장되었습니다.", <Save size={20} color={theme.accent} strokeWidth={1.5} />)} title="세팅 저장" style={{ background: "none", border: "none", cursor: "pointer", padding: "8px", color: theme.text, display: "flex", alignItems: "center" }}>
                 <Save size={20} strokeWidth={1.5} color={theme.text} />
               </button>
             )}
             
-            {/* 2. 인게임 상태일 때 (아이콘 두께 1.5로 통일) */}
             {activeSession && (
               <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
                 
-                {/* 📱 스마트폰 메신저 */}
                 {(activeSession.ruleMode?.startsWith("dating") || activeSession.ruleMode?.includes("free")) && (() => {
                   const phoneChats = activeSession.sheet?.phoneChats || {};
                   let unreadCount = 0;
@@ -513,7 +511,6 @@ export default function GamePlatform() {
                   );
                 })()}
 
-                {/* 📌 증거보드 */}
                 {activeSession.ruleMode === "freeform" && (
                   <button
                     type="button"
@@ -530,7 +527,6 @@ export default function GamePlatform() {
                   </button>
                 )}
 
-                {/* ⎌ 마지막 대화 취소 (롤백) 버튼 */}
                 <button 
                   type="button"
                   onClick={() => {
@@ -560,7 +556,6 @@ export default function GamePlatform() {
                    <span style={{fontSize: "1.2rem", fontWeight: "bold"}}>⎌</span>
                 </button>
 
-                {/* 🃏 핸드아웃 / 🎲 주사위 */}
                 {activeSession.ruleMode === "insane" && (
                   <button type="button" onClick={() => setIsTabletopOpen(!isTabletopOpen)} title="테이블탑 핸드아웃" style={{ width: "36px", height: "36px", display: "flex", alignItems: "center", justifyContent: "center", background: isTabletopOpen ? "rgba(214, 56, 87, 0.12)" : "transparent", border: `1px solid ${isTabletopOpen ? theme.danger : "transparent"}`, borderRadius: "10px", cursor: "pointer", color: isTabletopOpen ? theme.danger : theme.text }}>
                     <BookOpen size={20} strokeWidth={1.5} />
@@ -572,7 +567,6 @@ export default function GamePlatform() {
                   </button>
                 )}
 
-                {/* 📋 캐릭터 시트 */}
                 <button 
                   type="button"
                   onClick={(e) => {
@@ -589,7 +583,6 @@ export default function GamePlatform() {
               </div>
             )}
             
-            {/* 🌙 다크모드 토글 버튼 (항상 노출) */}
             <button 
               onClick={() => setIsDarkMode(!isDarkMode)} 
               title={isDarkMode ? "라이트 모드로 전환" : "다크 모드로 전환"}
@@ -600,11 +593,10 @@ export default function GamePlatform() {
           </div>
         </header>
 
-        {/* ── [A. 로비 뷰] ── */}
-        {!activeSession && (
+        {/* ── [A. 로비 뷰 / 탭 화면] ── */}
+        {!activeSession ? (
           <main style={{ flex: 1, overflowY: "auto", padding: isMobile ? "16px 14px 140px 14px" : "20px 16px 160px 16px", maxWidth: "860px", margin: "0 auto", width: "100%", display: "flex", flexDirection: "column", gap: isMobile ? "14px" : "18px", boxSizing: "border-box" }}>
             
-            {/* 🧭 [탭 1: 탐색] */}
             {activeTab === "explore" && (
               <section style={{ ...GLASS_STYLE, padding: "60px 20px", textAlign: "center", backgroundColor: theme.panel, borderRadius: "16px", border: `1px solid ${theme.border}`, display: "flex", flexDirection: "column", alignItems: "center", gap: "16px" }}>
                 <Search size={48} strokeWidth={1.5} color={theme.accent} />
@@ -618,7 +610,6 @@ export default function GamePlatform() {
               </section>
             )}
 
-            {/* 📚 [탭 2: 서재] */}
             {activeTab === "library" && (
               <section style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0 4px" }}>
@@ -642,7 +633,6 @@ export default function GamePlatform() {
               </section>
             )}
 
-            {/* 👤 [탭 4: 내정보] */}
             {activeTab === "profile" && (
               <section style={{ ...GLASS_STYLE, padding: "60px 20px", textAlign: "center", backgroundColor: theme.panel, borderRadius: "16px", border: `1px solid ${theme.border}`, display: "flex", flexDirection: "column", alignItems: "center", gap: "16px" }}>
                 <UserRound size={48} strokeWidth={1.5} color={theme.accent} />
@@ -653,7 +643,6 @@ export default function GamePlatform() {
               </section>
             )}
 
-            {/* ✍️ [탭 3: 창작 (기존 로비 뷰)] */}
             {activeTab === "lobby" && (
               <>
                 <section style={{ ...GLASS_STYLE, padding: isMobile ? "14px" : "18px", backgroundColor: theme.panel, borderRadius: "16px", border: `1px solid ${theme.border}` }}>
@@ -1102,210 +1091,7 @@ export default function GamePlatform() {
           </main>
         )}
 
-        ) : (
-          /* ── [B. 인게임 뷰: 소설 리더 본문 및 팝업/오버레이] ── */
-          <div style={{ flex: 1, display: "flex", overflow: "hidden", position: "relative", backgroundColor: theme.bg }}>
-            
-            {/* 📖 중앙: 소설형 텍스트 뷰어 (전자책 스타일 완벽 적용) */}
-            <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", position: "relative" }}>
-              <div 
-                className="serif-text" 
-                style={{ 
-                  flex: 1, overflowY: "auto", 
-                  padding: isMobile ? "24px 20px 140px 20px" : "50px 60px 160px 60px", 
-                  display: "flex", flexDirection: "column", gap: "28px", 
-                  maxWidth: "760px", margin: "0 auto", width: "100%", boxSizing: "border-box", 
-                  fontSize: "1.12rem", lineHeight: 2.1, color: theme.text, letterSpacing: "-0.02em",
-                  fontWeight: 400
-                }}
-              >
-                {(activeSession.messages || []).map((m, idx) => {
-                  const isUser = m.role === "user";
-                  return (
-                    <div key={idx} style={{ 
-                      alignSelf: "stretch",
-                      color: isUser ? theme.accent : theme.text,
-                      fontWeight: "400",
-                      opacity: 0.95,
-                      textAlign: isUser ? "center" : "left",
-                      fontStyle: isUser ? "italic" : "normal",
-                      wordBreak: "keep-all",
-                      padding: isUser ? "16px 0" : "0",
-                      borderTop: isUser ? `1px dashed ${theme.border}` : "none",
-                      borderBottom: isUser ? `1px dashed ${theme.border}` : "none",
-                      margin: isUser ? "10px 0" : "0"
-                    }}>
-                      {m.text}
-                    </div>
-                  );
-                })}
-                {isLoading && (
-                  <div style={{ color: theme.textMuted, fontSize: "0.95rem", fontStyle: "italic", textAlign: "center", padding: "20px 0", animation: "pulse 1.5s infinite" }}>
-                    (사건의 이면이 서술되는 중……)
-                  </div>
-                )}
-              </div>
-
-              {/* ⌨️ 하단: 늘어나는 캡슐형 입력창 및 제안 칩 */}
-              <footer style={{
-                position: "absolute", bottom: 0, left: 0, right: 0,
-                padding: "20px max(20px, env(safe-area-inset-bottom))",
-                background: `linear-gradient(to top, ${theme.bg} 85%, transparent)`,
-                display: "flex", flexDirection: "column", alignItems: "center", gap: "12px"
-              }}>
-                {/* AI 추천 행동 칩 */}
-                {activeSession?.suggestedActions?.length > 0 && (
-                  <div style={{ display: "flex", gap: "8px", overflowX: "auto", width: "100%", maxWidth: "680px", paddingBottom: "4px" }}>
-                    {activeSession.suggestedActions.map((sugg, idx) => (
-                      <button
-                        key={idx} onClick={() => executeMessage(sugg)}
-                        style={{ padding: "10px 16px", backgroundColor: theme.panelAlt, border: `1px solid ${theme.border}`, borderRadius: "20px", color: theme.text, fontSize: "0.85rem", fontWeight: "700", whiteSpace: "nowrap", cursor: "pointer", flexShrink: 0, boxShadow: "0 4px 12px rgba(0,0,0,0.05)", transition: "all 0.2s" }}
-                      >
-                        💡 {sugg}
-                      </button>
-                    ))}
-                  </div>
-                )}
-
-                {/* 🌟 캡슐형 텍스트 입력 폼 */}
-                <div style={{
-                  width: "100%", maxWidth: "680px", display: "flex", alignItems: "flex-end", gap: "8px",
-                  backgroundColor: theme.inputBg, border: `1.5px solid ${theme.border}`, borderRadius: "28px",
-                  padding: "6px 8px 6px 20px", boxShadow: "0 8px 24px rgba(0,0,0,0.08)"
-                }}>
-                  <textarea
-                    value={inputMsg}
-                    onChange={e => {
-                      setInputMsg(e.target.value);
-                      e.target.style.height = "auto";
-                      e.target.style.height = Math.min(e.target.scrollHeight, 120) + "px";
-                    }}
-                    onKeyDown={e => {
-                      if (e.key === "Enter") {
-                        if (e.shiftKey) {
-                          e.preventDefault();
-                          handleSendMessage();
-                          e.target.style.height = "auto";
-                        } else {
-                          e.preventDefault();
-                        }
-                      }
-                    }}
-                    placeholder="행동을 선언하거나 대사를 입력하세요... (Shift+Enter 전송)"
-                    rows={1}
-                    style={{
-                      flex: 1, border: "none", backgroundColor: "transparent", color: theme.text,
-                      fontSize: "0.95rem", outline: "none", resize: "none", overflowY: "auto",
-                      maxHeight: "120px", padding: "10px 0", margin: 0, fontFamily: "inherit", lineHeight: "1.5"
-                    }}
-                  />
-                  {isLoading ? (
-                    <button onClick={() => { if(abortController) abortController.abort(); }} title="중단" style={{ width: "40px", height: "40px", borderRadius: "50%", backgroundColor: theme.danger, color: "#fff", border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0, marginBottom: "2px" }}>
-                      <X size={20} strokeWidth={2.5} />
-                    </button>
-                  ) : (
-                    <button
-                      onClick={() => {
-                        handleSendMessage();
-                        const el = document.querySelector('textarea[placeholder*="행동을 선언"]');
-                        if(el) el.style.height = "auto";
-                      }}
-                      disabled={!inputMsg.trim()}
-                      title="전송"
-                      style={{
-                        width: "40px", height: "40px", borderRadius: "50%",
-                        backgroundColor: inputMsg.trim() ? theme.accent : theme.panelAlt,
-                        color: inputMsg.trim() ? "#fff" : theme.textMuted,
-                        border: "none", display: "flex", alignItems: "center", justifyContent: "center",
-                        cursor: inputMsg.trim() ? "pointer" : "default", transition: "all 0.2s",
-                        flexShrink: 0, marginBottom: "2px"
-                      }}
-                    >
-                      <ArrowUp size={20} strokeWidth={2.5} />
-                    </button>
-                  )}
-                </div>
-              </footer>
-            </div>
-
-            {/* ── 📌 1. 수사 증거보드 ── */}
-            {showEvidenceBoard && activeSession && activeSession.ruleMode === "freeform" && (
-              <SecretBoard
-                activeSession={activeSession}
-                theme={theme}
-                isMobile={isMobile}
-                onClose={() => setShowEvidenceBoard(false)}
-                onDeclareMystery={() => {
-                  setShowEvidenceBoard(false);
-                  setInputMsg(prev => prev.trim() ? prev : "[💡 진상 추리] ");
-                }}
-              />
-            )}
-
-            {/* ── 📋 2. 캐릭터 시트 ── */}
-            <CharacterSheet 
-              activeSession={activeSession}
-              theme={theme}
-              isMobile={isMobile}
-              isSheetOpen={isSheetOpen}
-              setIsSheetOpen={setIsSheetOpen}
-              isDarkMode={isDarkMode}
-              setActivePortraitTarget={setActivePortraitTarget}
-              setShowPortraitEditModal={setShowPortraitEditModal}
-              handleSaveCurrentAsPreset={handleSaveCurrentAsPreset}
-              handleSaveSessionAsLobbyPreset={handleSaveSessionAsLobbyPreset}
-            />
-
-          </div>
-        )}
-
-        {/* ── 📱 하단 세그먼트 글래스 탭바 ── */}
-        {!activeSession && (
-          <nav
-            style={{
-              position: "fixed", bottom: "16px", left: "50%", transform: "translateX(-50%)",
-              width: "calc(100% - 32px)", maxWidth: "440px", height: "62px",
-              backgroundColor: isDarkMode ? "rgba(35, 30, 28, 0.75)" : "rgba(240, 236, 228, 0.85)",
-              backdropFilter: "blur(18px)", WebkitBackdropFilter: "blur(18px)",
-              border: `1px solid ${theme.border}`, borderRadius: "20px",
-              display: "flex", overflow: "hidden", zIndex: 50,
-              boxShadow: isDarkMode ? "0 12px 36px rgba(0, 0, 0, 0.45)" : "0 10px 30px rgba(0, 0, 0, 0.08)",
-              transition: "background-color 0.25s ease, border-color 0.25s ease"
-            }}
-          >
-            {[
-              { key: "explore", icon: <Search size={20} strokeWidth={2.5} />, label: "탐색" },
-              { key: "library", icon: <LibraryBig size={20} strokeWidth={2.5} />, label: "서재" },
-              { key: "lobby", icon: <PenTool size={20} strokeWidth={2.5} />, label: "창작" },
-              { key: "profile", icon: <UserRound size={20} strokeWidth={2.5} />, label: "내정보" }
-            ].map((tab, idx, arr) => {
-              const isSelected = activeTab === tab.key;
-              const isLast = idx === arr.length - 1;
-
-              return (
-                <div
-                  key={tab.key}
-                  onClick={() => setActiveTab(tab.key)}
-                  style={{
-                    flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-                    cursor: "pointer", gap: "4px",
-                    borderRight: isLast ? "none" : `1px solid ${theme.border}`,
-                    backgroundColor: isSelected ? (isDarkMode ? "rgba(235, 227, 218, 0.12)" : "rgba(120, 105, 90, 0.12)") : "transparent",
-                    color: isSelected ? theme.accent : theme.textMuted,
-                    transition: "all 0.2s"
-                  }}
-                >
-                  <div style={{ transform: isSelected ? "scale(1.15)" : "scale(1)", transition: "transform 0.2s", display: "flex", alignItems: "center" }}>
-                    {tab.icon}
-                  </div>
-                  <span style={{ fontSize: "0.65rem", fontWeight: isSelected ? "800" : "600" }}>{tab.label}</span>
-                </div>
-              );
-            })}
-          </nav>
-        )}
-
-        {/* ── 🖼️ 초상화 모달 ── */}
+        {/* ── 🖼️ 초상화 모달 (크게 보기 + 연필 아이콘 업로드) ── */}
         {showPortraitModal && (() => {
           const isPc = activePortraitSuspectId === "pc";
           let target;
