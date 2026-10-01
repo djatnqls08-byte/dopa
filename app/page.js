@@ -1151,10 +1151,12 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
         } catch (e) {}
       }
 
-      // 🌟 [핵심] 더 강력해진 3중 필터로 AI의 모든 시스템 태그 찌꺼기를 화면에서 완전 삭제!
+     // 🌟 [핵심] 더 강력해진 3중 필터로 AI의 모든 시스템 태그 찌꺼기를 화면에서 완전 삭제!
       let cleanText = rawText
         .replace(/<!--[\s\S]*?-{1,3}>/g, "") // 정상 및 변형 주석 모두 제거
         .replace(/<!--[\s\S]*?$/g, "") // 끝 괄호가 안 닫힌 주석까지 추적 제거
+        .replace(/-\s*\*\*\[SUGGESTIONS\]\*\*[\s\S]*$/i, "") // 🌟 악질 [SUGGESTIONS] 텍스트 찌꺼기 100% 제거
+        .replace(/\[SUGGESTIONS\][\s\S]*$/i, "") // 혹시 모를 변형 패턴도 제거
         .trim();
 
       // 4. 상태 업데이트 (호감도, 단서, 메시지를 세션에 반영)
@@ -3224,7 +3226,7 @@ color: "#fff", border: "none", cursor: "pointer",
                             textAlign: m.role === "user" ? "center" : "left",
                             fontStyle: m.role === "user" ? "italic" : "normal",
                             fontWeight: m.role === "user" ? "700" : "400",
-                            // 🌟 1 & 2번 해결: 폰트 강제 분기 및 줄바꿈 문단 간격 최적화
+                            // 🌟 유저(나)는 고딕 고정, 상대방(모델)은 리디바탕 고정
                             fontFamily: isUser ? "'Pretendard', sans-serif" : "'RIDIBatang', serif"
                           }}
                         >
@@ -3241,10 +3243,10 @@ color: "#fff", border: "none", cursor: "pointer",
                             </div>
                           )}
                           
-                          {/* 🌟 1번 해결: 텍스트를 문단 단위로 쪼개어 가독성 극대화 */}
-                          <div style={{ display: "flex", flexDirection: "column", gap: "14px", lineHeight: "1.95" }}>
-                            {m.text.split('\n').map((line, lIdx) => (
-                              <span key={lIdx} style={{ minHeight: line.trim() ? "auto" : "0.5rem", display: "block" }}>
+                          {/* 🌟 텍스트를 문단 단위로 쪼개어 가독성 극대화 (마진을 더 시원하게 줌) */}
+                          <div style={{ display: "flex", flexDirection: "column", gap: "22px", lineHeight: "2.1" }}>
+                            {m.text.split('\n').filter(line => line.trim() !== '').map((line, lIdx) => (
+                              <span key={lIdx} style={{ display: "block" }}>
                                 {line}
                               </span>
                             ))}
@@ -3253,7 +3255,7 @@ color: "#fff", border: "none", cursor: "pointer",
 
                       </div>
 
-                      {/* 🌟 3번 해결: 취소 버튼 바깥 동그라미(테두리/배경) 완전 제거 */}
+                      {/* 🌟 취소 버튼 바깥 동그라미/테두리 완전 제거 */}
                       {isLastUserMsg && !isLoading && (
                         <div style={{ display: "flex", justifyContent: "center", marginTop: "14px" }}>
                           <button
@@ -3270,8 +3272,8 @@ color: "#fff", border: "none", cursor: "pointer",
                               } catch (err) {}
                             }}
                             style={{
-                              background: "transparent", border: "none", 
-                              padding: "6px 16px", color: theme.textMuted, fontSize: "0.8rem", fontWeight: "700", 
+                              background: "none", border: "none", 
+                              padding: "6px 16px", color: theme.textMuted, fontSize: "0.78rem", fontWeight: "700", 
                               cursor: "pointer", display: "flex", alignItems: "center", gap: "6px", transition: "color 0.2s"
                             }}
                           >
