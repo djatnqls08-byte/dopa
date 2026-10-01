@@ -3498,40 +3498,6 @@ color: "#fff", border: "none", cursor: "pointer",
           </nav>
         )}
 
-// ... (이전 코드 동일) ...
-
-            {[
-              { key: "explore", icon: <Search size={20} strokeWidth={2.5} />, label: "시나리오 탐색" },
-              { key: "library", icon: <LibraryBig size={20} strokeWidth={2.5} />, label: "서재" },
-              { key: "lobby", icon: <PenTool size={20} strokeWidth={2.5} />, label: "로비" },
-              { key: "profile", icon: <UserRound size={20} strokeWidth={2.5} />, label: "내정보" }
-            ].map((tab, idx, arr) => {
-              const isSelected = activeTab === tab.key;
-              const isLast = idx === arr.length - 1;
-
-              return (
-                <div
-                  key={tab.key}
-                  onClick={() => setActiveTab(tab.key)}
-                  style={{
-                    flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-                    cursor: "pointer", gap: "4px",
-                    borderRight: isLast ? "none" : `1px solid ${theme.border}`,
-                    backgroundColor: isSelected ? (isDarkMode ? "rgba(235, 227, 218, 0.12)" : "rgba(120, 105, 90, 0.12)") : "transparent",
-                    color: isSelected ? theme.accent : theme.textMuted,
-                    transition: "all 0.2s"
-                  }}
-                >
-                  <div style={{ transform: isSelected ? "scale(1.15)" : "scale(1)", transition: "transform 0.2s", display: "flex", alignItems: "center" }}>
-                    {tab.icon}
-                  </div>
-                  <span style={{ fontSize: "0.65rem", fontWeight: isSelected ? "800" : "600" }}>{tab.label}</span>
-                </div>
-              );
-            })}
-          </nav>
-        )}
-
       {/* 🎁 선물하기 인앱 모달 */}
       {giftModalNpc && (() => {
         const allNpcs = activeSession?.sheet?.npcs || [];
