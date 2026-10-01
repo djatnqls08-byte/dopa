@@ -141,7 +141,7 @@ export default function CharacterSheet({
         {/* 6. 사건 파일 & 단서 리스트 (수집된 것만 표시) */}
         <div>
           {(() => {
-            // 🌟 5번 해결: revealed(해금) 되거나 discovered(발견) 된 찐 수집품만 필터링
+            // 🌟 해금되거나 발견된(진짜 수집한) 단서만 필터링
             const visibleHandouts = (sheet.handouts || []).filter(h => h.revealed || h.discovered);
             
             return (
@@ -174,7 +174,7 @@ export default function CharacterSheet({
           })()}
         </div>
 
-        {/* 🌟 7. 주요 등장인물 호감도 리스트 (전체 행 클릭 시 상세 모달) */}
+        {/* 🌟 7. 주요 등장인물 호감도 리스트 (아코디언 스타일 완벽 적용) */}
         {sheet.npcs && sheet.npcs.length > 0 && (
           <div>
             <div style={{ fontSize: "0.75rem", fontWeight: "800", color: theme.textMuted, marginBottom: "10px", display: "flex", alignItems: "center", gap: "6px" }}>
@@ -182,39 +182,76 @@ export default function CharacterSheet({
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
               {sheet.npcs.map(npc => (
-                <div 
+                <details 
                   key={npc.id} 
-                  // 🌟 6번 해결: 사진뿐만 아니라 인물 카드 전체를 눌러도 모달이 열리도록 onClick 이동
-                  onClick={() => {
-                    if (setActivePortraitTarget && setShowPortraitEditModal) {
-                      setActivePortraitTarget(npc.id);
-                      setShowPortraitEditModal(true);
-                    }
-                  }}
-                  style={{ display: "flex", alignItems: "center", gap: "12px", padding: "10px 12px", backgroundColor: theme.panelAlt, border: `1px solid ${theme.border}`, borderRadius: "10px", cursor: "pointer", transition: "background 0.2s" }}
-                  onMouseEnter={e => e.currentTarget.style.backgroundColor = theme.inputBg}
-                  onMouseLeave={e => e.currentTarget.style.backgroundColor = theme.panelAlt}
+                  style={{ backgroundColor: theme.panelAlt, borderRadius: "10px", border: `1px solid ${theme.border}`, overflow: "hidden" }}
                 >
-                  <div style={{ width: "38px", height: "38px", borderRadius: "50%", overflow: "hidden", border: `1px solid ${theme.border}`, flexShrink: 0, backgroundColor: theme.inputBg }}>
-                    {npc.portrait ? (
-                      <img src={npc.portrait} alt={npc.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={(e) => (e.currentTarget.style.display = "none")} />
+                  <summary 
+                    style={{ display: "flex", alignItems: "center", gap: "12px", padding: "10px 12px", cursor: "pointer", outline: "none" }}
+                  >
+                    <div 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (setActivePortraitTarget && setShowPortraitEditModal) {
+                          setActivePortraitTarget(npc.id);
+                          setShowPortraitEditModal(true);
+                        }
+                      }}
+                      title="초상화 보기/변경"
+                      style={{ 
+                        width: "38px", height: "38px", borderRadius: "50%", overflow: "hidden", 
+                        border: `1px solid ${theme.border}`, flexShrink: 0, backgroundColor: theme.inputBg,
+                        cursor: "pointer" 
+                      }}
+                    >
+                      {npc.portrait ? (
+                        <img src={npc.portrait} alt={npc.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={(e) => (e.currentTarget.style.display = "none")} />
+                      ) : (
+                        <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", color: theme.textMuted }}>
+                          <UserRound size={16} strokeWidth={2}/>
+                        </div>
+                      )}
+                    </div>
+
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontWeight: "800", fontSize: "0.85rem", color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{npc.name}</div>
+                      <div style={{ fontSize: "0.68rem", color: theme.textMuted, marginTop: "2px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{npc.title || npc.job || "관계자"}</div>
+                    </div>
+                    
+                    <div style={{ fontWeight: "900", color: activeSession?.ruleMode === 'dating' ? theme.danger : theme.warning, fontSize: "0.85rem", flexShrink: 0, display: "flex", alignItems: "center", gap: "4px" }}>
+                       {activeSession?.ruleMode === 'dating' ? <Heart size={14} fill={theme.danger}/> : <Activity size={14} strokeWidth={2.5}/>}
+                       {npc.affection || 0}
+                    </div>
+                  </summary>
+
+                  {/* 아코디언 드롭다운 내용 (4번 스크린샷 100% 동일) */}
+                  <div style={{ padding: "10px 12px", borderTop: `1px solid ${theme.border}`, backgroundColor: "rgba(0,0,0,0.03)", display: "flex", flexDirection: "column", gap: "10px" }}>
+                    <div style={{ fontSize: "0.8rem", lineHeight: "1.6", color: theme.text, fontWeight: "500", whiteSpace: "pre-wrap", wordBreak: "keep-all" }}>
+                      {npc.desc || npc.detail || "등록된 상세 설정이 없습니다."}
+                    </div>
+                    
+                    {/* 취향 및 상태메시지 (가상 렌더링 예시) */}
+                    {npc.statusMessage && (
+                      <div style={{ marginTop: "4px" }}>
+                        <span style={{ fontSize: "0.75rem", fontWeight: "800", color: theme.accent }}>📌 상태메시지 :</span>
+                        <div style={{ fontSize: "0.78rem", color: theme.text, marginTop: "2px" }}>"{npc.statusMessage}"</div>
+                      </div>
+                    )}
+                    
+                    {/* 비밀 구역 */}
+                    {npc.secretRevealed ? (
+                      <div style={{ padding: "10px 12px", backgroundColor: "rgba(239, 68, 68, 0.08)", border: "1px solid rgba(239, 68, 68, 0.3)", borderRadius: "8px", fontSize: "0.78rem", color: "#b91c1c", lineHeight: "1.6", fontWeight: "500" }}>
+                        <div style={{ fontWeight: "800", marginBottom: "4px" }}>🔓 밝혀진 비밀 / 진심</div>
+                        {npc.secret}
+                      </div>
                     ) : (
-                      <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", color: theme.textMuted }}>
-                        <UserRound size={16} strokeWidth={2}/>
+                      <div style={{ padding: "9px 12px", backgroundColor: "rgba(0, 0, 0, 0.03)", border: `1px dashed ${theme.border}`, borderRadius: "8px", fontSize: "0.76rem", color: theme.textMuted, display: "flex", alignItems: "center", gap: "6px" }}>
+                        <Lock size={14} strokeWidth={2.5}/> 
+                        <span><strong style={{ color: theme.danger }}>[숨겨진 비밀/진심]</strong> 아직 서사 속에서 밝혀지지 않은 비밀입니다. (조사 필요)</span>
                       </div>
                     )}
                   </div>
-
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontWeight: "800", fontSize: "0.85rem", color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{npc.name}</div>
-                    <div style={{ fontSize: "0.68rem", color: theme.textMuted, marginTop: "2px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{npc.title || npc.job || "관계자"}</div>
-                  </div>
-                  
-                  <div style={{ fontWeight: "900", color: activeSession?.ruleMode === 'dating' ? theme.danger : theme.warning, fontSize: "0.85rem", flexShrink: 0, display: "flex", alignItems: "center", gap: "4px" }}>
-                     {activeSession?.ruleMode === 'dating' ? <Heart size={14} fill={theme.danger}/> : <Activity size={14} strokeWidth={2.5}/>}
-                     {npc.affection || 0}
-                  </div>
-                </div>
+                </details>
               ))}
             </div>
           </div>
