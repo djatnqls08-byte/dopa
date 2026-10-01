@@ -35,6 +35,122 @@ const GLASS_STYLE = { backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(
 // ==========================================
 const GOOGLE_SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQQEA39XlsqHKGn0GPzmVH42jhimki3yJUIbKHkXjgzmLA5bD66WQvXw3-nHy9PJSxwg727wfSGznYa/pub?gid=0&single=true&output=csv";
 
+// 🌟 수빈님 구글 시트 1000% 맞춤형 초강력 파서 엔진!
+function convertRowToPreset(row, index, headers = []) {
+  if (!row || row.length === 0) return null;
+
+  const cleanHeaders = (headers || []).map(h => (h || "").toString().replace(/[\s_]/g, "").toLowerCase());
+  const findIdx = (regex) => cleanHeaders.findIndex(h => regex.test(h));
+
+  const getVal = (regex) => {
+    const hIdx = findIdx(regex);
+    return hIdx !== -1 && hIdx < row.length ? (row[hIdx] || "").toString().trim() : "";
+  };
+
+  // 1. 상태 및 기본 정보
+  const pubIdx = findIdx(/^(공개여부|공개|상태)$/i);
+  let isHidden = false;
+  const firstColVal = (row[0] || "").toString().trim().toUpperCase();
+  if (pubIdx !== -1) {
+    const pubVal = (row[pubIdx] || "").toString().trim().toUpperCase();
+    isHidden = pubVal === "FALSE" || pubVal === "비공개" || pubVal === "X" || pubVal === "N";
+  } else if (firstColVal === "TRUE" || firstColVal === "FALSE") {
+    isHidden = firstColVal === "FALSE";
+  }
+
+  let titleIdx = findIdx(/^(제목|사건명|시나리오제목|title)$/i);
+  if (titleIdx === -1) titleIdx = pubIdx !== -1 ? pubIdx + 1 : 2; 
+  const title = (row[titleIdx] || "").toString().trim();
+
+  if (isHidden || !title || title.startsWith("//")) return null;
+
+  const modeRaw = getVal(/^(룰|모드|장르|룰모드)$/i);
+  let mode = "추리";
+  if (/연애|로맨스/i.test(modeRaw)) mode = "연애";
+  if (/괴담|호러|인세인/i.test(modeRaw)) mode = "괴담";
+
+  const tags = getVal(/^(태그|키워드)$/i);
+  const synopsis = getVal(/^(개요|시놉시스)$/i);
+  const opening = getVal(/^(도입부|서막|오프닝)$/i);
+  const truth = getVal(/^(진상|비밀|진실|사건내막)$/i);
+  const sessionCardImg = getVal(/^(세션카드|표지|이미지|썸네일)$/i);
+
+  const pcName = getVal(/^(pc|주인공|탐색자|수사관)(이름|명칭)?$/i);
+  const pcAgeGender = getVal(/^(pc|주인공|탐색자|수사관)(나이성별|성별나이|나이|성별)$/i);
+  const pcJob = getVal(/^(pc|주인공|탐색자|수사관)(직업|역할)$/i);
+  const pcBackground = getVal(/^(pc|주인공|탐색자|수사관)(성격|배경|설정)$/i);
+  const pcSecret = getVal(/^(pc|주인공|탐색자|수사관)(비밀|약점)$/i);
+  const pcPortraitUrl = getVal(/^(pc|주인공|탐색자|수사관)(초상화|사진|이미지)$/i);
+
+  const abyssTriggers = {
+    30: getVal(/^이상충동30$/i),
+    60: getVal(/^이상충동60$/i),
+    90: getVal(/^이상충동90$/i)
+  };
+
+  // 🌟 (강화됨!) 띄어쓰기, 숫자 위치 등 어떤 변수에도 대응하는 초강력 추출기!
+  const extractList = (maxCount, prefixRegex, fields, transformFn) => {
+    const list = [];
+    for (let i = 1; i <= maxCount; i++) {
+      const extracted = {};
+      let hasData = false;
+      fields.forEach(fieldGrp => {
+        const regexStr = `^(?:${prefixRegex})${i}(?:${fieldGrp})$|^(?:${prefixRegex})(?:${fieldGrp})${i}$`;
+        const val = getVal(new RegExp(regexStr, 'i'));
+        const mainKey = fieldGrp.split('|')[0]; 
+        extracted[mainKey] = val;
+        if (val) hasData = true;
+      });
+      if (hasData) list.push(transformFn(extracted, i));
+    }
+    return list;
+  };
+
+  // 🌟 수빈님이 주신 양식에 완벽 대응하도록 단어 셋팅!
+  const mainPartners = extractList(5, "파트너|메인파트너", ["이름", "나이성별|성별나이", "직업|역할", "특징|성격", "비밀|이면", "초상화|사진"], (d, i) => ({
+    id: `partner_${Date.now()}_${i}`, name: d.이름, ageGender: d.나이성별, job: d.직업, behavior: d.특징, secret: d.비밀, portraitUrl: d.초상화, showSecret: false
+  }));
+
+  const suspects = extractList(15, "인물|등장인물|공략대상|npc|용의자", ["이름", "나이성별|성별나이", "직업|역할", "특징|성격|행적", "비밀|진심|약점", "초상화|사진"], (d, i) => ({
+    id: `suspect_${Date.now()}_${i}`, name: d.이름, ageGender: d.나이성별, job: d.직업, behavior: d.특징, secret: d.비밀, portraitUrl: d.초상화, showSecret: false
+  }));
+
+  const evidenceList = extractList(15, "단서|증거|물증|핸드아웃", ["이름|명칭", "개요|설명", "비밀|진상|모순"], (d, i) => ({
+    id: `evidence_${Date.now()}_${i}`, name: d.이름, overview: d.개요, secret: d.비밀, contradiction: "", showSecret: false
+  }));
+
+  const cgList = extractList(15, "cg|이벤트cg|이벤트", ["이름|제목", "조건|해금조건", "대사|상황", "사진|이미지"], (d, i) => ({
+    id: `cg_${Date.now()}_${i}`, title: d.이름, condition: d.조건, dialogue: d.대사, imageUrl: d.사진, showDetails: false
+  }));
+
+  const routeList = extractList(20, "분기|루트|선택지", ["이름|설명", "대상|인물", "호감도|변화"], (d, i) => ({
+    id: `route_${Date.now()}_${i}`, routeName: d.이름, targetId: "", affectionChange: d.호감도 || "+10", requiredCG: ""
+  }));
+
+  routeList.forEach(rt => {
+     const matched = suspects.find(s => s.name === rt.대상) || mainPartners.find(p => p.name === rt.대상);
+     if(matched) rt.targetId = matched.id;
+  });
+
+  return {
+    id: 9000000000000 + index,
+    title: title,
+    mode: mode,
+    author: "공식 에디터",
+    likes: Math.floor(Math.random() * 500) + 500 + "K",
+    plays: Math.floor(Math.random() * 900) + 100 + "K",
+    isOriginal: true,
+    imageUrl: sessionCardImg,
+    isDownloaded: false,
+    data: {
+      playPreference: tags, publicSynopsis: synopsis, openingScene: opening, hiddenTruth: truth,
+      pcName, pcAgeGender, pcJob, pcBackground, pcSecret, pcPortraitUrl, showPcSecret: false,
+      abyssTriggers, mainPartners, usePartner: mainPartners.length > 0, suspects, evidenceList, cgList, routeList
+    }
+  };
+}
+
+
 export default function GamePlatform() {
   // ── [3. 상태 관리] ──
   const [isMounted, setIsMounted] = useState(false); // 🌟 에러 #423 방어막
@@ -826,63 +942,6 @@ const [showSupportModal, setShowSupportModal] = useState(false);
           </div>
         )}
 
-{/* 🚨 커스텀 삭제 확인 팝업 (못생긴 시스템 창 대체) */}
-        {itemToDelete && (
-          <div onClick={() => setItemToDelete(null)} style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 99999, padding: "20px", animation: "fadeIn 0.2s ease-out" }}>
-            <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: "340px", backgroundColor: theme.panel, border: `1px solid ${theme.border}`, borderRadius: "24px", padding: "28px 24px", display: "flex", flexDirection: "column", gap: "24px", boxShadow: "0 20px 50px rgba(0,0,0,0.5)" }}>
-              
-              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", gap: "14px" }}>
-                <div style={{ width: "64px", height: "64px", borderRadius: "50%", backgroundColor: isDarkMode ? "rgba(220, 38, 38, 0.15)" : "#fef2f2", display: "flex", alignItems: "center", justifyContent: "center", color: theme.danger }}>
-                  <AlertTriangle size={32} strokeWidth={2.5} />
-                </div>
-                <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                  <h3 style={{ margin: 0, fontSize: "1.15rem", fontWeight: "800", color: theme.text, letterSpacing: "-0.5px" }}>서류를 폐기하시겠습니까?</h3>
-                  <p style={{ margin: 0, fontSize: "0.85rem", color: theme.textMuted, lineHeight: 1.6 }}>
-                    서재에서 이 시나리오를 완전히 삭제합니다.<br/>삭제 후에는 <strong style={{color: theme.danger}}>절대 복구할 수 없습니다.</strong>
-                  </p>
-                </div>
-              </div>
-
-              <div style={{ display: "flex", gap: "10px" }}>
-                <button onClick={() => setItemToDelete(null)} style={{ flex: 1, padding: "14px", backgroundColor: theme.panelAlt, border: `1px solid ${theme.border}`, borderRadius: "14px", color: theme.text, fontSize: "0.95rem", fontWeight: "700", cursor: "pointer", transition: "background 0.2s" }}>
-                  취소
-                </button>
-                <button onClick={() => {
-                   const updated = savedLibrary.filter(item => item.id !== itemToDelete);
-                   setSavedLibrary(updated);
-                   localStorage.setItem("secret_novel_library", JSON.stringify(updated));
-                   triggerToast("폐기 완료", "서류가 안전하게 파기되었습니다.", <Trash2 size={18} strokeWidth={2.5}/>);
-                   setItemToDelete(null); // 🌟 지운 다음에 팝업 닫기!
-                }} style={{ flex: 1, padding: "14px", backgroundColor: theme.danger, border: "none", borderRadius: "14px", color: "#fff", fontSize: "0.95rem", fontWeight: "800", cursor: "pointer", boxShadow: "0 8px 20px rgba(220, 38, 38, 0.3)", transition: "transform 0.2s" }}>
-                  삭제하기
-                </button>
-              </div>
-
-            </div>
-          </div>
-        )}
-
-        {/* 🌟 약관 내용 팝업창 */}
-        {showTermsModal && (
-          <div onClick={() => setShowTermsModal(false)} style={{ position: "absolute", inset: 0, backgroundColor: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: "20px", borderRadius: "24px" }}>
-            <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: "380px", backgroundColor: theme.panelAlt, border: `1px solid ${theme.border}`, borderRadius: "16px", padding: "20px", display: "flex", flexDirection: "column", gap: "16px", boxShadow: "0 20px 40px rgba(0,0,0,0.3)" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: `1px solid ${theme.border}`, paddingBottom: "10px" }}>
-                <span style={{ fontWeight: "800", fontSize: "0.95rem", color: theme.text }}>이용약관 및 개인정보 처리방침</span>
-                <button onClick={() => setShowTermsModal(false)} style={{ background: "none", border: "none", color: theme.textMuted, cursor: "pointer" }}><X size={20}/></button>
-              </div>
-              <div style={{ maxHeight: "250px", overflowY: "auto", fontSize: "0.75rem", color: theme.text, lineHeight: 1.6, whiteSpace: "pre-wrap" }}>
-                {`제 1 조 (목적)\n본 약관은 Secret Novel이 제공하는 제반 서비스의 이용과 관련하여 회원과의 권리, 의무 및 책임사항을 규정함을 목적으로 합니다.\n\n제 2 조 (개인정보의 수집 및 이용)\n1. 수집 항목: 이메일 주소, 비밀번호\n2. 이용 목적: 회원 식별, 서비스 제공 및 부정 이용 방지\n3. 보유 기간: 회원 탈퇴 시까지 안전하게 보관됩니다.\n\n제 3 조 (창작물의 권리)\n회원이 서비스 내에 게시한 시나리오 및 창작물의 저작권은 회원에게 귀속되며, 원치 않을 경우 언제든 비공개 및 삭제가 가능합니다.`}
-              </div>
-              <button 
-                onClick={() => { setAgreeTerms(true); setShowTermsModal(false); }} 
-                style={{ width: "100%", padding: "12px", backgroundColor: theme.accent, color: "#fff", border: "none", borderRadius: "10px", fontWeight: "700", cursor: "pointer" }}
-              >
-                동의하고 닫기
-              </button>
-            </div>
-          </div>
-        )}
-
         <div style={{ ...GLASS_STYLE, backgroundColor: theme.panel, border: `1px solid ${theme.border}`, borderRadius: "24px", padding: "40px 30px", display: "flex", flexDirection: "column", alignItems: "center", gap: "24px", width: "100%", maxWidth: "380px", boxShadow: "0 20px 50px rgba(0,0,0,0.1)" }}>
           
           <div style={{ textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center" }}>
@@ -999,7 +1058,42 @@ const [showSupportModal, setShowSupportModal] = useState(false);
         </div>
       )}
 
-      {isDrawerOpen && <div onClick={() => setIsDrawerOpen(false)} style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.65)", backdropFilter: "blur(4px)", zIndex: 100 }} />}
+{/* 🚨 제자리로 찾아온 커스텀 삭제 확인 팝업! */}
+      {itemToDelete && (
+        <div onClick={() => setItemToDelete(null)} style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 99999, padding: "20px", animation: "fadeIn 0.2s ease-out" }}>
+          <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: "340px", backgroundColor: theme.panel, border: `1px solid ${theme.border}`, borderRadius: "24px", padding: "28px 24px", display: "flex", flexDirection: "column", gap: "24px", boxShadow: "0 20px 50px rgba(0,0,0,0.5)" }}>
+            
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", gap: "14px" }}>
+              <div style={{ width: "64px", height: "64px", borderRadius: "50%", backgroundColor: isDarkMode ? "rgba(220, 38, 38, 0.15)" : "#fef2f2", display: "flex", alignItems: "center", justifyContent: "center", color: theme.danger }}>
+                <AlertTriangle size={32} strokeWidth={2.5} />
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                <h3 style={{ margin: 0, fontSize: "1.15rem", fontWeight: "800", color: theme.text, letterSpacing: "-0.5px" }}>서류를 폐기하시겠습니까?</h3>
+                <p style={{ margin: 0, fontSize: "0.85rem", color: theme.textMuted, lineHeight: 1.6 }}>
+                  서재에서 이 시나리오를 완전히 삭제합니다.<br/>삭제 후에는 <strong style={{color: theme.danger}}>절대 복구할 수 없습니다.</strong>
+                </p>
+              </div>
+            </div>
+
+            <div style={{ display: "flex", gap: "10px" }}>
+              <button onClick={() => setItemToDelete(null)} style={{ flex: 1, padding: "14px", backgroundColor: theme.panelAlt, border: `1px solid ${theme.border}`, borderRadius: "14px", color: theme.text, fontSize: "0.95rem", fontWeight: "700", cursor: "pointer", transition: "background 0.2s" }}>
+                취소
+              </button>
+              <button onClick={() => {
+                 const updated = savedLibrary.filter(item => item.id !== itemToDelete);
+                 setSavedLibrary(updated);
+                 localStorage.setItem("secret_novel_library", JSON.stringify(updated));
+                 triggerToast("폐기 완료", "서류가 안전하게 파기되었습니다.", <Trash2 size={18} strokeWidth={2.5}/>);
+                 setItemToDelete(null);
+              }} style={{ flex: 1, padding: "14px", backgroundColor: theme.danger, border: "none", borderRadius: "14px", color: "#fff", fontSize: "0.95rem", fontWeight: "800", cursor: "pointer", boxShadow: "0 8px 20px rgba(220, 38, 38, 0.3)", transition: "transform 0.2s" }}>
+                삭제하기
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+     {isDrawerOpen && <div onClick={() => setIsDrawerOpen(false)} style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.65)", backdropFilter: "blur(4px)", zIndex: 100 }} />}
       
       <aside style={{ position: "fixed", top: 0, bottom: 0, left: 0, zIndex: 110, width: isMobile ? "100vw" : "320px", transform: isDrawerOpen ? "translateX(0)" : "translateX(-100%)", transition: "transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1)", backgroundColor: theme.sidebar, borderRight: `1px solid ${theme.border}`, display: "flex", flexDirection: "column", boxShadow: isDrawerOpen ? "10px 0 40px rgba(0,0,0,0.5)" : "none" }}>
         <div style={{ padding: "16px", borderBottom: `1px solid ${theme.border}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -2566,16 +2660,16 @@ color: "#fff", border: "none", cursor: "pointer",
             {activeTab === "profile" && (
               <div style={{ display: "flex", flexDirection: "column", gap: "16px", animation: "fadeIn 0.2s ease-out", width: "100%", paddingBottom: "20px" }}>
                 
-                {/* 1. 프로필 및 지갑 카드 */}
+               {/* 1. 프로필 및 지갑 카드 */}
                 <div style={{ display: "flex", flexDirection: "column", backgroundColor: theme.panel, borderRadius: "20px", border: `1px solid ${theme.border}`, overflow: "hidden", boxShadow: "0 8px 24px rgba(0,0,0,0.04)" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: "18px", padding: "24px 20px" }}>
                     <div style={{ width: "80px", height: "80px", borderRadius: "50%", overflow: "hidden", backgroundColor: theme.panelAlt, border: `1px solid ${theme.borderHighlight}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                      {pcPortraitUrl ? <img src={pcPortraitUrl} alt="프로필" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <UserRound size={36} color={theme.textMuted} />}
+                      {userAvatar ? <img src={userAvatar} alt="프로필" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <UserRound size={36} color={theme.textMuted} />}
                     </div>
                     <div style={{ display: "flex", flexDirection: "column", gap: "6px", flex: 1 }}>
                       <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                         <span style={{ fontSize: "1.3rem", fontWeight: "800", color: theme.text, letterSpacing: "-0.5px" }}>
-                          {currentUser?.name || pcName || "탐색자"}
+                          {currentUser?.name || "탐색자"}
                         </span>
                         <span style={{ fontSize: "0.7rem", color: isAdmin ? theme.danger : theme.accent, fontWeight: "800", backgroundColor: isDarkMode ? "rgba(163, 146, 116, 0.15)" : "#f5f0eb", padding: "4px 8px", borderRadius: "8px" }}>
                           {isAdmin ? "👑 관리자" : "LV. 1 탐색자"}
@@ -3099,42 +3193,51 @@ color: "#fff", border: "none", cursor: "pointer",
             <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: "400px", backgroundColor: theme.panel, border: `1px solid ${theme.border}`, borderRadius: "20px", padding: "24px", display: "flex", flexDirection: "column", gap: "24px", boxShadow: "0 20px 50px rgba(0,0,0,0.5)" }}>
               
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <span style={{ fontWeight: "800", fontSize: "1.1rem", color: theme.text }}>프로필 편집</span>
+                <span style={{ fontWeight: "800", fontSize: "1.1rem", color: theme.text }}>내 프로필 편집</span>
                 <button onClick={() => setShowProfileEdit(false)} style={{ background: "none", border: "none", color: theme.text, fontSize: "1.2rem", cursor: "pointer" }}><X size={24}/></button>
               </div>
 
-              {/* 프사 변경 구역 */}
+              {/* 🌟 계정 프사 변경 구역 */}
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "12px" }}>
                 <div style={{ width: "90px", height: "90px", borderRadius: "50%", backgroundColor: theme.panelAlt, border: `2px solid ${theme.borderHighlight}`, display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", position: "relative" }}>
-                  {pcPortraitUrl ? <img src={pcPortraitUrl} alt="프로필" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <UserRound size={40} color={theme.textMuted} />}
+                  {userAvatar ? <img src={userAvatar} alt="프로필" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <UserRound size={40} color={theme.textMuted} />}
                   <label style={{ position: "absolute", inset: 0, backgroundColor: "rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center", opacity: 0, cursor: "pointer", transition: "opacity 0.2s" }} onMouseEnter={e => e.currentTarget.style.opacity = 1} onMouseLeave={e => e.currentTarget.style.opacity = 0}>
                     <PenTool size={24} color="#fff" />
                     <input type="file" accept="image/*" style={{ display: "none" }} onChange={(e) => {
                         const file = e.target.files[0];
                         if (file) {
                           const reader = new FileReader();
-                          reader.onload = (ev) => setPcPortraitUrl(ev.target.result);
+                          reader.onload = (ev) => {
+                            setUserAvatar(ev.target.result); // 수사관 말고 내 계정 프사 상자에 넣기!
+                            localStorage.setItem("secret_novel_avatar", ev.target.result);
+                          };
                           reader.readAsDataURL(file);
                         }
                     }} />
                   </label>
                 </div>
-                <span style={{ fontSize: "0.75rem", color: theme.textMuted, fontWeight: "600" }}>터치하여 사진 변경</span>
+                <span style={{ fontSize: "0.75rem", color: theme.textMuted, fontWeight: "600" }}>터치하여 계정 사진 변경</span>
               </div>
 
-              {/* 닉네임 변경 */}
+              {/* 🌟 계정 닉네임 변경 */}
               <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                <label style={{ fontSize: "0.8rem", fontWeight: "700", color: theme.textMuted }}>닉네임</label>
-                <input type="text" value={pcName} onChange={e => setPcName(e.target.value)} placeholder="새 닉네임을 입력하세요" style={{ width: "100%", boxSizing: "border-box", padding: "12px 14px", borderRadius: "12px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.95rem", outline: "none", fontWeight: "600" }} />
+                <label style={{ fontSize: "0.8rem", fontWeight: "700", color: theme.textMuted }}>계정 닉네임</label>
+                <input type="text" value={currentUser?.name || ""} onChange={e => {
+                  const updatedUser = {...currentUser, name: e.target.value};
+                  setCurrentUser(updatedUser);
+                  localStorage.setItem("secret_novel_user", JSON.stringify(updatedUser));
+                }} placeholder="새 닉네임을 입력하세요" style={{ width: "100%", boxSizing: "border-box", padding: "12px 14px", borderRadius: "12px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.95rem", outline: "none", fontWeight: "600" }} />
               </div>
 
-              <button onClick={() => { setShowProfileEdit(false); triggerToast("변경 완료", "프로필 정보가 업데이트되었습니다.", <CheckCircle2 color={theme.success} size={18}/>); }} style={{ width: "100%", padding: "14px", backgroundColor: theme.accent, color: isDarkMode ? "#1a1817" : "#fff", border: "none", borderRadius: "14px", fontSize: "0.95rem", fontWeight: "800", cursor: "pointer", marginTop: "8px", boxShadow: `0 4px 12px ${theme.accentGlow}` }}>
+              <button onClick={() => { setShowProfileEdit(false); triggerToast("변경 완료", "내 계정 정보가 업데이트되었습니다.", <CheckCircle2 color={theme.success} size={18}/>); }} style={{ width: "100%", padding: "14px", backgroundColor: theme.accent, color: isDarkMode ? "#1a1817" : "#fff", border: "none", borderRadius: "14px", fontSize: "0.95rem", fontWeight: "800", cursor: "pointer", marginTop: "8px", boxShadow: `0 4px 12px ${theme.accentGlow}` }}>
                 저장하기
               </button>
               
             </div>
           </div>
         )}
+
+
 {/* 📜 나의 플레이 기록 팝업 */}
         {showHistoryModal && (
           <div onClick={() => setShowHistoryModal(false)} style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 500, padding: "20px", animation: "fadeIn 0.2s ease-out" }}>
