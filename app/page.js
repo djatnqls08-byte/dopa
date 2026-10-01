@@ -8,10 +8,11 @@ import CharacterSheet from "@/components/CharacterSheet";
 import { 
   Search, Heart, Flame, LayoutGrid, LibraryBig, PenTool, UserRound, 
   Menu, Moon, Sun, Save, FileUp, HelpCircle, X, ChevronDown, ChevronUp, Image as ImageIcon,
-  ClipboardList, Pin, FileSearch, Mailbox, Play, Trash2, Clock, Save,
+  ClipboardList, Pin, FileSearch, Mailbox, Play,
   FolderOpen, Lock, Settings, Database, ClipboardPaste, LogOut,
   ArrowUp, Smartphone, BookOpen, Dices, ChevronLeft, ChevronRight,
- Brain, Skull, Eye, Activity, ShieldAlert, ToggleLeft, ToggleRight, Plus, Minus, Ghost
+  Brain, Skull, Eye, Activity, ShieldAlert, ToggleLeft, ToggleRight, Plus, Minus, Ghost,
+  Trash2, Clock, Tag
 } from "lucide-react";
 
 const THEME_PALETTES = {
