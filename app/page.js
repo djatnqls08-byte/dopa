@@ -3213,14 +3213,16 @@ color: "#fff", border: "none", cursor: "pointer",
             )}
 
             <CharacterSheet
-  activeSession={activeSession}
-  isDarkMode={isDarkMode}
-  isMobile={isMobile}
-  isSheetOpen={isSheetOpen}
-  setIsSheetOpen={setIsSheetOpen}
-  theme={theme}
-/>
-
+              activeSession={activeSession}
+              isDarkMode={isDarkMode}
+              isMobile={isMobile}
+              isSheetOpen={isSheetOpen}
+              setIsSheetOpen={setIsSheetOpen}
+              theme={theme}
+              // 🌟 (신규 추가!) 인물 클릭 시 모달창을 띄워주는 변수 주입
+              setActivePortraitTarget={setActivePortraitSuspectId}
+              setShowPortraitEditModal={setShowPortraitModal}
+            />
           </div>
         )}
 
