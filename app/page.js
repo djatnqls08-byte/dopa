@@ -931,9 +931,14 @@ const [showSupportModal, setShowSupportModal] = useState(false);
   }
   
 // 🌟 진짜 Supabase 로그인 / 회원가입 화면
-  if (!currentUser) {
+  if (!currentUser && activeTab !== "explore") {
     return (
-      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", width: "100vw", height: "100dvh", backgroundColor: theme.bg, color: theme.text, padding: "20px", position: "relative" }}>
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", width: "100vw", height: "100dvh", backgroundColor: theme.bg, color: theme.text, padding: "20px", position: "relative", boxSizing: "border-box" }}>
+        
+        {/* 🌟 뒤로가기(둘러보기) 버튼 추가 */}
+        <button onClick={() => setActiveTab("explore")} style={{ position: "absolute", top: "24px", right: "24px", background: "none", border: "none", color: theme.text, cursor: "pointer", display: "flex", alignItems: "center", gap: "6px", fontWeight: "700", fontSize: "0.9rem" }}>
+          둘러보기 <X size={20} strokeWidth={2.5}/>
+        </button>
         
         {/* 🌟 로그인 화면용 토스트 알림창 */}
 
@@ -974,7 +979,8 @@ const [showSupportModal, setShowSupportModal] = useState(false);
           </div>
         )}
 
-        <div style={{ ...GLASS_STYLE, backgroundColor: theme.panel, border: `1px solid ${theme.border}`, borderRadius: "24px", padding: "40px 30px", display: "flex", flexDirection: "column", alignItems: "center", gap: "24px", width: "100%", maxWidth: "380px", boxShadow: "0 20px 50px rgba(0,0,0,0.1)" }}>
+        {/* 🌟 모바일 삐져나옴 완벽 해결 */}
+        <div style={{ ...GLASS_STYLE, backgroundColor: theme.panel, border: `1px solid ${theme.border}`, borderRadius: "24px", padding: "34px 24px", display: "flex", flexDirection: "column", alignItems: "center", gap: "24px", width: "100%", maxWidth: "380px", boxSizing: "border-box", margin: "0 20px", boxShadow: "0 20px 50px rgba(0,0,0,0.1)" }}>
           
           <div style={{ textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center" }}>
             <div style={{ marginBottom: "16px", padding: "16px", backgroundColor: theme.panelAlt, borderRadius: "50%", border: `1px solid ${theme.borderHighlight}`, boxShadow: "0 4px 12px rgba(0,0,0,0.05)" }}>
@@ -1499,7 +1505,7 @@ const [showSupportModal, setShowSupportModal] = useState(false);
                 <div style={{ display: "flex", flexDirection: "column", gap: "16px", animation: "fadeIn 0.2s ease-out" }}>
                   
                   {/* 상단: 검색 바 및 새 시나리오 생성 (+) 버튼 */}
-                  <div style={{ display: "flex", gap: "8px" }}>
+                  <div style={{ display: "flex", gap: "8px", width: "100%", boxSizing: "border-box" }}>
                     <div style={{ flex: 1, display: "flex", alignItems: "center", backgroundColor: theme.panel, border: `1px solid ${theme.border}`, borderRadius: "12px", padding: "0 12px" }}>
                       <Search size={18} color={theme.textMuted} />
                       <input type="text" autoComplete="off" value={libSearchQuery} onChange={e => setLibSearchQuery(e.target.value)} placeholder="서재에서 시나리오 검색..." style={{ flex: 1, padding: "12px 10px", border: "none", backgroundColor: "transparent", color: theme.text, fontSize: "0.9rem", outline: "none" }} />
@@ -1835,17 +1841,22 @@ const [showSupportModal, setShowSupportModal] = useState(false);
                   </div>
                 </section>
 
-                <section style={{ ...GLASS_STYLE, padding: isMobile ? "16px" : "20px", backgroundColor: theme.panel, borderRadius: "18px", border: `1px solid ${theme.border}`, display: "flex", flexDirection: "column", gap: "12px" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                    <ClipboardList size={22} strokeWidth={2} color={theme.accent} />
-                    <span style={{ fontWeight: "700", fontSize: "0.95rem", color: theme.text }}>사건 개요서</span>
+                <section style={{ ...GLASS_STYLE, padding: isMobile ? "16px" : "20px", backgroundColor: theme.panel, borderRadius: "18px", border: `1px solid ${theme.border}`, display: "flex", flexDirection: "column", gap: "12px", width: "100%", boxSizing: "border-box" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                      <ClipboardList size={22} strokeWidth={2} color={theme.accent} />
+                      <span style={{ fontWeight: "700", fontSize: "0.95rem", color: theme.text }}>사건 개요서</span>
+                    </div>
+                    <button type="button" onClick={() => handleAIGenerateSynopsis(false)} disabled={isGeneratingSynopsis} style={{ padding: "6px 12px", backgroundColor: theme.panelAlt, border: `1px solid ${theme.borderHighlight}`, borderRadius: "10px", color: theme.accent, fontSize: "0.75rem", fontWeight: "700", cursor: "pointer", display: "flex", alignItems: "center", gap: "4px" }}>
+                      {isGeneratingSynopsis ? "작성 중..." : "✨ AI 자동 작성"}
+                    </button>
                   </div>
-                  <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "2fr 1fr", gap: "10px" }}>
-                    <input type="text" autoComplete="off" value={scenarioTitle} onChange={e => setScenarioTitle(e.target.value)} placeholder="사건명 (예: 심야 펜트하우스 살인사건)" style={{ padding: "10px 12px", borderRadius: "8px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.85rem", outline: "none" }} />
-                    <input type="text" autoComplete="off" value={victimName} onChange={e => setVictimName(e.target.value)} placeholder="사건 대상/의뢰인" style={{ padding: "10px 12px", borderRadius: "8px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.85rem", outline: "none" }} />
+                  <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "2fr 1fr", gap: "10px", width: "100%", boxSizing: "border-box" }}>
+                    <input type="text" autoComplete="off" value={scenarioTitle} onChange={e => setScenarioTitle(e.target.value)} placeholder="사건명 (예: 심야 펜트하우스 살인사건)" style={{ width: "100%", boxSizing: "border-box", padding: "10px 12px", borderRadius: "8px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.85rem", outline: "none" }} />
+                    <input type="text" autoComplete="off" value={victimName} onChange={e => setVictimName(e.target.value)} placeholder="사건 대상/의뢰인" style={{ width: "100%", boxSizing: "border-box", padding: "10px 12px", borderRadius: "8px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.85rem", outline: "none" }} />
                   </div>
-                  <textarea rows={2} value={publicSynopsis} onChange={e => setPublicSynopsis(e.target.value)} placeholder="현장 상황 및 사건 발생 개요..." style={{ padding: "10px 12px", borderRadius: "8px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.83rem", resize: "none", outline: "none" }} />
-                  <textarea rows={2} value={openingScene} onChange={e => setOpeningScene(e.target.value)} placeholder="첫 오프닝/서막 지문..." style={{ padding: "10px 12px", borderRadius: "8px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.83rem", resize: "none", outline: "none" }} />
+                  <textarea rows={2} value={publicSynopsis} onChange={e => setPublicSynopsis(e.target.value)} placeholder="현장 상황 및 사건 발생 개요..." style={{ width: "100%", boxSizing: "border-box", padding: "10px 12px", borderRadius: "8px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.83rem", resize: "none", outline: "none" }} />
+                  <textarea rows={2} value={openingScene} onChange={e => setOpeningScene(e.target.value)} placeholder="첫 오프닝/서막 지문..." style={{ width: "100%", boxSizing: "border-box", padding: "10px 12px", borderRadius: "8px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.83rem", resize: "none", outline: "none" }} />
                 </section>
 
                 <section style={{ ...GLASS_STYLE, padding: isMobile ? "16px" : "20px", backgroundColor: theme.panel, borderRadius: "18px", border: `1px solid ${theme.border}`, display: "flex", flexDirection: "column", gap: "16px" }}>
@@ -3816,8 +3827,8 @@ color: "#fff", border: "none", cursor: "pointer",
                      date: new Date().toLocaleString("ko-KR", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" }),
                      imageUrl: selectedExploreScenario.imageUrl || "", 
                      isDownloaded: true, 
-                     hasUpdate: true, // 🌟 테스트용: 다운로드 시 업데이트 뱃지 활성화
-                     data: { publicSynopsis: "라운지에서 다운로드한 시나리오입니다." }
+                     hasUpdate: false, 
+                     data: selectedExploreScenario.data // 🌟 (핵심!) 가짜 텍스트 대신 구글 시트에서 파싱한 진짜 데이터를 그대로 넘겨줍니다!!
                    };
                    
                    const updatedLibrary = [newDownloadedScenario, ...savedLibrary];
@@ -3831,15 +3842,35 @@ color: "#fff", border: "none", cursor: "pointer",
                  <FileUp size={24} strokeWidth={2} />
                </button>
                
-               {/* 바로 플레이 버튼 (기존) */}
+               {/* 바로 플레이 버튼 (수정완료!) */}
                <button 
                  onClick={() => {
                    setIsGuestPlay(true);
                    if (userInk < 10) { triggerToast("잉크 부족", "보유한 잉크가 부족합니다.", "💧"); return; }
                    setUserInk(prev => prev - 10);
-                   setScenarioTitle(selectedExploreScenario.title);
-                   setSelectedMode(selectedExploreScenario.mode);
-                   setPublicSynopsis("라운지에서 불러온 시나리오입니다.");
+                   
+                   // 🌟 (핵심 고침!) 로비로 모든 데이터를 쫙 뿌려주는 로직을 가져옵니다.
+                   const d = selectedExploreScenario.data;
+                   if (d) {
+                     setSelectedMode(selectedExploreScenario.mode);
+                     setScenarioTitle(selectedExploreScenario.title);
+                     setPlayPreference(d.playPreference || ""); setPcName(d.pcName || ""); setPcAgeGender(d.pcAgeGender || ""); setPcJob(d.pcJob || ""); setPcBackground(d.pcBackground || ""); setPcPortraitUrl(d.pcPortraitUrl || ""); setPcSecret(d.pcSecret || ""); setShowPcSecret(d.showPcSecret || false);
+                     setVictimName(d.victimName || ""); setPublicSynopsis(d.publicSynopsis || ""); setOpeningScene(d.openingScene || ""); setCulpritName(d.culpritName || ""); setTrickDetail(d.trickDetail || ""); setHiddenTruth(d.hiddenTruth || "");
+                     
+                     if(d.horrorStats) setHorrorStats(d.horrorStats);
+                     if(d.horrorTraits) setHorrorTraits(d.horrorTraits);
+                     if(d.horrorTraumas) setHorrorTraumas(d.horrorTraumas);
+                     if(d.horrorInventory) setHorrorInventory(d.horrorInventory);
+                     if(d.abyssTriggers) setAbyssTriggers(d.abyssTriggers);
+                     if(d.usePartner !== undefined) setUsePartner(d.usePartner);
+             
+                     setMainPartners(d.mainPartners?.length ? d.mainPartners : [{ id: Date.now(), name: "", ageGender: "", job: "", behavior: "", secret: "", showSecret: false, portraitUrl: "" }]);
+                     setSuspects(d.suspects?.length ? d.suspects : [{ id: Date.now()+1, name: "", ageGender: "", job: "", behavior: "", secret: "", portraitUrl: "", showSecret: false }]);
+                     setEvidenceList(d.evidenceList?.length ? d.evidenceList : [{ id: Date.now()+2, name: "", overview: "", contradiction: "", secret: "", showSecret: false }]);
+                     setCgList(d.cgList?.length ? d.cgList : [{ id: Date.now()+3, title: "", condition: "", dialogue: "", imageUrl: "", showDetails: false }]);
+                     setRouteList(d.routeList?.length ? d.routeList : [{ id: Date.now()+4, routeName: "", targetId: "", affectionChange: "+10", requiredCG: "" }]);
+                   }
+
                    setSelectedExploreScenario(null);
                    setActiveTab("lobby");
                    triggerToast("세팅 시작", `[${selectedExploreScenario.title}] 10 잉크가 차감되었습니다.`, <Play size={18} color="#fff"/>);
@@ -3896,10 +3927,15 @@ color: "#fff", border: "none", cursor: "pointer",
                 </div>
               </div>
 
-              {/* 소개글 작성란 */}
+             {/* 소개글 작성란 */}
               <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                <label style={{ fontSize: "0.85rem", fontWeight: "800", color: theme.text, marginLeft: "4px" }}>탐색 라운지 공개 소개글</label>
-                <textarea 
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginLeft: "4px" }}>
+                  <label style={{ fontSize: "0.85rem", fontWeight: "800", color: theme.text }}>탐색 라운지 공개 소개글</label>
+                  <button type="button" onClick={() => handleAIGenerateSynopsis(true)} disabled={isGeneratingSynopsis} style={{ padding: "4px 10px", backgroundColor: theme.panelAlt, border: `1px solid ${theme.borderHighlight}`, borderRadius: "8px", color: theme.accent, fontSize: "0.7rem", fontWeight: "700", cursor: "pointer", display: "flex", alignItems: "center" }}>
+                    {isGeneratingSynopsis ? "작성 중..." : "✨ AI 자동 작성"}
+                  </button>
+                </div>
+                <textarea
                   rows={5} 
                   value={uploadingScenario.uploadSynopsis}
                   onChange={e => setUploadingScenario({...uploadingScenario, uploadSynopsis: e.target.value})}
