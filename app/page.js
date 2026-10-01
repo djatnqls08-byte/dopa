@@ -316,7 +316,7 @@ const [showInkModal, setShowInkModal] = useState(false); // 🌟 잉크 충전�
       const prevTarget = filtered[deletedIndex - 1] || filtered[0];
       setSelectedSuspectId(prevTarget.id);
     }
-    triggerToast("인물 삭제", "수사망에서 제외되었습니다.", "<Trash2 size="{16}" strokeWidth="{2}"/>️");
+    triggerToast("인물 삭제", "수사망에서 제외되었습니다.", <Trash2 size="{16}" strokeWidth="{2}"/>);
   };
 
   const handleUpdateSuspect = (id, field, value) => {
