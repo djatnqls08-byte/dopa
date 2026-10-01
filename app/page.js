@@ -1474,10 +1474,21 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
                   {exploreFilter === "추천" && !exploreSearchQuery ? (
                     <div style={{ display: "flex", flexDirection: "column", gap: "32px" }}>
                       
-                      {/* A. 히어로 다중 배너 (가로 스크롤 & 어드민 편집) */}
+                     {/* A. 히어로 다중 배너 (가로 스크롤 & 어드민 편집) */}
                       <div style={{ position: "relative", display: "flex", overflowX: "auto", snapType: "x mandatory", gap: "16px", paddingBottom: "8px", WebkitOverflowScrolling: "touch", width: "100%", scrollbarWidth: "none" }}>
                         {banners.map((banner) => (
-                          <div key={banner.id} style={{ ...GLASS_STYLE, flex: "0 0 100%", snapAlign: "center", aspectRatio: "16/9", backgroundColor: theme.panel, borderRadius: "20px", overflow: "hidden", position: "relative", border: `1px solid ${theme.borderHighlight}` }}>
+                          <div 
+                            key={banner.id} 
+                            // 🌟 (핵심!) 배너를 클릭하면, 배너에 적힌 linkId(이름)와 똑같은 시나리오를 찾아서 열어줍니다!
+                            onClick={() => {
+                              if (!isAdmin && banner.linkId) {
+                                const targetScen = exploreScenarios.find(s => s.title.includes(banner.linkId));
+                                if (targetScen) setSelectedExploreScenario(targetScen);
+                                else triggerToast("안내", "현재 라운지에서 찾을 수 없는 시나리오입니다.", "🔍");
+                              }
+                            }}
+                            style={{ ...GLASS_STYLE, flex: "0 0 100%", snapAlign: "center", aspectRatio: "16/9", backgroundColor: theme.panel, borderRadius: "20px", overflow: "hidden", position: "relative", border: `1px solid ${theme.borderHighlight}`, cursor: (!isAdmin && banner.linkId) ? "pointer" : "default" }}
+                          >
                             <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.1) 60%, transparent 100%)", zIndex: 1 }} />
                             <img src={banner.imageUrl} alt="배너" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                             <div style={{ position: "absolute", bottom: "0", left: "0", right: "0", padding: "24px 20px", zIndex: 2, display: "flex", flexDirection: "column", gap: "6px" }}>
@@ -3313,9 +3324,13 @@ color: "#fff", border: "none", cursor: "pointer",
                  </label>
               </div>
 
-              {/* 텍스트 변경 구역 */}
+              {/* 텍스트 변경 구역 & 목적지 링크 설정 */}
               <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                 <input type="text" value={editingBanner.tag} onChange={e => setEditingBanner({...editingBanner, tag: e.target.value})} placeholder="태그 (예: 추천 사건)" style={{ padding: "12px", borderRadius: "8px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.85rem", outline: "none", fontWeight: "700" }} />
+                 <div style={{ display: "flex", gap: "8px" }}>
+                   <input type="text" value={editingBanner.tag} onChange={e => setEditingBanner({...editingBanner, tag: e.target.value})} placeholder="태그 (예: 추천 사건)" style={{ flex: 1, padding: "12px", borderRadius: "8px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.85rem", outline: "none", fontWeight: "700" }} />
+                   {/* 🌟 새로 추가됨: 이동할 시나리오의 제목이나 ID를 적는 칸 */}
+                   <input type="text" value={editingBanner.linkId || ""} onChange={e => setEditingBanner({...editingBanner, linkId: e.target.value})} placeholder="이동할 시나리오 이름 (예: 사각지대의 유죄인간)" style={{ flex: 1.5, padding: "12px", borderRadius: "8px", border: `1px solid ${theme.accent}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.85rem", outline: "none", fontWeight: "600" }} />
+                 </div>
                  <input type="text" value={editingBanner.title} onChange={e => setEditingBanner({...editingBanner, title: e.target.value})} placeholder="배너 제목" style={{ padding: "12px", borderRadius: "8px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "1rem", outline: "none", fontWeight: "800" }} />
                  <textarea rows={2} value={editingBanner.desc} onChange={e => setEditingBanner({...editingBanner, desc: e.target.value})} placeholder="배너 설명" style={{ padding: "12px", borderRadius: "8px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.85rem", outline: "none", resize: "none" }} />
               </div>
@@ -3489,9 +3504,8 @@ color: "#fff", border: "none", cursor: "pointer",
                     
                     const today = new Date().toISOString().split("T")[0];
                     
-                    // 🌟 서버의 notices 방에 새 공지를 밀어 넣습니다!
-                    const { data, error } = await supabase.from('notices').insert([{ text: newNotice, date: today }]).select();
-                    
+                   // 🌟 무조건 뚫고 들어가는 마법의 열쇠! (insert 대신 upsert 사용)
+                    const { data, error } = await supabase.from('notices').upsert([{ text: newNotice, date: today }]).select();
                     if (!error && data) {
                       setNotices([data[0], ...notices]); // 화면에도 즉시 새 공지 추가
                       setNewNotice("");
@@ -4081,9 +4095,10 @@ color: "#fff", border: "none", cursor: "pointer",
                 onClick={async () => {
                   triggerToast("업로드 중...", "서버로 데이터를 전송하고 있습니다.", "⏳");
 
+                  // 🌟 무적의 업서트! 시나리오 심사 데이터도 강제로 밀어 넣습니다.
                   const { error } = await supabase
                     .from('scenarios')
-                    .insert([
+                    .upsert([
                       {
                         title: uploadingScenario.title,
                         mode: uploadingScenario.mode,
