@@ -173,6 +173,7 @@ export default function GamePlatform() {
   const [isLoginLoading, setIsLoginLoading] = useState(false);
   const [loginEmail, setLoginEmail] = useState(""); // 🌟 이메일 입력창 상태
   const [loginPassword, setLoginPassword] = useState(""); // 🌟 비밀번호 입력창 상태
+  const [agreeTerms, setAgreeTerms] = useState(false); // 🌟 (여기에 추가) 개인정보 동의 체크박스 상태!
   
  // ── [0. 폰트 강제 로드] ──
   useEffect(() => {
@@ -806,7 +807,6 @@ const [showSupportModal, setShowSupportModal] = useState(false);
             <p style={{ margin: 0, fontSize: "0.85rem", color: theme.textMuted }}>당신만의 은밀한 서사가 시작되는 곳</p>
           </div>
 
-          {/* 🌟 이메일 & 비밀번호 입력칸 */}
           <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: "10px", marginTop: "10px" }}>
             <input 
               type="email" 
@@ -822,12 +822,24 @@ const [showSupportModal, setShowSupportModal] = useState(false);
               placeholder="비밀번호 (6자리 이상)" 
               style={{ width: "100%", padding: "14px", backgroundColor: theme.inputBg, border: `1px solid ${theme.border}`, borderRadius: "12px", color: theme.text, fontSize: "0.9rem", outline: "none", boxSizing: "border-box" }}
             />
+            
+            {/* 🌟 개인정보 동의 체크박스 추가! */}
+            <label style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "0.75rem", color: theme.textMuted, cursor: "pointer", marginTop: "4px", paddingLeft: "4px" }}>
+              <input 
+                type="checkbox" 
+                checked={agreeTerms} 
+                onChange={(e) => setAgreeTerms(e.target.checked)} 
+                style={{ width: "16px", height: "16px", accentColor: theme.accent, cursor: "pointer" }} 
+              />
+              <span>(필수) 서비스 이용약관 및 개인정보 처리방침 동의</span>
+            </label>
           </div>
 
-          <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: "8px" }}>
+          <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: "8px", marginTop: "4px" }}>
+            
             {/* 🌟 진짜 로그인 버튼 */}
             <button 
-              disabled={isLoginLoading || !loginEmail || !loginPassword}
+              disabled={isLoginLoading || !loginEmail || !loginPassword || !agreeTerms}
               onClick={async () => {
                 setIsLoginLoading(true);
                 const { data, error } = await supabase.auth.signInWithPassword({
@@ -839,21 +851,20 @@ const [showSupportModal, setShowSupportModal] = useState(false);
                 if (error) {
                   triggerToast("로그인 실패", "이메일이나 비밀번호가 맞지 않습니다.", <AlertTriangle color={theme.danger} size={18}/>);
                 } else {
-                  // 성공 시 유저 정보 저장
                   const userObj = { uid: data.user.id, email: data.user.email, name: data.user.email.split('@')[0] };
                   setCurrentUser(userObj);
                   localStorage.setItem("secret_novel_user", JSON.stringify(userObj));
                   triggerToast("환영합니다!", "시크릿 노벨에 접속했습니다.", "✨");
                 }
               }}
-              style={{ width: "100%", padding: "14px", backgroundColor: theme.accent, color: "#fff", border: "none", borderRadius: "12px", fontSize: "0.95rem", fontWeight: "800", cursor: "pointer", transition: "opacity 0.2s", opacity: (isLoginLoading || !loginEmail || !loginPassword) ? 0.6 : 1 }}
+              style={{ width: "100%", padding: "14px", backgroundColor: theme.accent, color: "#fff", border: "none", borderRadius: "12px", fontSize: "0.95rem", fontWeight: "800", cursor: "pointer", transition: "all 0.2s", opacity: (isLoginLoading || !loginEmail || !loginPassword || !agreeTerms) ? 0.5 : 1 }}
             >
               {isLoginLoading ? "확인 중..." : "로그인"}
             </button>
 
             {/* 🌟 진짜 회원가입 버튼 */}
             <button 
-              disabled={isLoginLoading || !loginEmail || !loginPassword}
+              disabled={isLoginLoading || !loginEmail || !loginPassword || !agreeTerms}
               onClick={async () => {
                 setIsLoginLoading(true);
                 const { data, error } = await supabase.auth.signUp({
@@ -863,12 +874,12 @@ const [showSupportModal, setShowSupportModal] = useState(false);
                 setIsLoginLoading(false);
 
                 if (error) {
-                  triggerToast("가입 실패", error.message, <AlertTriangle color={theme.danger} size={18}/>);
+                  triggerToast("가입 실패", "이미 가입된 이메일이거나 비밀번호가 너무 짧습니다.", <AlertTriangle color={theme.danger} size={18}/>);
                 } else {
-                  triggerToast("가입 성공!", "이제 로그인 버튼을 눌러 접속해주세요.", <CheckCircle2 color={theme.success} size={18}/>);
+                  triggerToast("가입 성공!", "환영합니다! 이제 로그인 버튼을 눌러 접속해주세요.", <CheckCircle2 color={theme.success} size={18}/>);
                 }
               }}
-              style={{ width: "100%", padding: "14px", backgroundColor: "transparent", color: theme.text, border: `1px solid ${theme.borderHighlight}`, borderRadius: "12px", fontSize: "0.95rem", fontWeight: "700", cursor: "pointer" }}
+              style={{ width: "100%", padding: "14px", backgroundColor: "transparent", color: theme.text, border: `1px solid ${theme.borderHighlight}`, borderRadius: "12px", fontSize: "0.95rem", fontWeight: "700", cursor: "pointer", transition: "all 0.2s", opacity: (isLoginLoading || !loginEmail || !loginPassword || !agreeTerms) ? 0.5 : 1 }}
             >
               회원가입
             </button>
