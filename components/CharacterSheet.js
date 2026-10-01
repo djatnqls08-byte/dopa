@@ -138,32 +138,43 @@ export default function CharacterSheet({
           </div>
         )}
 
-        {/* 6. 사건 파일 & 단서 리스트 (단어 자동 변경 반영됨) */}
+        {/* 6. 사건 파일 & 단서 리스트 (수집된 것만 표시) */}
         <div>
-          <div style={{ fontSize: "0.75rem", fontWeight: "800", color: theme.textMuted, marginBottom: "10px", display: "flex", alignItems: "center", gap: "6px" }}>
-            {handoutHeader.icon} {handoutHeader.text} ({(sheet.handouts || []).length}건)
-          </div>
-          {(!sheet.handouts || sheet.handouts.length === 0) ? (
-            <div style={{ textAlign: "center", padding: "20px", fontSize: "0.75rem", color: theme.textMuted, border: `1px dashed ${theme.border}`, borderRadius: "10px" }}>확보된 단서가 없습니다.</div>
-          ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-              {sheet.handouts.map((h, idx) => {
-                const isEven = idx % 2 === 0;
-                return (
-                  <div key={idx} style={{ backgroundColor: isEven ? (isDarkMode ? "#0c4a6e" : "#e0f2fe") : (isDarkMode ? "#4c1d95" : "#f3e8ff"), padding: "12px 14px", borderRadius: "6px", position: "relative", borderLeft: `4px solid ${isEven ? (isDarkMode ? "#0284c7" : "#0284c7") : (isDarkMode ? "#7c3aed" : "#9333ea")}`, boxShadow: "0 4px 10px rgba(0,0,0,0.1)", color: isDarkMode ? "#e0e7ff" : "#0f172a" }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "4px" }}>
-                      <span style={{ fontWeight: "900", fontSize: "0.85rem", color: isEven ? (isDarkMode ? "#38bdf8" : "#0369a1") : (isDarkMode ? "#c084fc" : "#6b21a8") }}>{h.name || h.title}</span>
-                      {h.revealed ? <LockOpen size={14} strokeWidth={2.5} style={{ opacity: 0.6 }} /> : <Lock size={14} strokeWidth={2.5} style={{ opacity: 0.4 }} />}
-                    </div>
-                    <div style={{ fontSize: "0.75rem", lineHeight: "1.5", fontWeight: "500", opacity: 0.9, whiteSpace: "pre-wrap" }}>{h.revealed ? (h.secret || h.overview) : h.overview}</div>
+          {(() => {
+            // 🌟 5번 해결: revealed(해금) 되거나 discovered(발견) 된 찐 수집품만 필터링
+            const visibleHandouts = (sheet.handouts || []).filter(h => h.revealed || h.discovered);
+            
+            return (
+              <>
+                <div style={{ fontSize: "0.75rem", fontWeight: "800", color: theme.textMuted, marginBottom: "10px", display: "flex", alignItems: "center", gap: "6px" }}>
+                  {handoutHeader.icon} {handoutHeader.text} ({visibleHandouts.length}건)
+                </div>
+                {visibleHandouts.length === 0 ? (
+                  <div style={{ textAlign: "center", padding: "20px", fontSize: "0.75rem", color: theme.textMuted, border: `1px dashed ${theme.border}`, borderRadius: "10px" }}>
+                    아직 획득한 수집품이나 단서가 없습니다.
                   </div>
-                );
-              })}
-            </div>
-          )}
+                ) : (
+                  <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                    {visibleHandouts.map((h, idx) => {
+                      const isEven = idx % 2 === 0;
+                      return (
+                        <div key={idx} style={{ backgroundColor: isEven ? (isDarkMode ? "#0c4a6e" : "#e0f2fe") : (isDarkMode ? "#4c1d95" : "#f3e8ff"), padding: "12px 14px", borderRadius: "6px", position: "relative", borderLeft: `4px solid ${isEven ? (isDarkMode ? "#0284c7" : "#0284c7") : (isDarkMode ? "#7c3aed" : "#9333ea")}`, boxShadow: "0 4px 10px rgba(0,0,0,0.1)", color: isDarkMode ? "#e0e7ff" : "#0f172a" }}>
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "4px" }}>
+                            <span style={{ fontWeight: "900", fontSize: "0.85rem", color: isEven ? (isDarkMode ? "#38bdf8" : "#0369a1") : (isDarkMode ? "#c084fc" : "#6b21a8") }}>{h.name || h.title}</span>
+                            {h.revealed ? <LockOpen size={14} strokeWidth={2.5} style={{ opacity: 0.6 }} /> : <Lock size={14} strokeWidth={2.5} style={{ opacity: 0.4 }} />}
+                          </div>
+                          <div style={{ fontSize: "0.75rem", lineHeight: "1.5", fontWeight: "500", opacity: 0.9, whiteSpace: "pre-wrap" }}>{h.revealed ? (h.secret || h.overview) : h.overview}</div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </>
+            );
+          })()}
         </div>
 
-        {/* 🌟 7. 주요 등장인물 호감도 리스트 (클릭 활성화 완료!) */}
+        {/* 🌟 7. 주요 등장인물 호감도 리스트 (전체 행 클릭 시 상세 모달) */}
         {sheet.npcs && sheet.npcs.length > 0 && (
           <div>
             <div style={{ fontSize: "0.75rem", fontWeight: "800", color: theme.textMuted, marginBottom: "10px", display: "flex", alignItems: "center", gap: "6px" }}>
@@ -171,23 +182,20 @@ export default function CharacterSheet({
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
               {sheet.npcs.map(npc => (
-                <div key={npc.id} style={{ display: "flex", alignItems: "center", gap: "12px", padding: "10px 12px", backgroundColor: theme.panelAlt, border: `1px solid ${theme.border}`, borderRadius: "10px" }}>
-                  
-                  {/* 👇 인물 사진을 클릭했을 때 모달창 띄우기 */}
-                  <div 
-                    onClick={() => {
-                      if (setActivePortraitTarget && setShowPortraitEditModal) {
-                        setActivePortraitTarget(npc.id);
-                        setShowPortraitEditModal(true);
-                      }
-                    }}
-                    title="초상화 보기/변경"
-                    style={{ 
-                      width: "38px", height: "38px", borderRadius: "50%", overflow: "hidden", 
-                      border: `1px solid ${theme.border}`, flexShrink: 0, backgroundColor: theme.inputBg,
-                      cursor: "pointer" 
-                    }}
-                  >
+                <div 
+                  key={npc.id} 
+                  // 🌟 6번 해결: 사진뿐만 아니라 인물 카드 전체를 눌러도 모달이 열리도록 onClick 이동
+                  onClick={() => {
+                    if (setActivePortraitTarget && setShowPortraitEditModal) {
+                      setActivePortraitTarget(npc.id);
+                      setShowPortraitEditModal(true);
+                    }
+                  }}
+                  style={{ display: "flex", alignItems: "center", gap: "12px", padding: "10px 12px", backgroundColor: theme.panelAlt, border: `1px solid ${theme.border}`, borderRadius: "10px", cursor: "pointer", transition: "background 0.2s" }}
+                  onMouseEnter={e => e.currentTarget.style.backgroundColor = theme.inputBg}
+                  onMouseLeave={e => e.currentTarget.style.backgroundColor = theme.panelAlt}
+                >
+                  <div style={{ width: "38px", height: "38px", borderRadius: "50%", overflow: "hidden", border: `1px solid ${theme.border}`, flexShrink: 0, backgroundColor: theme.inputBg }}>
                     {npc.portrait ? (
                       <img src={npc.portrait} alt={npc.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={(e) => (e.currentTarget.style.display = "none")} />
                     ) : (
@@ -196,19 +204,16 @@ export default function CharacterSheet({
                       </div>
                     )}
                   </div>
-                  {/* 👆 클릭 활성화 영역 끝 */}
 
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontWeight: "800", fontSize: "0.85rem", color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{npc.name}</div>
                     <div style={{ fontSize: "0.68rem", color: theme.textMuted, marginTop: "2px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{npc.title || npc.job || "관계자"}</div>
                   </div>
                   
-                  {/* 🌟 룰에 따른 아이콘/명칭 동적 표시 */}
                   <div style={{ fontWeight: "900", color: activeSession?.ruleMode === 'dating' ? theme.danger : theme.warning, fontSize: "0.85rem", flexShrink: 0, display: "flex", alignItems: "center", gap: "4px" }}>
                      {activeSession?.ruleMode === 'dating' ? <Heart size={14} fill={theme.danger}/> : <Activity size={14} strokeWidth={2.5}/>}
                      {npc.affection || 0}
                   </div>
-                  
                 </div>
               ))}
             </div>
