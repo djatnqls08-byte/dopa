@@ -268,6 +268,47 @@ export default function GamePlatform() {
     }
   }, [currentUser]); // 로그인 완료 시 한 번 싹 맞춰줍니다.
 
+
+// ☁️ [클라우드 서재 & 세션 자동 동기화 엔진]
+  // 1. 로그인 성공 시, 클라우드에서 내 데이터 싹 불러오기!
+  useEffect(() => {
+    if (currentUser?.uid) {
+      const fetchCloudData = async () => {
+        const { data, error } = await supabase.from('user_saves').select('*').eq('user_id', currentUser.uid).single();
+        if (data) {
+          if (data.library_data && data.library_data.length > 0) setSavedLibrary(data.library_data);
+          if (data.session_data && data.session_data.length > 0) setSessions(data.session_data);
+          if (data.liked_data && data.liked_data.length > 0) setLikedScenarios(data.liked_data);
+          triggerToast("동기화 완료", "클라우드에서 서재와 진행 상황을 불러왔습니다.", "☁️");
+        }
+      };
+      fetchCloudData();
+    }
+  }, [currentUser]);
+
+  // 2. 게임 중 데이터가 변하면 2초 뒤 클라우드에 조용히 자동 백업! (서버 과부하 방지)
+  useEffect(() => {
+    if (!currentUser?.uid) return;
+    if (savedLibrary.length === 0 && sessions.length === 0 && likedScenarios.length === 0) return;
+
+    const syncTimer = setTimeout(async () => {
+      await supabase.from('user_saves').upsert({
+        user_id: currentUser.uid,
+        library_data: savedLibrary,
+        session_data: sessions,
+        liked_data: likedScenarios,
+        updated_at: new Date().toISOString()
+      });
+      
+      // 로컬(브라우저)에도 이중으로 안전하게 저장해 둡니다.
+      localStorage.setItem("secret_novel_library", JSON.stringify(savedLibrary));
+      localStorage.setItem("secret_novel_sessions", JSON.stringify(sessions));
+      localStorage.setItem("secret_novel_liked", JSON.stringify(likedScenarios));
+    }, 2000); 
+
+    return () => clearTimeout(syncTimer);
+  }, [savedLibrary, sessions, likedScenarios, currentUser]);
+  
  // ── [0. 폰트 강제 로드] ──
   useEffect(() => {
     const style = document.createElement("style");
