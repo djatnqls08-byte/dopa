@@ -59,13 +59,14 @@ function parseCSV(text) {
   return r;
 }
 
+// 🌟 여기서부터 복사하세요!
 function convertRowToPreset(row, index, headers = []) {
   if (!row || row.length === 0) return null;
 
   const cleanHeaders = (headers || []).map(h => (h || "").toString().replace(/[\s_]/g, "").toLowerCase());
   const findIdx = (regex) => cleanHeaders.findIndex(h => regex.test(h));
 
-  // 🌟 체크박스(TRUE/FALSE) 완벽 감지 및 공개 여부 필터링
+  // 1. 상태 및 기본 정보
   const pubIdx = findIdx(/^(공개여부|공개|공개\/비공개|상태|open|public)$/i);
   let isHidden = false;
   const firstColVal = (row[0] || "").toString().trim().toUpperCase();
@@ -81,7 +82,6 @@ function convertRowToPreset(row, index, headers = []) {
   if (titleIdx === -1) titleIdx = pubIdx !== -1 ? pubIdx + 1 : 2; 
   const title = (row[titleIdx] || "").toString().trim();
 
-  // 비공개 상태거나 제목이 없으면 탐색 탭에 띄우지 않음
   if (isHidden || !title || title.startsWith("//")) return null;
 
   const getVal = (regex) => {
@@ -100,12 +100,13 @@ function convertRowToPreset(row, index, headers = []) {
   const truth = getVal(/^(진상|기밀|비밀|진실)$/i);
   const sessionCardImg = getVal(/^(세션카드|썸네일|표지|이미지)$/i);
 
-  const pcName = getVal(/^(pc이름|주인공이름|탐색자이름)$/i);
-  const pcAgeGender = getVal(/^(pc나이성별|pc성별나이|주인공나이성별)$/i);
-  const pcJob = getVal(/^(pc직업|주인공직업)$/i);
-  const pcBackground = getVal(/^(pc성격|pc배경|주인공성격)$/i);
-  const pcSecret = getVal(/^(pc비밀|주인공비밀)$/i);
-  const pcPortraitUrl = getVal(/^(pc초상화|pc사진)$/i);
+  // 🌟 주인공 데이터 파싱 (pc, 주인공, 탐색자 / 사진, 초상화, 이미지 모두 호환!)
+  const pcName = getVal(/^(pc|주인공|탐색자)(이름|명칭)$/i);
+  const pcAgeGender = getVal(/^(pc|주인공|탐색자)(나이성별|성별나이|나이|성별)$/i);
+  const pcJob = getVal(/^(pc|주인공|탐색자)(직업|역할)$/i);
+  const pcBackground = getVal(/^(pc|주인공|탐색자)(성격|배경|설정)$/i);
+  const pcSecret = getVal(/^(pc|주인공|탐색자)(비밀|약점)$/i);
+  const pcPortraitUrl = getVal(/^(pc|주인공|탐색자)(초상화|사진|이미지)$/i);
 
   const abyssTriggers = {
     30: getVal(/^이상충동30$/i),
@@ -113,14 +114,17 @@ function convertRowToPreset(row, index, headers = []) {
     90: getVal(/^이상충동90$/i)
   };
 
-  const extractList = (maxCount, prefix, fields, transformFn) => {
+  // 🌟 융통성 끝판왕 파서 엔진: 헤더 이름이 조금 달라도 찰떡같이 찾아냅니다.
+  const extractList = (maxCount, prefixRegex, fields, transformFn) => {
     const list = [];
     for (let i = 1; i <= maxCount; i++) {
       const extracted = {};
       let hasData = false;
-      fields.forEach(field => {
-        const val = getVal(new RegExp(`^${prefix}${i}${field}$`, 'i'));
-        extracted[field] = val;
+      fields.forEach(fieldGrp => {
+        const regexStr = `^${prefixRegex}${i}(?:${fieldGrp})$`;
+        const val = getVal(new RegExp(regexStr, 'i'));
+        const mainKey = fieldGrp.split('|')[0]; 
+        extracted[mainKey] = val;
         if (val) hasData = true;
       });
       if (hasData) list.push(transformFn(extracted, i));
@@ -128,23 +132,24 @@ function convertRowToPreset(row, index, headers = []) {
     return list;
   };
 
-  const mainPartners = extractList(5, "(?:메인)?파트너", ["이름", "나이성별", "직업", "특징", "비밀", "초상화"], (d, i) => ({
+  const mainPartners = extractList(5, "(?:메인)?파트너", ["이름", "나이성별|성별나이", "직업", "특징|성격", "비밀", "초상화|사진|이미지"], (d, i) => ({
     id: `partner_${Date.now()}_${i}`, name: d.이름, ageGender: d.나이성별, job: d.직업, behavior: d.특징, secret: d.비밀, portraitUrl: d.초상화, showSecret: false
   }));
 
-  const suspects = extractList(15, "(?:등장)?인물", ["이름", "나이성별", "직업", "특징", "비밀", "초상화"], (d, i) => ({
+  // 🌟 "공략대상1이름", "인물1사진", "npc1성격" 등 어떤 이름이든 다 잡아냅니다!
+  const suspects = extractList(15, "(?:등장)?(?:인물|공략대상|대상|npc)", ["이름", "나이성별|성별나이", "직업|역할", "특징|성격|상태", "비밀|진심", "초상화|사진|이미지"], (d, i) => ({
     id: `suspect_${Date.now()}_${i}`, name: d.이름, ageGender: d.나이성별, job: d.직업, behavior: d.특징, secret: d.비밀, portraitUrl: d.초상화, showSecret: false
   }));
 
-  const evidenceList = extractList(15, "단서", ["이름", "개요", "비밀"], (d, i) => ({
+  const evidenceList = extractList(15, "(?:단서|증거|물증)", ["이름|명칭", "개요|설명", "비밀|진상|모순"], (d, i) => ({
     id: `evidence_${Date.now()}_${i}`, name: d.이름, overview: d.개요, secret: d.비밀, contradiction: "", showSecret: false
   }));
 
-  const cgList = extractList(10, "CG", ["이름", "조건", "대사", "사진"], (d, i) => ({
+  const cgList = extractList(10, "(?:CG|이벤트|cg)", ["이름|명칭|제목", "조건", "대사|상황", "사진|이미지|초상화"], (d, i) => ({
     id: `cg_${Date.now()}_${i}`, title: d.이름, condition: d.조건, dialogue: d.대사, imageUrl: d.사진, showDetails: false
   }));
 
-  const routeList = extractList(10, "분기", ["이름", "대상", "호감도"], (d, i) => {
+  const routeList = extractList(10, "(?:분기|루트)", ["이름|명칭", "대상|인물", "호감도|변화"], (d, i) => {
     const matchedNpc = suspects.find(s => s.name === d.대상) || mainPartners.find(p => p.name === d.대상);
     return { id: `route_${Date.now()}_${i}`, routeName: d.이름, targetId: matchedNpc ? matchedNpc.id : "", affectionChange: d.호감도 || "+10", requiredCG: "" };
   });
@@ -1891,6 +1896,20 @@ color: "#fff", border: "none", cursor: "pointer",
             {selectedMode === "연애" && (
               <div style={{ display: "flex", flexDirection: "column", gap: "16px", marginBottom: "20px" }}>
 
+{/* 🌟 0. 추가된 사건 개요서 (연애 모드용) */}
+                <section style={{ ...GLASS_STYLE, padding: isMobile ? "16px" : "20px", backgroundColor: theme.panel, borderRadius: "18px", border: `1px solid ${theme.border}`, display: "flex", flexDirection: "column", gap: "12px" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                    <ClipboardList size={22} strokeWidth={2} color={theme.accent} />
+                    <span style={{ fontWeight: "700", fontSize: "0.95rem", color: theme.text }}>사건 개요서 (로맨스 서사)</span>
+                  </div>
+                  <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "2fr 1fr", gap: "10px" }}>
+                    <input type="text" autoComplete="off" value={scenarioTitle} onChange={e => setScenarioTitle(e.target.value)} placeholder="시나리오 제목 (예: 어느 세이렌의 결백)" style={{ padding: "10px 12px", borderRadius: "8px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.85rem", outline: "none" }} />
+                    <input type="text" autoComplete="off" value={victimName} onChange={e => setVictimName(e.target.value)} placeholder="주요 공략 대상 / 서사 목표" style={{ padding: "10px 12px", borderRadius: "8px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.85rem", outline: "none" }} />
+                  </div>
+                  <textarea rows={2} value={publicSynopsis} onChange={e => setPublicSynopsis(e.target.value)} placeholder="시놉시스 및 초기 배경 설명..." style={{ padding: "10px 12px", borderRadius: "8px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.83rem", resize: "none", outline: "none" }} />
+                  <textarea rows={2} value={openingScene} onChange={e => setOpeningScene(e.target.value)} placeholder="첫 오프닝 지문..." style={{ padding: "10px 12px", borderRadius: "8px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.83rem", resize: "none", outline: "none" }} />
+                </section>
+
                 {/* 📱 1. 스마트폰 메신저 UI (추리 모드 가이드라인 100% 맞춤 복구!) */}
                 <div style={{
                   width: "100%", maxWidth: "380px", margin: "0 auto", backgroundColor: theme.panel,
@@ -2475,6 +2494,93 @@ color: "#fff", border: "none", cursor: "pointer",
             >
                   {isLoading ? "서막을 여는 중..." : "▶ 이야기 시작하기"}
                 </button>
+              </div>
+            )}
+
+{/* 👇 텅 빈 화면 해결! 내정보 탭을 제자리(main 안쪽)로 복귀시킵니다 👇 */}
+            {activeTab === "profile" && (
+              <div style={{ display: "flex", flexDirection: "column", gap: "16px", animation: "fadeIn 0.2s ease-out", width: "100%", paddingBottom: "20px" }}>
+                
+                {/* 1. 프로필 및 지갑 카드 */}
+                <div style={{ display: "flex", flexDirection: "column", backgroundColor: theme.panel, borderRadius: "20px", border: `1px solid ${theme.border}`, overflow: "hidden", boxShadow: "0 8px 24px rgba(0,0,0,0.04)" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "18px", padding: "24px 20px" }}>
+                    <div style={{ width: "80px", height: "80px", borderRadius: "50%", overflow: "hidden", backgroundColor: theme.panelAlt, border: `1px solid ${theme.borderHighlight}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      {pcPortraitUrl ? <img src={pcPortraitUrl} alt="프로필" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <UserRound size={36} color={theme.textMuted} />}
+                    </div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "6px", flex: 1 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                        <span style={{ fontSize: "1.3rem", fontWeight: "800", color: theme.text, letterSpacing: "-0.5px" }}>
+                          {currentUser?.name || pcName || "탐색자"}
+                        </span>
+                        <span style={{ fontSize: "0.7rem", color: isAdmin ? theme.danger : theme.accent, fontWeight: "800", backgroundColor: isDarkMode ? "rgba(163, 146, 116, 0.15)" : "#f5f0eb", padding: "4px 8px", borderRadius: "8px" }}>
+                          {isAdmin ? "👑 관리자" : "LV. 1 탐색자"}
+                        </span>
+                      </div>
+                      <span style={{ fontSize: "0.85rem", color: theme.textMuted }}>
+                        {currentUser?.email || "이메일 정보 없음"}
+                      </span>
+                    </div>
+                    <button onClick={() => setShowProfileEdit(true)} style={{ padding: "8px 16px", backgroundColor: theme.panelAlt, border: `1px solid ${theme.border}`, borderRadius: "12px", color: theme.text, fontSize: "0.8rem", fontWeight: "700", cursor: "pointer", transition: "background 0.2s" }} onMouseEnter={e => e.currentTarget.style.backgroundColor = theme.inputBg} onMouseLeave={e => e.currentTarget.style.backgroundColor = theme.panelAlt}>
+                      수정
+                    </button>
+                  </div>
+
+                  <div style={{ borderTop: `1px solid ${theme.border}` }} />
+                  
+                  <div 
+                    onClick={() => setShowInkModal(true)}
+                    style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "20px", cursor: "pointer", transition: "background 0.2s" }}
+                    onMouseEnter={e => e.currentTarget.style.backgroundColor = theme.panelAlt} onMouseLeave={e => e.currentTarget.style.backgroundColor = "transparent"}
+                  >
+                    <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                      <span style={{ fontSize: "0.85rem", fontWeight: "700", color: theme.accent, display: "flex", alignItems: "center", gap: "6px" }}>
+                        <Droplet size={16} strokeWidth={2.5} /> 보유 잉크
+                      </span>
+                      <span style={{ fontSize: "1.8rem", fontWeight: "800", color: theme.text, letterSpacing: "-0.5px" }}>
+                        {userInk.toLocaleString()} <span style={{ fontSize: "0.95rem", color: theme.textMuted, fontWeight: "600" }}>방울</span>
+                      </span>
+                    </div>
+                    <div style={{ padding: "12px 18px", backgroundColor: theme.accent, color: isDarkMode ? "#1a1817" : "#fff", borderRadius: "14px", fontWeight: "800", fontSize: "0.9rem", display: "flex", alignItems: "center", gap: "6px", boxShadow: `0 4px 12px ${theme.accentGlow}` }}>
+                      <Plus size={16} strokeWidth={3} /> 충전 / 획득
+                    </div>
+                  </div>
+                </div>
+
+                {/* 2. 내 활동 메뉴 카드 */}
+                <div style={{ display: "flex", flexDirection: "column", backgroundColor: theme.panel, borderRadius: "20px", border: `1px solid ${theme.border}`, overflow: "hidden", boxShadow: "0 8px 24px rgba(0,0,0,0.04)" }}>
+                  {[
+                    { icon: <Clock size={20} color={theme.accent} />, title: "나의 플레이 기록", count: `${sessions.length}건`, onClick: () => setShowHistoryModal(true) },
+                    { icon: <Heart size={20} color={theme.danger} fill={likedScenarios.length > 0 ? theme.danger : "none"} />, title: "관심 시나리오", count: `${likedScenarios.length}건`, onClick: () => setShowLikedModal(true) },
+                    { icon: <UploadCloud size={20} color="#60a5fa" />, title: "라운지 심사 및 발행 내역", count: `${savedLibrary.filter(s => s.status === "심사 대기").length}건 대기중`, onClick: () => setShowReviewModal(true) }
+                  ].map((menu, i, arr) => (
+                    <div key={i} onClick={menu.onClick} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "18px 20px", cursor: "pointer", borderBottom: i === arr.length - 1 ? "none" : `1px solid ${theme.border}`, transition: "background 0.2s" }} onMouseEnter={e => e.currentTarget.style.backgroundColor = theme.panelAlt} onMouseLeave={e => e.currentTarget.style.backgroundColor = "transparent"}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
+                        {menu.icon}
+                        <span style={{ fontSize: "0.95rem", fontWeight: "600", color: theme.text }}>{menu.title}</span>
+                      </div>
+                      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                        <span style={{ fontSize: "0.8rem", color: theme.textMuted, fontWeight: "600" }}>{menu.count}</span>
+                        <ChevronRight size={18} color={theme.textMuted} opacity={0.6} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* 3. 고객 지원 메뉴 카드 */}
+                <div style={{ display: "flex", flexDirection: "column", backgroundColor: theme.panel, borderRadius: "20px", border: `1px solid ${theme.border}`, overflow: "hidden", boxShadow: "0 8px 24px rgba(0,0,0,0.04)" }}>
+                  {[
+                    { icon: <Headphones size={20} color={theme.textMuted} />, title: "고객센터 / 문의하기", onClick: () => setShowSupportModal(true) },
+                    { icon: <AlertTriangle size={20} color={theme.textMuted} />, title: "공지사항", onClick: () => setShowNoticeModal(true) }
+                  ].map((menu, i, arr) => (
+                    <div key={i} onClick={menu.onClick} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "18px 20px", cursor: "pointer", borderBottom: i === arr.length - 1 ? "none" : `1px solid ${theme.border}`, transition: "background 0.2s" }} onMouseEnter={e => e.currentTarget.style.backgroundColor = theme.panelAlt} onMouseLeave={e => e.currentTarget.style.backgroundColor = "transparent"}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
+                        {menu.icon}
+                        <span style={{ fontSize: "0.95rem", fontWeight: "600", color: theme.text }}>{menu.title}</span>
+                      </div>
+                      <ChevronRight size={18} color={theme.textMuted} opacity={0.6} />
+                    </div>
+                  ))}
+                </div>
 
               </div>
             )}
@@ -3282,94 +3388,6 @@ color: "#fff", border: "none", cursor: "pointer",
             </div>
           </div>
         )}
-
-{/* 👤 내정보 (Profile) 탭 화면 (여백 및 스크롤 버그 완벽 해결!) */}
-            {activeTab === "profile" && (
-              <div style={{ display: "flex", flexDirection: "column", gap: "16px", animation: "fadeIn 0.2s ease-out", width: "100%", paddingBottom: "20px" }}>
-                
-                {/* 1. 프로필 및 지갑 카드 */}
-                <div style={{ display: "flex", flexDirection: "column", backgroundColor: theme.panel, borderRadius: "20px", border: `1px solid ${theme.border}`, overflow: "hidden", boxShadow: "0 8px 24px rgba(0,0,0,0.04)" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "18px", padding: "24px 20px" }}>
-                    <div style={{ width: "80px", height: "80px", borderRadius: "50%", overflow: "hidden", backgroundColor: theme.panelAlt, border: `1px solid ${theme.borderHighlight}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                      {pcPortraitUrl ? <img src={pcPortraitUrl} alt="프로필" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <UserRound size={36} color={theme.textMuted} />}
-                    </div>
-                    <div style={{ display: "flex", flexDirection: "column", gap: "6px", flex: 1 }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                        <span style={{ fontSize: "1.3rem", fontWeight: "800", color: theme.text, letterSpacing: "-0.5px" }}>
-                          {currentUser?.name || pcName || "탐색자"}
-                        </span>
-                        <span style={{ fontSize: "0.7rem", color: isAdmin ? theme.danger : theme.accent, fontWeight: "800", backgroundColor: isDarkMode ? "rgba(163, 146, 116, 0.15)" : "#f5f0eb", padding: "4px 8px", borderRadius: "8px" }}>
-                          {isAdmin ? "👑 관리자" : "LV. 1 탐색자"}
-                        </span>
-                      </div>
-                      <span style={{ fontSize: "0.85rem", color: theme.textMuted }}>
-                        {currentUser?.email || "이메일 정보 없음"}
-                      </span>
-                    </div>
-                    <button onClick={() => setShowProfileEdit(true)} style={{ padding: "8px 16px", backgroundColor: theme.panelAlt, border: `1px solid ${theme.border}`, borderRadius: "12px", color: theme.text, fontSize: "0.8rem", fontWeight: "700", cursor: "pointer", transition: "background 0.2s" }} onMouseEnter={e => e.currentTarget.style.backgroundColor = theme.inputBg} onMouseLeave={e => e.currentTarget.style.backgroundColor = theme.panelAlt}>
-                      수정
-                    </button>
-                  </div>
-
-                  <div style={{ borderTop: `1px solid ${theme.border}` }} />
-                  
-                  <div 
-                    onClick={() => setShowInkModal(true)}
-                    style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "20px", cursor: "pointer", transition: "background 0.2s" }}
-                    onMouseEnter={e => e.currentTarget.style.backgroundColor = theme.panelAlt} onMouseLeave={e => e.currentTarget.style.backgroundColor = "transparent"}
-                  >
-                    <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                      <span style={{ fontSize: "0.85rem", fontWeight: "700", color: theme.accent, display: "flex", alignItems: "center", gap: "6px" }}>
-                        <Droplet size={16} strokeWidth={2.5} /> 보유 잉크
-                      </span>
-                      <span style={{ fontSize: "1.8rem", fontWeight: "800", color: theme.text, letterSpacing: "-0.5px" }}>
-                        {userInk.toLocaleString()} <span style={{ fontSize: "0.95rem", color: theme.textMuted, fontWeight: "600" }}>방울</span>
-                      </span>
-                    </div>
-                    <div style={{ padding: "12px 18px", backgroundColor: theme.accent, color: isDarkMode ? "#1a1817" : "#fff", borderRadius: "14px", fontWeight: "800", fontSize: "0.9rem", display: "flex", alignItems: "center", gap: "6px", boxShadow: `0 4px 12px ${theme.accentGlow}` }}>
-                      <Plus size={16} strokeWidth={3} /> 충전 / 획득
-                    </div>
-                  </div>
-                </div>
-
-                {/* 2. 내 활동 메뉴 카드 */}
-                <div style={{ display: "flex", flexDirection: "column", backgroundColor: theme.panel, borderRadius: "20px", border: `1px solid ${theme.border}`, overflow: "hidden", boxShadow: "0 8px 24px rgba(0,0,0,0.04)" }}>
-                  {[
-                    { icon: <Clock size={20} color={theme.accent} />, title: "나의 플레이 기록", count: `${sessions.length}건`, onClick: () => setShowHistoryModal(true) },
-                    { icon: <Heart size={20} color={theme.danger} fill={likedScenarios.length > 0 ? theme.danger : "none"} />, title: "관심 시나리오", count: `${likedScenarios.length}건`, onClick: () => setShowLikedModal(true) },
-                    { icon: <UploadCloud size={20} color="#60a5fa" />, title: "라운지 심사 및 발행 내역", count: `${savedLibrary.filter(s => s.status === "심사 대기").length}건 대기중`, onClick: () => setShowReviewModal(true) }
-                  ].map((menu, i, arr) => (
-                    <div key={i} onClick={menu.onClick} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "18px 20px", cursor: "pointer", borderBottom: i === arr.length - 1 ? "none" : `1px solid ${theme.border}`, transition: "background 0.2s" }} onMouseEnter={e => e.currentTarget.style.backgroundColor = theme.panelAlt} onMouseLeave={e => e.currentTarget.style.backgroundColor = "transparent"}>
-                      <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
-                        {menu.icon}
-                        <span style={{ fontSize: "0.95rem", fontWeight: "600", color: theme.text }}>{menu.title}</span>
-                      </div>
-                      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                        <span style={{ fontSize: "0.8rem", color: theme.textMuted, fontWeight: "600" }}>{menu.count}</span>
-                        <ChevronRight size={18} color={theme.textMuted} opacity={0.6} />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                {/* 3. 고객 지원 메뉴 카드 */}
-                <div style={{ display: "flex", flexDirection: "column", backgroundColor: theme.panel, borderRadius: "20px", border: `1px solid ${theme.border}`, overflow: "hidden", boxShadow: "0 8px 24px rgba(0,0,0,0.04)" }}>
-                  {[
-                    { icon: <Headphones size={20} color={theme.textMuted} />, title: "고객센터 / 문의하기", onClick: () => setShowSupportModal(true) },
-                    { icon: <AlertTriangle size={20} color={theme.textMuted} />, title: "공지사항", onClick: () => setShowNoticeModal(true) }
-                  ].map((menu, i, arr) => (
-                    <div key={i} onClick={menu.onClick} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "18px 20px", cursor: "pointer", borderBottom: i === arr.length - 1 ? "none" : `1px solid ${theme.border}`, transition: "background 0.2s" }} onMouseEnter={e => e.currentTarget.style.backgroundColor = theme.panelAlt} onMouseLeave={e => e.currentTarget.style.backgroundColor = "transparent"}>
-                      <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
-                        {menu.icon}
-                        <span style={{ fontSize: "0.95rem", fontWeight: "600", color: theme.text }}>{menu.title}</span>
-                      </div>
-                      <ChevronRight size={18} color={theme.textMuted} opacity={0.6} />
-                    </div>
-                  ))}
-                </div>
-
-              </div>
-            )}
 
 {/* 🧭 탐색 탭: 시나리오 상세 페이지 전체 화면 오버레이 */}
         {selectedExploreScenario && (
