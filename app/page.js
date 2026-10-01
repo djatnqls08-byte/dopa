@@ -91,7 +91,7 @@ function convertRowToPreset(row, index, headers = []) {
   const modeRaw = getVal(/^(룰|모드|장르|룰모드)$/i);
   let mode = "추리";
   if (/연애|로맨스/i.test(modeRaw)) mode = "연애";
-  if (/괴담|호러|인세인/i.test(modeRaw)) mode = "괴담";
+  if (/괴담|호러/i.test(modeRaw)) mode = "괴담";
 
   const tags = getVal(/^(태그|키워드)$/i);
   const synopsis = getVal(/^(개요|시놉시스)$/i);
@@ -180,6 +180,7 @@ const opening = getVal(/^(도입부|서막|오프닝)$/i);
 export default function GamePlatform() {
   // ── [3. 상태 관리] ──
   const [isMounted, setIsMounted] = useState(false); // 🌟 에러 #423 방어막
+  const chatContainerRef = useRef(null); 
  const [currentUser, setCurrentUser] = useState(null);
 
   // 🌟 내 계정 전용 프로필 사진 상자 독립!! (이 부분이 빠져서 에러가 났었어요!)
@@ -242,6 +243,15 @@ export default function GamePlatform() {
     return () => window.removeEventListener("popstate", handlePopState);
   }, []);
 
+
+// 🌟 채팅 추가 시 자동 스크롤
+  useEffect(() => {
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+    }
+  }, [sessions, activeSessionId]);
+
+  
   // 🌟 (신규) 내 서재의 심사 상태를 서버와 실시간으로 맞추는 안테나!
   useEffect(() => {
     if (currentUser?.email && savedLibrary.length > 0) {
@@ -318,8 +328,19 @@ export default function GamePlatform() {
 
   // ── [2. 시스템 토스트 알림] ──
   const [toast, setToast] = useState(null);
-  const triggerToast = (title, message = "", icon = "✨") => {
-    setToast({ title, message, icon });
+  const triggerToast = (title, message = "", icon = null) => {
+    // 🌟 사반님 절대 규칙: 텍스트 이모지가 들어오면 강제로 Lucide 아이콘으로 정화!
+    let finalIcon = icon;
+    if (typeof icon === "string") {
+      if (icon.includes("✨") || icon.includes("🎉") || icon.includes("🎊")) finalIcon = <CheckCircle2 size={18} color={theme.success} />;
+      else if (icon.includes("⚠️") || icon.includes("🚨") || icon.includes("⚠")) finalIcon = <AlertTriangle size={18} color={theme.warning} />;
+      else if (icon.includes("🚫") || icon.includes("💔") || icon.includes("🗑️")) finalIcon = <ShieldAlert size={18} color={theme.danger} />;
+      else if (icon.includes("⏳")) finalIcon = <Clock size={18} color={theme.textMuted} />;
+      else if (icon.includes("💡") || icon.includes("📢")) finalIcon = <Lightbulb size={18} color={theme.accent} />;
+      else if (icon.includes("📂") || icon.includes("📋") || icon.includes("💾")) finalIcon = <FolderOpen size={18} color={theme.accent} />;
+      else finalIcon = <CheckCircle2 size={18} color={theme.accent} />;
+    }
+    setToast({ title, message, icon: finalIcon });
     setTimeout(() => setToast(null), 2500);
   };
 
@@ -951,7 +972,7 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
     const newSession = {
       id: newId,
       title: scenarioTitle,
-      ruleMode: selectedMode === "추리" ? "freeform" : selectedMode === "연애" ? "dating" : "insane",
+      ruleMode: selectedMode === "추리" ? "freeform" : selectedMode === "연애" ? "dating" : "horror",
       preference: playPreference.trim(),
       // 🌟 AI에게 치환이 완료된(final) 텍스트를 전달합니다!
       scenarioText: `[시나리오 제목: ${scenarioTitle}]\n\n[공개 시놉시스]\n${finalSynopsis}\n\n[초기 배경/서막]\n${finalOpening}\n\n[키퍼 전용 기밀/진상]\n${finalTruth}`,
@@ -1363,104 +1384,80 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
             )}
             
             {activeSession && (
-              <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
+              <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
                 
-                {(activeSession.ruleMode?.startsWith("dating") || activeSession.ruleMode?.includes("free")) && (() => {
-                  const phoneChats = activeSession.sheet?.phoneChats || {};
-                  let unreadCount = 0;
-                  Object.values(phoneChats).forEach(msgs => { unreadCount += (msgs || []).filter(m => m.unread).length; });
-                  
-                  return (
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setIsSheetOpen(false);
-                        setShowEvidenceBoard(false);
-                        setActivePhoneContactId(null);
-                        setIsPhoneDrawerOpen(!isPhoneDrawerOpen);
-                      }}
-                      title="스마트폰 메신저"
-                      style={{ position: "relative", width: "36px", height: "36px", display: "flex", alignItems: "center", justifyContent: "center", background: isPhoneDrawerOpen ? theme.panelAlt : "transparent", border: `1px solid ${isPhoneDrawerOpen ? theme.accent : "transparent"}`, borderRadius: "10px", cursor: "pointer", color: isPhoneDrawerOpen ? theme.accent : theme.text, transition: "all 0.2s" }}
-                    >
-                      <Smartphone size={20} strokeWidth={1.5} />
-                      {unreadCount > 0 && (
-                        <span style={{ position: "absolute", top: "-2px", right: "-2px", backgroundColor: theme.danger, color: "#fff", borderRadius: "10px", minWidth: "16px", height: "16px", fontSize: "0.6rem", fontWeight: "700", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                          {unreadCount > 9 ? "9+" : unreadCount}
-                        </span>
-                      )}
+                {/* 🌸 연애 모드 */}
+                {activeSession.ruleMode?.startsWith("dating") && (
+                  <>
+                    <button type="button" onClick={(e) => { e.stopPropagation(); setIsPhoneDrawerOpen(!isPhoneDrawerOpen); }} title="메신저" style={{ background: "none", border: "none", cursor: "pointer", color: theme.text, display: "flex", alignItems: "center" }}>
+                      <Smartphone size={22} strokeWidth={2} />
                     </button>
-                  );
-                })()}
-
-                {activeSession.ruleMode === "freeform" && (
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setIsPhoneDrawerOpen(false);
-                      setIsSheetOpen(false);
-                      setShowEvidenceBoard(true); 
-                    }}
-                    title="수사 본부 증거보드"
-                    style={{ width: "36px", height: "36px", display: "flex", alignItems: "center", justifyContent: "center", background: "transparent", border: `1px solid ${showEvidenceBoard ? theme.accent : "transparent"}`, borderRadius: "10px", cursor: "pointer", color: theme.danger, transition: "all 0.2s" }}
-                  >
-                    <Pin size={20} strokeWidth={1.5} style={{ transform: "rotate(45deg)" }} />
-                  </button>
+                    <button type="button" onClick={() => { const currentNpc = (activeSession?.sheet?.npcs || []).find(n => n.id === activeSession?.activeContactId) || activeSession?.sheet?.npcs?.[0]; if (currentNpc) setClueModalNpc(currentNpc); }} title="취향 수첩" style={{ background: "none", border: "none", cursor: "pointer", color: theme.text, display: "flex", alignItems: "center" }}>
+                      <BookOpen size={22} strokeWidth={2} />
+                    </button>
+                    <button type="button" onClick={() => { const partner = activeSession.sheet?.npcs?.[0]; if (partner) setGiftModalNpc(partner); }} title="선물하기" style={{ background: "none", border: "none", cursor: "pointer", color: theme.text, display: "flex", alignItems: "center" }}>
+                      <Gift size={22} strokeWidth={2} />
+                    </button>
+                  </>
                 )}
 
-                <button 
-                  type="button"
-                  onClick={() => {
-                    const lastUserMsgIndex = (activeSession.messages || []).map(x => x.role).lastIndexOf("user");
-                    if(lastUserMsgIndex !== -1) {
-                        const targetMsg = activeSession.messages[lastUserMsgIndex];
-                        setInputMsg(targetMsg.text);
-                        setSessions(prev => prev.map(s => {
-                            if (s.id !== activeSessionId) return s;
-                            const newMsgs = s.messages.slice(0, lastUserMsgIndex);
-                            return {
-                                ...s,
-                                sheet: targetMsg.prevSheet ? targetMsg.prevSheet : s.sheet,
-                                messages: newMsgs,
-                                suggestedActions: [],
-                                pendingCheck: null
-                            };
-                        }));
-                        triggerToast("롤백 완료", "마지막 대화가 취소되었습니다.", "⎌");
-                    } else {
-                        triggerToast("알림", "되돌릴 수 있는 유저의 대화가 없습니다.", "💡");
-                    }
-                  }}
-                  title="마지막 대화 취소"
-                  style={{ width: "36px", height: "36px", display: "flex", alignItems: "center", justifyContent: "center", background: "transparent", border: "none", cursor: "pointer", color: theme.textMuted }}
-                >
+                {/* 🕵️ 추리 모드 */}
+                {activeSession.ruleMode === "freeform" && (
+                  <>
+                    <button type="button" onClick={() => setInputMsg("[🔍 현장 조사] 주변의 수상한 점이나 단서를 유심히 살펴본다. ")} title="현장 조사" style={{ background: "none", border: "none", cursor: "pointer", color: theme.text, display: "flex", alignItems: "center" }}>
+                      <Search size={22} strokeWidth={2} />
+                    </button>
+                    <button type="button" onClick={() => setInputMsg("[🤫 특수 정보 수집] 남몰래 기기를 해킹하거나 은밀하게 정보를 캐낸다. ")} title="정보 수집" style={{ background: "none", border: "none", cursor: "pointer", color: theme.text, display: "flex", alignItems: "center" }}>
+                      <FileSearch size={22} strokeWidth={2} />
+                    </button>
+                    <button type="button" onClick={() => setInputMsg("[💬 심문/추궁] 상대방의 말에서 모순점이나 수상한 알리바이를 날카롭게 캐묻는다. ")} title="알리바이 심문" style={{ background: "none", border: "none", cursor: "pointer", color: theme.text, display: "flex", alignItems: "center" }}>
+                      <MessageCircle size={22} strokeWidth={2} />
+                    </button>
+                    <button type="button" onClick={() => setInputMsg("[💡 진상 추리 선언] 지금까지 모은 단서들을 바탕으로 이 사건의 진실을 밝혀낸다! ")} title="진상 추리" style={{ background: "none", border: "none", cursor: "pointer", color: theme.danger, display: "flex", alignItems: "center" }}>
+                      <Lightbulb size={22} strokeWidth={2} />
+                    </button>
+                    <button type="button" onClick={(e) => { e.stopPropagation(); setShowEvidenceBoard(!showEvidenceBoard); }} title="증거 보드" style={{ background: "none", border: "none", cursor: "pointer", color: theme.text, display: "flex", alignItems: "center" }}>
+                      <Pin size={22} strokeWidth={2} style={{ transform: "rotate(45deg)" }} />
+                    </button>
+                  </>
+                )}
+
+                {/* 🕯️ 괴담 모드 */}
+                {activeSession.ruleMode === "horror" && (
+                  <>
+                    <button type="button" onClick={() => rollDiceDirectly()} title="행동 판정" style={{ background: "none", border: "none", cursor: "pointer", color: theme.warning, display: "flex", alignItems: "center" }}>
+                      <Dices size={22} strokeWidth={2} />
+                    </button>
+                    <button type="button" onClick={() => setIsTabletopOpen(!isTabletopOpen)} title="핸드아웃" style={{ background: "none", border: "none", cursor: "pointer", color: theme.text, display: "flex", alignItems: "center" }}>
+                      <LibraryBig size={22} strokeWidth={2} />
+                    </button>
+                    <button type="button" onClick={() => triggerMadnessDirectly(activeSessionId)} title="괴담 현상 발동" style={{ background: "none", border: "none", cursor: "pointer", color: theme.danger, display: "flex", alignItems: "center" }}>
+                      <Ghost size={22} strokeWidth={2} />
+                    </button>
+                    <button type="button" onClick={() => alert("장면 닫기 구현 필요")} title="장면 닫기" style={{ background: "none", border: "none", cursor: "pointer", color: theme.text, display: "flex", alignItems: "center" }}>
+                      <LogOut size={22} strokeWidth={2} />
+                    </button>
+                  </>
+                )}
+
+                {/* 공통: 롤백 & 캐릭터 시트 */}
+                <div style={{ width: "1px", height: "16px", backgroundColor: theme.border, margin: "0 4px" }} />
+                <button type="button" onClick={() => {
+                  const lastUserMsgIndex = (activeSession.messages || []).map(x => x.role).lastIndexOf("user");
+                  if(lastUserMsgIndex !== -1) {
+                      const targetMsg = activeSession.messages[lastUserMsgIndex];
+                      setInputMsg(targetMsg.text);
+                      setSessions(prev => prev.map(s => {
+                          if (s.id !== activeSessionId) return s;
+                          return { ...s, sheet: targetMsg.prevSheet ? targetMsg.prevSheet : s.sheet, messages: s.messages.slice(0, lastUserMsgIndex), suggestedActions: [], pendingCheck: null };
+                      }));
+                      triggerToast("롤백 완료", "마지막 대화가 취소되었습니다.", "⎌");
+                  }
+                }} title="대화 취소" style={{ background: "none", border: "none", cursor: "pointer", color: theme.textMuted, display: "flex", alignItems: "center" }}>
                    <span style={{fontSize: "1.2rem", fontWeight: "bold"}}>⎌</span>
                 </button>
-
-                {activeSession.ruleMode === "insane" && (
-                  <button type="button" onClick={() => setIsTabletopOpen(!isTabletopOpen)} title="테이블탑 핸드아웃" style={{ width: "36px", height: "36px", display: "flex", alignItems: "center", justifyContent: "center", background: isTabletopOpen ? "rgba(214, 56, 87, 0.12)" : "transparent", border: `1px solid ${isTabletopOpen ? theme.danger : "transparent"}`, borderRadius: "10px", cursor: "pointer", color: isTabletopOpen ? theme.danger : theme.text }}>
-                    <BookOpen size={20} strokeWidth={1.5} />
-                  </button>
-                )}
-                {(activeSession.ruleMode === "coc" || activeSession.ruleMode === "insane") && (
-                  <button type="button" onClick={() => rollDiceDirectly()} title="주사위 굴리기" style={{ width: "36px", height: "36px", display: "flex", alignItems: "center", justifyContent: "center", background: "transparent", border: `1px solid transparent`, borderRadius: "10px", cursor: "pointer", color: theme.warning }}>
-                    <Dices size={20} strokeWidth={1.5} />
-                  </button>
-                )}
-
-                <button 
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setIsPhoneDrawerOpen(false);
-                    setShowEvidenceBoard(false);
-                    setIsSheetOpen(!isSheetOpen);
-                  }} 
-                  title="캐릭터 시트" 
-                  style={{ width: "36px", height: "36px", display: "flex", alignItems: "center", justifyContent: "center", background: isSheetOpen ? theme.panelAlt : "transparent", border: `1px solid ${isSheetOpen ? theme.accent : "transparent"}`, borderRadius: "10px", color: isSheetOpen ? theme.accent : theme.text, cursor: "pointer", transition: "all 0.2s" }}
-                >
-                  {activeSession.ruleMode?.startsWith("dating") ? <UserRound size={20} strokeWidth={1.5} /> : <ClipboardList size={20} strokeWidth={1.5} />}
+                <button type="button" onClick={(e) => { e.stopPropagation(); setIsSheetOpen(!isSheetOpen); }} title="캐릭터 정보" style={{ background: "none", border: "none", cursor: "pointer", color: isSheetOpen ? theme.accent : theme.text, display: "flex", alignItems: "center" }}>
+                  {activeSession.ruleMode?.startsWith("dating") ? <UserRound size={22} strokeWidth={2} /> : <ClipboardList size={22} strokeWidth={2} />}
                 </button>
               </div>
             )}
@@ -1580,7 +1577,7 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
                       {originalScenarios.length > 0 && (
                         <div>
                           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px", padding: "0 4px" }}>
-                            <span style={{ fontSize: "1.1rem", fontWeight: "800", color: theme.text }}>👑 공식 대표 작품! 오리지널</span>
+                            <span style={{ display: "flex", alignItems: "center", gap: "6px" }}><LayoutGrid size="{18}" strokeWidth="{2.5}"/> 공식 대표 작품! 오리지널</span>
                             <span onClick={() => setExploreFilter("전체")} style={{ fontSize: "0.8rem", fontWeight: "700", color: theme.textMuted, cursor: "pointer" }}>전체보기 〉</span>
                           </div>
                           <div style={{ display: "flex", gap: "14px", overflowX: "auto", paddingBottom: "10px", WebkitOverflowScrolling: "touch" }}>
@@ -1601,7 +1598,7 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
                       {/* C. 실시간 인기 사건 (가로 스크롤) */}
                       <div>
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px", padding: "0 4px" }}>
-                          <span style={{ fontSize: "1.1rem", fontWeight: "800", color: theme.text }}>🔥 지금 뜨는 인기 사건</span>
+                          <span style={{ display: "flex", alignItems: "center", gap: "6px" }}><Flame color="{theme.danger}" size="{18}" strokeWidth="{2.5}"/> 지금 뜨는 인기 사건</span>
                           <span onClick={() => setExploreFilter("전체")} style={{ fontSize: "0.8rem", fontWeight: "700", color: theme.textMuted, cursor: "pointer" }}>전체보기 〉</span>
                         </div>
                         <div style={{ display: "flex", gap: "14px", overflowX: "auto", paddingBottom: "10px", WebkitOverflowScrolling: "touch" }}>
@@ -2661,13 +2658,13 @@ color: "#fff", border: "none", cursor: "pointer",
                       </div>
 
                       <button type="button" onClick={() => setShowTraitModal(true)} style={{ width: "100%", padding: "10px", backgroundColor: theme.panelAlt, border: `1.5px dashed ${theme.borderHighlight}`, borderRadius: "8px", color: theme.accent, fontSize: "0.82rem", fontWeight: "700", cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                        <span>🏷️ 특성 및 트라우마</span>
+                        <span style={{ display: "flex", alignItems: "center", gap: "6px" }}><Tag size="{16}" strokeWidth="{2.5}"/> 특성 및 트라우마</span>
                         <span style={{ fontSize: "0.75rem", color: theme.textMuted }}>선택 완료: 특성 {horrorTraits.length} | 트라우마 {horrorTraumas.length}</span>
                       </button>
 
                       <div style={{ backgroundColor: theme.panelAlt, borderRadius: "10px", padding: "12px", border: `1px solid ${theme.borderHighlight || theme.border}` }}>
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
-                          <span style={{ fontSize: "0.82rem", fontWeight: "700", color: theme.text }}>1D10 스탯 분배</span>
+                          <span style={{ fontSize: "0.82rem", fontWeight: "700", color: theme.text }}>탐색자 스탯 분배</span>
                           <span style={{ fontSize: "0.75rem", fontWeight: "700", color: availableStatPoints === 0 ? theme.success : theme.danger }}>잔여: {availableStatPoints} pt</span>
                         </div>
                         <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr 1fr" : "repeat(6, 1fr)", gap: "6px" }}>
@@ -2997,7 +2994,8 @@ color: "#fff", border: "none", cursor: "pointer",
             <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", position: "relative" }}>
               <div 
                 className="serif-text" 
-                style={{ 
+                ref={chatContainerRef} 
+                style={{
                   flex: 1, overflowY: "auto", 
                   padding: isMobile ? "24px 20px 140px 20px" : "50px 60px 160px 60px", 
                   display: "flex", flexDirection: "column", gap: "28px", 
@@ -3033,12 +3031,14 @@ color: "#fff", border: "none", cursor: "pointer",
                 )}
               </div>
 
-              <footer style={{
+             <footer style={{
                 position: "absolute", bottom: 0, left: 0, right: 0,
-                padding: "20px max(20px, env(safe-area-inset-bottom))",
+                padding: "16px max(16px, env(safe-area-inset-bottom))",
                 background: `linear-gradient(to top, ${theme.bg} 85%, transparent)`,
-                display: "flex", flexDirection: "column", alignItems: "center", gap: "12px"
+                display: "flex", flexDirection: "column", alignItems: "center", gap: "12px", zIndex: 30
               }}>
+                
+                {/* 💡 상단: 제안 칩 (연애 모드 등) */}
                 {activeSession?.suggestedActions?.length > 0 && (
                   <div style={{ display: "flex", gap: "8px", overflowX: "auto", width: "100%", maxWidth: "680px", paddingBottom: "4px" }}>
                     {activeSession.suggestedActions.map((sugg, idx) => (
@@ -3046,12 +3046,13 @@ color: "#fff", border: "none", cursor: "pointer",
                         key={idx} onClick={() => executeMessage(sugg)}
                         style={{ padding: "10px 16px", backgroundColor: theme.panelAlt, border: `1px solid ${theme.border}`, borderRadius: "20px", color: theme.text, fontSize: "0.85rem", fontWeight: "700", whiteSpace: "nowrap", cursor: "pointer", flexShrink: 0, boxShadow: "0 4px 12px rgba(0,0,0,0.05)", transition: "all 0.2s" }}
                       >
-                        💡 {sugg}
+                        {sugg}
                       </button>
                     ))}
                   </div>
                 )}
 
+                {/* ✍️ 하단: 실제 텍스트 입력 캡슐 */}
                 <div style={{
                   width: "100%", maxWidth: "680px", display: "flex", alignItems: "flex-end", gap: "8px",
                   backgroundColor: theme.inputBg, border: `1.5px solid ${theme.border}`, borderRadius: "28px",
@@ -3518,7 +3519,7 @@ color: "#fff", border: "none", cursor: "pointer",
                     <div key={s.id} style={{ padding: "16px", backgroundColor: theme.inputBg, borderRadius: "12px", border: `1px solid ${theme.border}` }}>
                       <div style={{ fontWeight: "800", color: theme.text, fontSize: "1.05rem", marginBottom: "6px" }}>{s.title}</div>
                       <div style={{ fontSize: "0.8rem", color: theme.textMuted, display: "flex", gap: "10px" }}>
-                        <span>모드: {s.ruleMode === "dating" ? "연애" : s.ruleMode === "insane" ? "괴담" : "추리"}</span>
+                        <span>모드: {s.ruleMode === "dating" ? "연애" : s.ruleMode === "horror" ? "괴담" : "추리"}</span>
                         <span>·</span>
                         <span>{new Date(s.id).toLocaleString()}</span>
                       </div>
@@ -3802,8 +3803,7 @@ color: "#fff", border: "none", cursor: "pointer",
               <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <span style={{ fontSize: "0.9rem", fontWeight: "800", color: theme.text }}>스토어 충전</span>
-                  <span style={{ fontSize: "0.7rem", color: "#fff", backgroundColor: theme.danger, padding: "4px 8px", borderRadius: "8px", fontWeight: "800", boxShadow: "0 2px 8px rgba(220,38,38,0.4)" }}>
-                    🎁 베타 한정 무료!
+                  <span style={{ display: "flex", alignItems: "center", gap: "4px" }}><Gift size="{12}" strokeWidth="{2.5}"/> 베타 한정 무료!</span>
                   </span>
                 </div>
                 {[
