@@ -10,7 +10,7 @@ import {
   Menu, Moon, Sun, Save, FileUp, HelpCircle, X, ChevronDown, ChevronUp, Image as ImageIcon,
   ClipboardList, Pin, FileSearch, Mailbox, Play,
   FolderOpen, Lock, Settings, Database, ClipboardPaste, LogOut,
-  ArrowUp, Smartphone, BookOpen, Dices // 🌟 이 4개 아이콘 추가!
+  ArrowUp, Smartphone, BookOpen, Dices
 } from "lucide-react";
 
 const THEME_PALETTES = {
@@ -1103,8 +1103,10 @@ export default function GamePlatform() {
         )}
 
         ) : (
+          /* ── [B. 인게임 뷰: 소설 리더 본문 및 팝업/오버레이] ── */
           <div style={{ flex: 1, display: "flex", overflow: "hidden", position: "relative", backgroundColor: theme.bg }}>
             
+            {/* 📖 중앙: 소설형 텍스트 뷰어 (전자책 스타일 완벽 적용) */}
             <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", position: "relative" }}>
               <div 
                 className="serif-text" 
@@ -1144,12 +1146,14 @@ export default function GamePlatform() {
                 )}
               </div>
 
+              {/* ⌨️ 하단: 늘어나는 캡슐형 입력창 및 제안 칩 */}
               <footer style={{
                 position: "absolute", bottom: 0, left: 0, right: 0,
                 padding: "20px max(20px, env(safe-area-inset-bottom))",
                 background: `linear-gradient(to top, ${theme.bg} 85%, transparent)`,
                 display: "flex", flexDirection: "column", alignItems: "center", gap: "12px"
               }}>
+                {/* AI 추천 행동 칩 */}
                 {activeSession?.suggestedActions?.length > 0 && (
                   <div style={{ display: "flex", gap: "8px", overflowX: "auto", width: "100%", maxWidth: "680px", paddingBottom: "4px" }}>
                     {activeSession.suggestedActions.map((sugg, idx) => (
@@ -1163,6 +1167,7 @@ export default function GamePlatform() {
                   </div>
                 )}
 
+                {/* 🌟 캡슐형 텍스트 입력 폼 */}
                 <div style={{
                   width: "100%", maxWidth: "680px", display: "flex", alignItems: "flex-end", gap: "8px",
                   backgroundColor: theme.inputBg, border: `1.5px solid ${theme.border}`, borderRadius: "28px",
@@ -1223,6 +1228,7 @@ export default function GamePlatform() {
               </footer>
             </div>
 
+            {/* ── 📌 1. 수사 증거보드 ── */}
             {showEvidenceBoard && activeSession && activeSession.ruleMode === "freeform" && (
               <SecretBoard
                 activeSession={activeSession}
@@ -1236,6 +1242,7 @@ export default function GamePlatform() {
               />
             )}
 
+            {/* ── 📋 2. 캐릭터 시트 ── */}
             <CharacterSheet 
               activeSession={activeSession}
               theme={theme}
@@ -1252,6 +1259,7 @@ export default function GamePlatform() {
           </div>
         )}
 
+        {/* ── 📱 하단 세그먼트 글래스 탭바 ── */}
         {!activeSession && (
           <nav
             style={{
@@ -1297,6 +1305,7 @@ export default function GamePlatform() {
           </nav>
         )}
 
+        {/* ── 🖼️ 초상화 모달 ── */}
         {showPortraitModal && (() => {
           const isPc = activePortraitSuspectId === "pc";
           let target;
@@ -1390,6 +1399,7 @@ export default function GamePlatform() {
           );
         })()}
 
+        {/* ── 📄 시나리오 텍스트 붙여넣기 모달 ── */}
         {showPasteModal && (
           <div onClick={() => setShowPasteModal(false)} style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 200, padding: "20px" }}>
             <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: "520px", backgroundColor: theme.panel, border: `1px solid ${theme.border}`, borderRadius: "16px", padding: "20px", display: "flex", flexDirection: "column", gap: "12px", boxShadow: "0 20px 40px rgba(0,0,0,0.5)" }}>
@@ -1408,6 +1418,7 @@ export default function GamePlatform() {
           </div>
         )}
 
+        {/* 🌟 4. 룰 모드 가이드 모달 */}
         {ruleHelpModal && (
           <div onClick={() => setRuleHelpModal(null)} style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 160, padding: "20px" }}>
             <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: "440px", padding: "22px", borderRadius: "16px", backgroundColor: theme.panel, color: theme.text, display: "flex", flexDirection: "column", gap: "12px", boxShadow: "0 16px 40px rgba(0,0,0,0.3)" }}>
