@@ -12,7 +12,8 @@ import {
   FolderOpen, Lock, Settings, Database, ClipboardPaste, LogOut,
   ArrowUp, Smartphone, BookOpen, Dices, ChevronLeft, ChevronRight, UploadCloud, AlertTriangle, CheckCircle2,
   Brain, Skull, Eye, Activity, ShieldAlert, ToggleLeft, ToggleRight, Plus, Minus, Ghost, Gift, Video, CreditCard, Headphones,
-  Trash2, Clock, Tag, Droplet
+  Trash2, Clock, Tag, Droplet, MessageCircle, MessageSquare, Bandage, Clapperboard, Lightbulb, 
+  Fingerprint, Flower2, Tentacle, Compass
 } from "lucide-react";
 
 const THEME_PALETTES = {
@@ -22,6 +23,139 @@ const THEME_PALETTES = {
   }
 };
 const GLASS_STYLE = { backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)" };
+
+// ==========================================
+// 📑 시크릿 노벨 공식 시나리오 파이프라인 (구글 시트 연동)
+// ==========================================
+const GOOGLE_SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQQEA39XlsqHKGn0GPzmVH42jhimki3yJUIbKHkXjgzmLA5bD66WQvXw3-nHy9PJSxwg727wfSGznYa/pub?gid=0&single=true&output=csv"; // 나중에 웹 게시 CSV 링크로 교체하세요!
+
+function parseCSV(text) {
+  let p = '', c = '', r = [];
+  let q = false;
+  let row = [''];
+  for (let i = 0; i < text.length; i++) {
+    c = text[i];
+    let next = text[i + 1];
+    if (c === '"') {
+      if (q && next === '"') { row[row.length - 1] += '"'; i++; }
+      else { q = !q; }
+    } else if (c === ',' && !q) {
+      row.push('');
+    } else if ((c === '\r' || c === '\n') && !q) {
+      if (c === '\r' && next === '\n') { i++; }
+      r.push(row);
+      row = [''];
+    } else {
+      row[row.length - 1] += c;
+    }
+  }
+  if (row.length > 1 || row[0] !== '') r.push(row);
+  return r;
+}
+
+// 🌟 [수정됨] 2. 체크박스(TRUE/FALSE) 완벽 감지 및 공개 여부 필터링
+  const pubIdx = findIdx(/^(공개여부|공개|공개\/비공개|상태|open|public)$/i);
+  let isHidden = false;
+  const firstColVal = (row[0] || "").toString().trim().toUpperCase();
+
+  // 구글 시트의 체크박스 상태(TRUE/FALSE)를 읽어옵니다.
+  if (pubIdx !== -1) {
+    const pubVal = (row[pubIdx] || "").toString().trim().toUpperCase();
+    isHidden = pubVal === "FALSE" || pubVal === "비공개" || pubVal === "X" || pubVal === "N";
+  } else if (firstColVal === "TRUE" || firstColVal === "FALSE") {
+    // 헤더를 못 찾았어도 첫 번째 열이 체크박스라면 그걸 기준으로 삼음
+    isHidden = firstColVal === "FALSE";
+  }
+
+  let titleIdx = findIdx(/^(제목|사건명|시나리오제목|title)$/i);
+  if (titleIdx === -1) titleIdx = pubIdx !== -1 ? pubIdx + 1 : 2; 
+  const title = (row[titleIdx] || "").toString().trim();
+
+  // 🚨 비공개(체크 해제) 상태거나 제목이 없으면 탐색 탭에 절대 띄우지 않고 무시합니다!
+  if (isHidden || !title || title.startsWith("//")) return null;
+
+  const getVal = (regex) => {
+    const hIdx = findIdx(regex);
+    return hIdx !== -1 && hIdx < row.length ? (row[hIdx] || "").toString().trim() : "";
+  };
+
+  const modeRaw = getVal(/^(룰|룰모드|모드|장르|mode)$/i);
+  let mode = "추리";
+  if (/연애|미연시|로맨스|dating/i.test(modeRaw)) mode = "연애";
+  else if (/괴담|인세인|호러|insane/i.test(modeRaw)) mode = "괴담";
+
+  const tags = getVal(/^(태그|키워드)$/i);
+  const synopsis = getVal(/^(개요|공개시놉시스|시놉시스)$/i);
+  const opening = getVal(/^(도입부|서막|오프닝)$/i);
+  const truth = getVal(/^(진상|기밀|비밀|진실)$/i);
+  const sessionCardImg = getVal(/^(세션카드|썸네일|표지|이미지)$/i);
+
+  const pcName = getVal(/^(pc이름|주인공이름|탐색자이름)$/i);
+  const pcAgeGender = getVal(/^(pc나이성별|pc성별나이|주인공나이성별)$/i);
+  const pcJob = getVal(/^(pc직업|주인공직업)$/i);
+  const pcBackground = getVal(/^(pc성격|pc배경|주인공성격)$/i);
+  const pcSecret = getVal(/^(pc비밀|주인공비밀)$/i);
+  const pcPortraitUrl = getVal(/^(pc초상화|pc사진)$/i);
+
+  const abyssTriggers = {
+    30: getVal(/^이상충동30$/i),
+    60: getVal(/^이상충동60$/i),
+    90: getVal(/^이상충동90$/i)
+  };
+
+  const extractList = (maxCount, prefix, fields, transformFn) => {
+    const list = [];
+    for (let i = 1; i <= maxCount; i++) {
+      const extracted = {};
+      let hasData = false;
+      fields.forEach(field => {
+        const val = getVal(new RegExp(`^${prefix}${i}${field}$`, 'i'));
+        extracted[field] = val;
+        if (val) hasData = true;
+      });
+      if (hasData) list.push(transformFn(extracted, i));
+    }
+    return list;
+  };
+
+  const mainPartners = extractList(5, "(?:메인)?파트너", ["이름", "나이성별", "직업", "특징", "비밀", "초상화"], (d, i) => ({
+    id: `partner_${Date.now()}_${i}`, name: d.이름, ageGender: d.나이성별, job: d.직업, behavior: d.특징, secret: d.비밀, portraitUrl: d.초상화, showSecret: false
+  }));
+
+  const suspects = extractList(15, "(?:등장)?인물", ["이름", "나이성별", "직업", "특징", "비밀", "초상화"], (d, i) => ({
+    id: `suspect_${Date.now()}_${i}`, name: d.이름, ageGender: d.나이성별, job: d.직업, behavior: d.특징, secret: d.비밀, portraitUrl: d.초상화, showSecret: false
+  }));
+
+  const evidenceList = extractList(15, "단서", ["이름", "개요", "비밀"], (d, i) => ({
+    id: `evidence_${Date.now()}_${i}`, name: d.이름, overview: d.개요, secret: d.비밀, contradiction: "", showSecret: false
+  }));
+
+  const cgList = extractList(10, "CG", ["이름", "조건", "대사", "사진"], (d, i) => ({
+    id: `cg_${Date.now()}_${i}`, title: d.이름, condition: d.조건, dialogue: d.대사, imageUrl: d.사진, showDetails: false
+  }));
+
+  const routeList = extractList(10, "분기", ["이름", "대상", "호감도"], (d, i) => {
+    const matchedNpc = suspects.find(s => s.name === d.대상) || mainPartners.find(p => p.name === d.대상);
+    return { id: `route_${Date.now()}_${i}`, routeName: d.이름, targetId: matchedNpc ? matchedNpc.id : "", affectionChange: d.호감도 || "+10", requiredCG: "" };
+  });
+
+  return {
+    id: 9000000000000 + index,
+    title: title,
+    mode: mode,
+    author: "공식 에디터",
+    likes: Math.floor(Math.random() * 500) + 500 + "K",
+    plays: Math.floor(Math.random() * 900) + 100 + "K",
+    isOriginal: true,
+    imageUrl: sessionCardImg,
+    isDownloaded: false,
+    data: {
+      playPreference: tags, publicSynopsis: synopsis, openingScene: opening, hiddenTruth: truth,
+      pcName, pcAgeGender, pcJob, pcBackground, pcSecret, pcPortraitUrl, showPcSecret: false,
+      abyssTriggers, mainPartners, usePartner: mainPartners.length > 0, suspects, evidenceList, cgList, routeList
+    }
+  };
+}
 
 export default function GamePlatform() {
  // ── [0. 폰트 강제 로드] ──
@@ -260,14 +394,31 @@ const handleDeleteFromLibrary = (id) => {
   const [showCgModal, setShowCgModal] = useState(false); // 🖼️ CG 팝업 스위치
   const [activeCgId, setActiveCgId] = useState(null); // 🖼️ 현재 선택된 CG 아이디
 
-// ── [탐색 탭 라운지 데이터 (상태로 변경)] ──
-const [exploreScenarios, setExploreScenarios] = useState([
-  { id: 101, title: "재로 덮인 요람", mode: "괴담", author: "에쉬우드", likes: "1.2K", plays: "5.4K", isOriginal: true, imageUrl: "" },
-  { id: 102, title: "달그림자 경매장의 밤", mode: "연애", author: "라이리스", likes: "890", plays: "3.2K", isOriginal: false, imageUrl: "" },
-  { id: 103, title: "시간의 톱니바퀴", mode: "추리", author: "크로노스", likes: "2.5K", plays: "12K", isOriginal: true, imageUrl: "" },
-  { id: 104, title: "방과 후 미라클", mode: "추리", author: "아카데미", likes: "450", plays: "1.1K", isOriginal: false, imageUrl: "" }
-]);
+// ── [탐색 탭 라운지 데이터 (구글 시트 연동)] ──
+const [exploreScenarios, setExploreScenarios] = useState([]); // 처음엔 빈 배열
 
+// 마운트 시 구글 시트에서 공식 시나리오 불러오기
+useEffect(() => {
+  if (GOOGLE_SHEET_CSV_URL && GOOGLE_SHEET_CSV_URL.trim() !== "" && !GOOGLE_SHEET_CSV_URL.includes("여기에")) {
+    fetch(GOOGLE_SHEET_CSV_URL)
+      .then(res => res.text())
+      .then(csvText => {
+        const rows = parseCSV(csvText);
+        const headers = rows[0] || [];
+        
+        // 시트 데이터를 순회하며 프론트엔드 포맷으로 변환
+        const sheetPresets = rows.slice(1)
+          .map((row, idx) => convertRowToPreset(row, idx, headers))
+          .filter(Boolean); // null(비공개/에러) 제거
+
+        if (sheetPresets.length > 0) {
+          setExploreScenarios(sheetPresets);
+        }
+      })
+      .catch(err => console.error("구글 시트 불러오기 실패:", err));
+  }
+}, []);
+ 
 // ── [탐색 탭 상세 페이지용 상태] ──
 const [selectedExploreScenario, setSelectedExploreScenario] = useState(null);
 const [exploreDetailTab, setExploreDetailTab] = useState("소개"); // 소개 탭 vs 주요 인물 탭
@@ -994,7 +1145,14 @@ const [showSupportModal, setShowSupportModal] = useState(false);
                               </div>
                             )}
 
-                            {/* 🌟 뱃지 모음 (다운로드 됨 + 업데이트 가능) */}
+{/* 🌟 라운지 공개 중 뱃지 */}
+                            {!scen.isDownloaded && scen.isPublic && (
+                              <div style={{ position: "absolute", top: "12px", right: "12px", padding: "4px 8px", backgroundColor: theme.success, backdropFilter: "blur(4px)", borderRadius: "8px", color: "#fff", fontSize: "0.7rem", fontWeight: "800", border: `1px solid rgba(255,255,255,0.3)`, zIndex: 5, boxShadow: "0 2px 8px rgba(0,0,0,0.3)", display: "flex", alignItems: "center", gap: "4px" }}>
+                                <Globe size={12} strokeWidth={2.5} /> 라운지 공개 중
+                              </div>
+                            )}
+
+                            {/* (기존) 다운로드 됨 뱃지 */}
                             {scen.isDownloaded && (
                               <div style={{ position: "absolute", top: "12px", left: "12px", display: "flex", flexDirection: "column", gap: "6px", zIndex: 5 }}>
                                 <div style={{ padding: "4px 8px", backgroundColor: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)", borderRadius: "8px", color: "#60a5fa", fontSize: "0.7rem", fontWeight: "700", border: "1px solid rgba(96, 165, 250, 0.4)", display: "flex", alignItems: "center", gap: "4px", width: "fit-content" }}>
@@ -1028,7 +1186,7 @@ const [showSupportModal, setShowSupportModal] = useState(false);
                             )}
                           </div>
 
-                          {/* 🌟 하단 카드 텍스트 정보 영역 */}
+{/* 🌟 하단 카드 텍스트 정보 영역 */}
                           <div style={{ padding: "16px", display: "flex", flexDirection: "column", gap: "12px" }}>
                             <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
                               <div style={{ fontWeight: "800", fontSize: "1.1rem", color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
@@ -1048,10 +1206,37 @@ const [showSupportModal, setShowSupportModal] = useState(false);
                                   <FolderOpen size={18} strokeWidth={2.5} />
                                 </button>
                                 
-                                {/* 다운로드 받은 게 아니고, 심사 요청도 안 했을 때만 업로드 구름 노출 */}
-                                {!scen.isDownloaded && scen.status !== "심사 대기" && (
-                                  <button title="라운지에 시나리오 공유/업로드" onClick={() => setUploadingScenario(scen)} style={{ background: "none", border: "none", color: "#60a5fa", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: "4px" }}>
-                                    <UploadCloud size={19} strokeWidth={2.5} />
+                                {/* 유저 창작 시나리오 라운지 공개/비공개 토글 */}
+                                {!scen.isDownloaded && (
+                                  <button 
+                                    title={scen.isPublic ? "라운지에서 내리기 (비공개)" : "라운지에 공개하기"} 
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      const newPublicState = !scen.isPublic;
+                                      
+                                      const updatedLibrary = savedLibrary.map(item => 
+                                        item.id === scen.id ? { ...item, isPublic: newPublicState } : item
+                                      );
+                                      setSavedLibrary(updatedLibrary);
+                                      localStorage.setItem("secret_novel_library", JSON.stringify(updatedLibrary));
+
+                                      if (newPublicState) {
+                                        const newExploreItem = {
+                                          id: scen.id, title: scen.title, mode: scen.mode, author: pcName || "익명 탐색자", 
+                                          likes: "0", plays: "0", isOriginal: false, imageUrl: scen.imageUrl, data: scen.data
+                                        };
+                                        setExploreScenarios([newExploreItem, ...exploreScenarios]);
+                                        // 🌟 이모지 대신 고급스러운 아이콘 렌더링!
+                                        triggerToast("라운지 발행", "이 서류가 라운지에 공개되었습니다.", <Globe size={18} color={theme.success} />);
+                                      } else {
+                                        setExploreScenarios(exploreScenarios.filter(e => e.id !== scen.id));
+                                        // 🌟 이모지 대신 고급스러운 자물쇠 아이콘 렌더링!
+                                        triggerToast("비공개 전환", "라운지에서 서류를 내렸습니다.", <Lock size={18} color={theme.textMuted} />);
+                                      }
+                                    }} 
+                                    style={{ background: "none", border: "none", color: scen.isPublic ? theme.success : theme.textMuted, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: "4px", transition: "color 0.2s" }}
+                                  >
+                                    {scen.isPublic ? <ToggleRight size={22} strokeWidth={2.5} /> : <ToggleLeft size={22} strokeWidth={2.5} />}
                                   </button>
                                 )}
 
