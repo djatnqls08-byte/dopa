@@ -3505,11 +3505,15 @@ color: "#fff", border: "none", cursor: "pointer",
                     
                     const today = new Date().toISOString().split("T")[0];
                     
-                  // 🌟 upsert를 다시 insert로 변경! (보안문이 열렸으니 무사 통과됩니다)
+                  // 🌟 공지사항 서버 전송!
                     const { data, error } = await supabase.from('notices').insert([{ text: newNotice, date: today }]).select();
-                
-                    if (!error && data) {
-                      setNotices([data[0], ...notices]); // 화면에도 즉시 새 공지 추가
+                    
+                    if (error) {
+                      triggerToast("서버 에러 상세", error.message, "🚨");
+                      return;
+                    }
+                    if (data) {
+                      setNotices([data[0], ...notices]);
                       setNewNotice("");
                       triggerToast("공지 등록 완료", "모든 유저에게 새 공지가 실시간 송출됩니다!", "📢");
                     } else {
@@ -4097,27 +4101,28 @@ color: "#fff", border: "none", cursor: "pointer",
                 onClick={async () => {
                   triggerToast("업로드 중...", "서버로 데이터를 전송하고 있습니다.", "⏳");
 
-                 // 🌟 여기도 upsert를 다시 insert로 변경!
+                 // 🌟 혹시라도 빈칸이 들어가서 튕기지 않게 방어막(||)을 쳐둡니다!
                   const { error } = await supabase
                     .from('scenarios')
                     .insert([
                       {
-                        title: uploadingScenario.title,
-                        mode: uploadingScenario.mode,
+                        title: uploadingScenario.title || "제목 없음",
+                        mode: uploadingScenario.mode || "추리",
                         author_email: currentUser?.email || "unknown@test.com",
                         author_name: currentUser?.name || "익명 작가",
                         image_url: uploadingScenario.imageUrl || "",
                         data: {
                           ...uploadingScenario.data,
-                          publicSynopsis: uploadingScenario.uploadSynopsis,
-                          triggerWarning: uploadingScenario.uploadWarning
+                          publicSynopsis: uploadingScenario.uploadSynopsis || "",
+                          triggerWarning: uploadingScenario.uploadWarning || ""
                         },
                         status: '심사 대기'
                       }
                     ]);
 
+                  // 🌟 에러가 나면 뭉뚱그리지 말고 "정확한 에러 원인"을 화면에 띄웁니다!
                   if (error) {
-                    triggerToast("업로드 실패", "서버 연결에 문제가 발생했습니다.", "⚠️");
+                    triggerToast("서버 에러 상세", error.message, "🚨");
                     console.error("Supabase 에러:", error);
                     return;
                   }
