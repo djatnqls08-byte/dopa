@@ -8,7 +8,7 @@ import CharacterSheet from "@/components/CharacterSheet";
 import { 
   Search, Heart, Flame, LayoutGrid, LibraryBig, PenTool, UserRound, 
   Menu, Moon, Sun, Save, FileUp, HelpCircle, X, ChevronDown, ChevronUp, Image as ImageIcon,
-  ClipboardList, Pin, FileSearch, Mailbox, Play,
+  ClipboardList, Pin, FileSearch, Mailbox, Play, Trash2, Clock, Save,
   FolderOpen, Lock, Settings, Database, ClipboardPaste, LogOut,
   ArrowUp, Smartphone, BookOpen, Dices, ChevronLeft, ChevronRight,
  Brain, Skull, Eye, Activity, ShieldAlert, ToggleLeft, ToggleRight, Plus, Minus, Ghost
@@ -165,7 +165,15 @@ const TRAUMA_LIST = [
   "호흡발작", "빛민감증", "망각강박", "망상장애", "사물집착"
 ];
   
- 
+// ── [서재 탭 UI 미리보기용 상태] ──
+const [mockLibrary, setMockLibrary] = useState([
+  { id: 1, title: "재로 덮인 요람", mode: "괴담 (FREEFORM)", date: "09. 30. 오전 02:13", imageUrl: "" },
+  { id: 2, title: "시간의 톱니바퀴", mode: "추리 (INVESTIGATION)", date: "09. 29. 오후 08:24", imageUrl: "" },
+  { id: 3, title: "달그림자 경매장의 밤", mode: "연애 (DATING)", date: "09. 29. 오후 08:20", imageUrl: "" }
+]);
+const [showLibEditModal, setShowLibEditModal] = useState(false);
+const [editingLibItem, setEditingLibItem] = useState(null);
+
  const [cgList, setCgList] = useState([
     { id: 1, title: "", condition: "", dialogue: "", imageUrl: "", showDetails: false }
   ]);
@@ -730,30 +738,78 @@ const TRAUMA_LIST = [
               </div>
             )}
          
-            {/* 📚 서재 (Library) 탭 화면 */}
+{/* 📚 서재 (Library) 탭 화면 */}
             {activeTab === "library" && (
               <div style={{ display: "flex", flexDirection: "column", gap: "16px", animation: "fadeIn 0.2s ease-out" }}>
-                <div style={{ ...GLASS_STYLE, padding: "24px", backgroundColor: theme.panel, borderRadius: "18px", border: `1px solid ${theme.border}`, display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", gap: "12px" }}>
-                  <div style={{ backgroundColor: theme.panelAlt, padding: "16px", borderRadius: "50%", color: theme.accent }}>
-                    <LibraryBig size={40} strokeWidth={1.5} />
-                  </div>
-                  <div style={{ fontWeight: "700", fontSize: "1.1rem", color: theme.text }}>
-                    내 서재에 보관된 서류철
-                  </div>
-                  <div style={{ fontSize: "0.82rem", color: theme.textMuted, lineHeight: "1.5", maxWidth: "300px" }}>
-                    로비에서 작성한 시나리오 세팅을 브라우저에 저장하고 언제든 다시 불러올 수 있습니다.
-                  </div>
-                </div>
+                
+                {/* 상단: + 새 시나리오 생성 버튼 */}
+                <button 
+                  onClick={() => setActiveTab("lobby")}
+                  style={{ width: "100%", padding: "16px", backgroundColor: theme.accent, border: "none", borderRadius: "12px", color: isDarkMode ? "#1a1817" : "#fff", fontSize: "1.05rem", fontWeight: "700", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", boxShadow: "0 6px 16px rgba(0,0,0,0.15)", transition: "transform 0.2s" }}
+                >
+                  <Plus size={20} strokeWidth={2.5} /> 새 시나리오 생성
+                </button>
 
-                <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                  <span style={{ fontSize: "0.85rem", fontWeight: "700", color: theme.text, marginLeft: "4px" }}>저장된 세팅 목록 (0)</span>
-                  <div style={{ padding: "30px", backgroundColor: theme.panelAlt, borderRadius: "16px", border: `1px dashed ${theme.border}`, textAlign: "center", color: theme.textMuted, fontSize: "0.8rem", display: "flex", flexDirection: "column", alignItems: "center", gap: "8px" }}>
-                    <Database size={24} strokeWidth={1.5} opacity={0.5} />
-                    아직 저장된 서류철이 없습니다.<br/>로비 상단의 💾 저장 버튼을 눌러보세요.
-                  </div>
+                {/* 세션 카드 그리드 리스트 */}
+                <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: "16px" }}>
+                  {mockLibrary.map(scen => (
+                    <div key={scen.id} style={{ backgroundColor: theme.panel, borderRadius: "16px", overflow: "hidden", border: `1px solid ${theme.border}`, boxShadow: "0 8px 24px rgba(0,0,0,0.06)", display: "flex", flexDirection: "column", position: "relative" }}>
+                      
+                      {/* 썸네일 영역 (16:9) */}
+                      <div style={{ width: "100%", aspectRatio: "16/9", backgroundColor: theme.panelAlt, position: "relative", display: "flex", alignItems: "center", justifyContent: "center", borderBottom: `1px solid ${theme.border}` }}>
+                        {scen.imageUrl ? (
+                          <img src={scen.imageUrl} alt="표지" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                        ) : (
+                          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "8px", color: theme.textMuted, opacity: 0.5 }}>
+                            <ImageIcon size={36} strokeWidth={1.5} />
+                            <span style={{ fontSize: "0.75rem", fontWeight: "600" }}>커버 이미지 없음</span>
+                          </div>
+                        )}
+                        
+                        {/* 🌟 수정(연필) 팝업 띄우기 버튼 */}
+                        <button 
+                          title="커버 수정" 
+                          onClick={() => {
+                            setEditingLibItem({ ...scen });
+                            setShowLibEditModal(true);
+                          }}
+                          style={{ position: "absolute", top: "12px", right: "12px", width: "32px", height: "32px", borderRadius: "8px", backgroundColor: "rgba(0, 0, 0, 0.65)", border: `1px solid rgba(255, 255, 255, 0.2)`, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", backdropFilter: "blur(4px)", zIndex: 10 }}
+                        >
+                          <PenTool size={16} strokeWidth={2.5} color="#f97316" />
+                        </button>
+                      </div>
+
+                      {/* 하단 카드 텍스트 정보 영역 */}
+                      <div style={{ padding: "16px", display: "flex", flexDirection: "column", gap: "12px" }}>
+                        <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                          <div style={{ fontWeight: "800", fontSize: "1.1rem", color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                            {scen.title}
+                          </div>
+                          <div style={{ fontSize: "0.75rem", fontWeight: "700", color: theme.textMuted, letterSpacing: "0.5px" }}>
+                            {scen.mode}
+                          </div>
+                        </div>
+
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingTop: "10px", borderTop: `1px dashed ${theme.borderHighlight || theme.border}` }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: "6px", color: theme.textMuted, fontSize: "0.75rem", fontWeight: "500" }}>
+                            <Clock size={14} strokeWidth={2} /> {scen.date}
+                          </div>
+                          <div style={{ display: "flex", gap: "8px" }}>
+                            <button title="세션 플레이 시작" style={{ background: "none", border: "none", color: theme.accent, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: "4px" }}>
+                              <Play size={20} strokeWidth={2.5} />
+                            </button>
+                            <button title="삭제 (미리보기)" onClick={() => setMockLibrary(mockLibrary.filter(item => item.id !== scen.id))} style={{ background: "none", border: "none", color: theme.textMuted, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: "4px" }}>
+                              <Trash2 size={18} strokeWidth={2} />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             )}
+
 
             {/* ✍️ 로비 (Lobby) 탭 화면 */}
             {activeTab === "lobby" && (
@@ -2185,6 +2241,64 @@ color: "#fff", border: "none", cursor: "pointer",
                 <button onClick={() => setShowPasteModal(false)} style={{ flex: 1, padding: "10px", backgroundColor: theme.panelAlt, border: `1px solid ${theme.border}`, borderRadius: "8px", color: theme.text, fontSize: "0.8rem", cursor: "pointer" }}>취소</button>
                 <button onClick={handleApplyPastedScenario} style={{ flex: 2, padding: "10px", backgroundColor: theme.accent, color: isDarkMode ? "#1a1817" : "#fff", border: "none", borderRadius: "8px", fontSize: "0.8rem", fontWeight: "600", cursor: "pointer" }}>서류철에 자동 배치 ➔</button>
               </div>
+            </div>
+          </div>
+        )}
+
+
+{/* 📚 서재 세션 카드 수정 팝업 */}
+        {showLibEditModal && editingLibItem && (
+          <div onClick={() => setShowLibEditModal(false)} style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 300, padding: "20px" }}>
+            <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: "440px", backgroundColor: theme.panel, border: `1px solid ${theme.border}`, borderRadius: "18px", padding: "24px", display: "flex", flexDirection: "column", gap: "20px", boxShadow: "0 20px 40px rgba(0,0,0,0.5)" }}>
+              
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: `1px solid ${theme.border}`, paddingBottom: "12px" }}>
+                <span style={{ fontWeight: "700", fontSize: "1.05rem", color: theme.text, display: "flex", alignItems: "center", gap: "8px" }}>
+                  <PenTool size={20} color="#f97316" /> 세션 커버 및 정보 수정
+                </span>
+                <button onClick={() => setShowLibEditModal(false)} style={{ background: "none", border: "none", color: theme.text, fontSize: "1.2rem", cursor: "pointer" }}><X size={20}/></button>
+              </div>
+
+              {/* 🌟 16:9 커버 이미지 등록 영역 */}
+              <div style={{ width: "100%", aspectRatio: "16/9", backgroundColor: theme.inputBg, border: `1.5px dashed ${theme.borderHighlight}`, borderRadius: "12px", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", position: "relative", cursor: "pointer" }}>
+                 {editingLibItem.imageUrl ? (
+                   <img src={editingLibItem.imageUrl} alt="커버" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                 ) : (
+                   <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "8px", color: theme.textMuted }}>
+                     <ImageIcon size={32} strokeWidth={1.5} />
+                     <span style={{ fontSize: "0.8rem", fontWeight: "600" }}>터치하여 커버 이미지 업로드</span>
+                   </div>
+                 )}
+                 <label style={{ position: "absolute", inset: 0, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                   <input type="file" accept="image/*" style={{ display: "none" }} onChange={(e) => {
+                       const file = e.target.files[0];
+                       if (file) {
+                           const reader = new FileReader();
+                           reader.onload = (ev) => {
+                               setEditingLibItem({...editingLibItem, imageUrl: ev.target.result});
+                           };
+                           reader.readAsDataURL(file);
+                       }
+                   }} />
+                 </label>
+              </div>
+
+              {/* 제목 수정 영역 */}
+              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                 <label style={{ fontSize: "0.75rem", fontWeight: "700", color: theme.textMuted, paddingLeft: "4px" }}>사건명 (타이틀)</label>
+                 <input type="text" autoComplete="off" value={editingLibItem.title} onChange={e => setEditingLibItem({...editingLibItem, title: e.target.value})} style={{ padding: "12px", borderRadius: "8px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.9rem", outline: "none", fontWeight: "600" }} />
+              </div>
+
+              <button 
+                onClick={() => {
+                  // 수정된 내용을 메인 리스트에 반영
+                  setMockLibrary(mockLibrary.map(item => item.id === editingLibItem.id ? editingLibItem : item));
+                  setShowLibEditModal(false);
+                  triggerToast("수정 완료", "커버 정보가 성공적으로 변경되었습니다.", <Save color={theme.accent} size={18}/>);
+                }} 
+                style={{ width: "100%", padding: "14px", backgroundColor: theme.accent, color: isDarkMode ? "#1a1817" : "#fff", border: "none", borderRadius: "12px", fontSize: "0.95rem", fontWeight: "700", cursor: "pointer", marginTop: "4px" }}
+              >
+                저장하고 닫기
+              </button>
             </div>
           </div>
         )}
