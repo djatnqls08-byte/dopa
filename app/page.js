@@ -3124,16 +3124,14 @@ color: "#fff", border: "none", cursor: "pointer",
               />
             )}
 
-            <CharacterSheet 
-              activeSession={activeSession}
-              theme={theme}
-              isMobile={isMobile}
-              isSheetOpen={isSheetOpen}
-              setIsSheetOpen={setIsSheetOpen}
-              isDarkMode={isDarkMode}
-              handleSaveCurrentAsPreset={handleSaveCurrentAsPreset}
-              handleSaveSessionAsLobbyPreset={handleSaveSessionAsLobbyPreset}
-            />
+            <CharacterSheet
+  activeSession={activeSession}
+  isDarkMode={isDarkMode}
+  isMobile={isMobile}
+  isSheetOpen={isSheetOpen}
+  setIsSheetOpen={setIsSheetOpen}
+  theme={theme}
+/>
 
           </div>
         )}
