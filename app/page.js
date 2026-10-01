@@ -500,11 +500,18 @@ const handleDeleteFromLibrary = (id) => {
   const [editingBanner, setEditingBanner] = useState(null); 
 
   useEffect(() => {
-    // 앱을 처음 켤 때 Supabase 서버에서 현재 전시 중인 배너를 가져옵니다!
     const fetchBanners = async () => {
       const { data, error } = await supabase.from('main_banners').select('*').order('id', { ascending: true });
-      if (data && !error) {
+      
+      // 🌟 서버에서 데이터를 성공적으로 가져오고, 내용이 비어있지 않을 때만 세팅!
+      if (data && data.length > 0 && !error) {
         setBanners(data.map(b => ({ id: b.id, tag: b.tag, title: b.title, desc: b.description, imageUrl: b.image_url })));
+      } else {
+        // 🌟 비어있거나 에러가 나면 무조건 띄워줄 '기본 배너' (증발 방어막!)
+        setBanners([
+          { id: 1, tag: "이번 주말의 추천 사건", title: "저택의 그림자", desc: "어느 비 오는 밤, 저택에서 울린 한 발의 총성.", imageUrl: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=800&q=80" },
+          { id: 2, tag: "NEW 로맨스", title: "어느 세이렌의 결백", desc: "깊은 바닷속, 그녀가 숨기고 있는 슬픈 진실", imageUrl: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=800&q=80" }
+        ]);
       }
     };
     fetchBanners();
@@ -604,9 +611,22 @@ const [showSupportModal, setShowSupportModal] = useState(false);
   }, [showReviewModal, isAdmin]);
 
   const [showNoticeModal, setShowNoticeModal] = useState(false);
-  const [notices, setNotices] = useState([
-    { id: 1, text: "시크릿 노벨 클로즈 베타 테스트에 오신 것을 환영합니다! 🎉\n버그 제보 및 피드백은 고객센터를 이용해 주세요.", date: "2026-10-01" }
-  ]);
+  const [showNoticeModal, setShowNoticeModal] = useState(false);
+  
+  // 🌟 (서버 연동 완료!) 공지사항 데이터 상자 및 안테나
+  const [notices, setNotices] = useState([]);
+  const [newNotice, setNewNotice] = useState("");
+
+  useEffect(() => {
+    // 앱을 켤 때 서버에서 최신 공지사항을 불러옵니다!
+    const fetchNotices = async () => {
+      const { data, error } = await supabase.from('notices').select('*').order('id', { ascending: false });
+      if (data && !error) {
+        setNotices(data);
+      }
+    };
+    fetchNotices();
+  }, []);
   
   const [newNotice, setNewNotice] = useState("");
   const [likedScenarios, setLikedScenarios] = useState([]); // 💖 관심 시나리오 보관함
@@ -3307,13 +3327,14 @@ color: "#fff", border: "none", cursor: "pointer",
                 onClick={async () => {
                   triggerToast("저장 중...", "서버에 배너를 업데이트하고 있습니다.", "⏳");
                   
-                  // 🌟 수빈님이 바꾼 배너 사진과 글씨를 서버(Supabase)에 덮어씌우기!
-                  const { error } = await supabase.from('main_banners').update({
+                  // 🌟 데이터가 없으면 새로 만들고, 있으면 덮어씌우는 무적의 Upsert 마법!
+                  const { error } = await supabase.from('main_banners').upsert({
+                    id: editingBanner.id,
                     tag: editingBanner.tag,
                     title: editingBanner.title,
                     description: editingBanner.desc,
                     image_url: editingBanner.imageUrl
-                  }).eq('id', editingBanner.id);
+                  });
 
                   if (!error) {
                     setBanners(banners.map(b => b.id === editingBanner.id ? editingBanner : b));
@@ -3463,11 +3484,23 @@ color: "#fff", border: "none", cursor: "pointer",
               {isAdmin && (
                 <div style={{ display: "flex", flexDirection: "column", gap: "10px", paddingBottom: "16px", borderBottom: `1px dashed ${theme.borderHighlight}` }}>
                   <textarea value={newNotice} onChange={e => setNewNotice(e.target.value)} placeholder="새로운 공지사항을 작성하세요 (어드민 전용)" style={{ width: "100%", boxSizing: "border-box", padding: "12px", borderRadius: "10px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.85rem", outline: "none", resize: "vertical", minHeight: "80px" }} />
-                  <button onClick={() => { 
+                  <button onClick={async () => { 
                     if(!newNotice.trim()) return; 
-                    setNotices([{ id: Date.now(), text: newNotice, date: new Date().toISOString().split("T")[0] }, ...notices]);
-                    setNewNotice("");
-                    triggerToast("공지 등록", "새 공지가 등록되었습니다.", "✅");
+                    
+                    triggerToast("처리 중...", "서버에 공지사항을 등록하고 있습니다.", "⏳");
+                    
+                    const today = new Date().toISOString().split("T")[0];
+                    
+                    // 🌟 서버의 notices 방에 새 공지를 밀어 넣습니다!
+                    const { data, error } = await supabase.from('notices').insert([{ text: newNotice, date: today }]).select();
+                    
+                    if (!error && data) {
+                      setNotices([data[0], ...notices]); // 화면에도 즉시 새 공지 추가
+                      setNewNotice("");
+                      triggerToast("공지 등록 완료", "모든 유저에게 새 공지가 실시간 송출됩니다!", "📢");
+                    } else {
+                      triggerToast("오류", "서버 통신 중 문제가 발생했습니다.", "⚠️");
+                    }
                   }} style={{ padding: "10px", backgroundColor: theme.danger, color: "#fff", border: "none", borderRadius: "10px", fontWeight: "700", cursor: "pointer", alignSelf: "flex-end" }}>공지 등록하기</button>
                 </div>
               )}
@@ -3906,28 +3939,33 @@ color: "#fff", border: "none", cursor: "pointer",
                   </div>
                 )}
 
-                {exploreDetailTab === "주요 인물" && (
+{exploreDetailTab === "주요 인물" && (
                   <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-                    {/* 🌟 주요 인물 썸네일 크기 대폭 확대 (70px -> 110px) */}
-                    {[
-                      { name: "세라", job: "미스터리 동아리 부장", desc: "언제나 완벽을 추구하지만, 무언가 큰 실수를 숨기고 있는 듯하다." },
-                      { name: "진우", job: "아카데미 학생회장", desc: "사건의 중심에 서 있는 의문의 소년. 속을 알 수 없는 미소로 일관한다." }
-                    ].map((npc, idx) => (
-                      <div key={idx} style={{ display: "flex", gap: "16px", padding: "16px", backgroundColor: theme.panelAlt, borderRadius: "16px", border: `1px solid ${theme.border}` }}>
-                        <div style={{ width: "110px", height: "110px", borderRadius: "14px", backgroundColor: theme.inputBg, border: `1px solid ${theme.borderHighlight}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, overflow: "hidden" }}>
-                           <ImageIcon size={32} color={theme.textMuted} />
-                        </div>
-                        <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "8px", justifyContent: "center" }}>
-                          <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                            <span style={{ fontWeight: "800", fontSize: "1.1rem", color: theme.text }}>{npc.name}</span>
-                            <span style={{ fontSize: "0.8rem", color: theme.accent, fontWeight: "800" }}>{npc.job}</span>
+                    {/* 🌟 (가짜 데이터 삭제 & 진짜 데이터 연동 완료!) */}
+                    {selectedExploreScenario.data?.suspects?.length > 0 ? (
+                      selectedExploreScenario.data.suspects.map((npc, idx) => (
+                        <div key={idx} style={{ display: "flex", gap: "16px", padding: "16px", backgroundColor: theme.panelAlt, borderRadius: "16px", border: `1px solid ${theme.border}` }}>
+                          <div style={{ width: "110px", height: "110px", borderRadius: "14px", backgroundColor: theme.inputBg, border: `1px solid ${theme.borderHighlight}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, overflow: "hidden" }}>
+                             {npc.portraitUrl ? (
+                               <img src={npc.portraitUrl} alt="인물" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                             ) : (
+                               <ImageIcon size={32} color={theme.textMuted} />
+                             )}
                           </div>
-                          <div style={{ fontSize: "0.85rem", color: theme.text, lineHeight: 1.5, opacity: 0.9 }}>
-                            {npc.desc}
+                          <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "8px", justifyContent: "center" }}>
+                            <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                              <span style={{ fontWeight: "800", fontSize: "1.1rem", color: theme.text }}>{npc.name || "이름 미상"}</span>
+                              <span style={{ fontSize: "0.8rem", color: theme.accent, fontWeight: "800" }}>{npc.job || "직업 미상"}</span>
+                            </div>
+                            <div style={{ fontSize: "0.85rem", color: theme.text, lineHeight: 1.5, opacity: 0.9, whiteSpace: "pre-wrap" }}>
+                              {npc.behavior || "등록된 인물 정보가 없습니다."}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
+                      ))
+                    ) : (
+                      <div style={{ padding: "40px", textAlign: "center", color: theme.textMuted, fontSize: "0.9rem" }}>등록된 주요 인물이 없습니다.</div>
+                    )}
                   </div>
                 )}
               </div>
