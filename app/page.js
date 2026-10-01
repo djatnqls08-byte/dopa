@@ -1151,12 +1151,15 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
         } catch (e) {}
       }
 
-     // 🌟 [핵심] 더 강력해진 3중 필터로 AI의 모든 시스템 태그 찌꺼기를 화면에서 완전 삭제!
+     // 🌟 [핵심] 더 강력해진 3중 필터로 AI의 모든 시스템 태그 및 1,2,3 선택지 찌꺼기를 화면에서 완전 삭제!
       let cleanText = rawText
         .replace(/<!--[\s\S]*?-{1,3}>/g, "") // 정상 및 변형 주석 모두 제거
-        .replace(/<!--[\s\S]*?$/g, "") // 끝 괄호가 안 닫힌 주석까지 추적 제거
-        .replace(/-\s*\*\*\[SUGGESTIONS\]\*\*[\s\S]*$/i, "") // 🌟 악질 [SUGGESTIONS] 텍스트 찌꺼기 100% 제거
-        .replace(/\[SUGGESTIONS\][\s\S]*$/i, "") // 혹시 모를 변형 패턴도 제거
+        .replace(/<!--[\s\S]*?$/g, "") // 끝 괄호가 안 닫힌 주석 제거
+        .replace(/(?:-\s*)?\*\*\[SUGGESTIONS\]\*\*[\s\S]*$/i, "") // [SUGGESTIONS] 관련 찌꺼기 100% 제거
+        .replace(/\[SUGGESTIONS\][\s\S]*$/i, "") 
+        .replace(/\n\s*1\.\s*".*$/g, "") // "1. 어쩌구" 형태로 튀어나온 텍스트 잘라내기
+        .replace(/\n\s*1\.\s*.+?(?=\n|$)/g, "")
+        .replace(/\n\s*[1-3]\.\s*.*/g, "") // 1., 2., 3. 으로 시작하는 문장 전부 학살
         .trim();
 
       // 4. 상태 업데이트 (호감도, 단서, 메시지를 세션에 반영)
@@ -3201,7 +3204,19 @@ color: "#fff", border: "none", cursor: "pointer",
                   fontWeight: 400
                 }}
               >
-{(activeSession.messages || []).map((m, idx) => {
+<div 
+                className="serif-text" 
+                ref={chatContainerRef} 
+                style={{
+                  flex: 1, overflowY: "auto", 
+                  padding: isMobile ? "24px 20px 140px 20px" : "50px 60px 160px 60px", 
+                  display: "flex", flexDirection: "column", gap: "28px", 
+                  maxWidth: "760px", margin: "0 auto", width: "100%", boxSizing: "border-box", 
+                  fontSize: "1.12rem", lineHeight: 2.1, color: theme.text, letterSpacing: "-0.02em",
+                  fontWeight: 400
+                }}
+              >
+                {(activeSession.messages || []).map((m, idx) => {
                   const isUser = m.role === "user";
                   const isLastUserMsg = isUser && idx === activeSession.messages.map(x => x.role).lastIndexOf("user");
                   
@@ -3252,7 +3267,6 @@ color: "#fff", border: "none", cursor: "pointer",
                             ))}
                           </div>
                         </div>
-
                       </div>
 
                       {/* 🌟 취소 버튼 바깥 동그라미/테두리 완전 제거 */}
@@ -3299,17 +3313,23 @@ color: "#fff", border: "none", cursor: "pointer",
                 display: "flex", flexDirection: "column", alignItems: "center", gap: "12px", zIndex: 30
               }}>
                 
-                {/* 💡 상단: 제안 칩 (연애 모드 등) */}
+                {/* 💡 상단: 1,2,3 대신 선택지 버튼 칩 렌더링! */}
                 {activeSession?.suggestedActions?.length > 0 && (
-                  <div style={{ display: "flex", gap: "8px", overflowX: "auto", width: "100%", maxWidth: "680px", paddingBottom: "4px" }}>
-                    {activeSession.suggestedActions.map((sugg, idx) => (
-                      <button
-                        key={idx} onClick={() => executeMessage(sugg)}
-                        style={{ padding: "10px 16px", backgroundColor: theme.panelAlt, border: `1px solid ${theme.border}`, borderRadius: "20px", color: theme.text, fontSize: "0.85rem", fontWeight: "700", whiteSpace: "nowrap", cursor: "pointer", flexShrink: 0, boxShadow: "0 4px 12px rgba(0,0,0,0.05)", transition: "all 0.2s" }}
-                      >
-                        {sugg}
-                      </button>
-                    ))}
+                  <div style={{ display: "flex", gap: "8px", overflowX: "auto", width: "100%", maxWidth: "680px", paddingBottom: "4px", WebkitOverflowScrolling: "touch" }}>
+                    {activeSession.suggestedActions.map((sugg, idx) => {
+                       // "1. 대사내용" 처럼 앞에 숫자가 붙어있으면 떼어냅니다.
+                       const cleanSugg = sugg.replace(/^\d+\.\s*/, "").replace(/^"/, "").replace(/"$/, "");
+                       return (
+                        <button
+                          key={idx} onClick={() => executeMessage(cleanSugg)}
+                          style={{ padding: "10px 16px", backgroundColor: theme.panelAlt, border: `1.5px solid ${theme.borderHighlight}`, borderRadius: "20px", color: theme.text, fontSize: "0.85rem", fontWeight: "700", whiteSpace: "nowrap", cursor: "pointer", flexShrink: 0, boxShadow: "0 4px 12px rgba(0,0,0,0.05)", transition: "all 0.2s" }}
+                          onMouseEnter={e => e.currentTarget.style.backgroundColor = theme.inputBg}
+                          onMouseLeave={e => e.currentTarget.style.backgroundColor = theme.panelAlt}
+                        >
+                          {cleanSugg}
+                        </button>
+                       );
+                    })}
                   </div>
                 )}
 
@@ -4499,20 +4519,33 @@ color: "#fff", border: "none", cursor: "pointer",
                    if (userInk < 10) { triggerToast("잉크 부족", "보유한 잉크가 부족합니다.", "💧"); return; }
                    setUserInk(prev => prev - 10);
                    
-                   // 🌟 (버그 픽스) 오리지널이든 아니든 무조건 화면 조회수는 +1 올려줍니다!
                    const newPlays = Number(selectedExploreScenario.plays || 0) + 1;
                    setExploreScenarios(prev => prev.map(s => s.id === selectedExploreScenario.id ? { ...s, plays: newPlays } : s));
                    
                    if (!selectedExploreScenario.isOriginal) {
-                     supabase.from('scenarios').update({ plays: newPlays }).eq('id', selectedExploreScenario.id).then(); // 서버는 유저 작품만!
+                     supabase.from('scenarios').update({ plays: newPlays }).eq('id', selectedExploreScenario.id).then(); 
                    }
 
                    const d = selectedExploreScenario.data;
                    if (d) {
                      setSelectedMode(selectedExploreScenario.mode);
                      setScenarioTitle(selectedExploreScenario.title);
-                     setPlayPreference(d.playPreference || ""); setPcName(d.pcName || ""); setPcAgeGender(d.pcAgeGender || ""); setPcJob(d.pcJob || ""); setPcBackground(d.pcBackground || ""); setPcPortraitUrl(d.pcPortraitUrl || ""); setPcSecret(d.pcSecret || ""); setShowPcSecret(d.showPcSecret || false);
-                     setVictimName(d.victimName || ""); setPublicSynopsis(d.publicSynopsis || ""); setOpeningScene(d.openingScene || ""); setCulpritName(d.culpritName || ""); setTrickDetail(d.trickDetail || ""); setHiddenTruth(d.hiddenTruth || "");
+                     
+                     // 🌟 텅 빈 로비 데이터를 엎어치는 현상 수정! 원본 데이터를 100% 보존하며 덮어씌웁니다.
+                     setPlayPreference(d.playPreference || ""); 
+                     setPcName(d.pcName || ""); 
+                     setPcAgeGender(d.pcAgeGender || ""); 
+                     setPcJob(d.pcJob || ""); 
+                     setPcBackground(d.pcBackground || ""); 
+                     setPcPortraitUrl(d.pcPortraitUrl || ""); 
+                     setPcSecret(d.pcSecret || ""); 
+                     setShowPcSecret(d.showPcSecret || false);
+                     setVictimName(d.victimName || ""); 
+                     setPublicSynopsis(d.publicSynopsis || ""); 
+                     setOpeningScene(d.openingScene || ""); 
+                     setCulpritName(d.culpritName || ""); 
+                     setTrickDetail(d.trickDetail || ""); 
+                     setHiddenTruth(d.hiddenTruth || "");
                      
                      if(d.horrorStats) setHorrorStats(d.horrorStats);
                      if(d.horrorTraits) setHorrorTraits(d.horrorTraits);
@@ -4521,18 +4554,19 @@ color: "#fff", border: "none", cursor: "pointer",
                      if(d.abyssTriggers) setAbyssTriggers(d.abyssTriggers);
                      if(d.usePartner !== undefined) setUsePartner(d.usePartner);
              
-                     setMainPartners(d.mainPartners?.length ? d.mainPartners : [{ id: Date.now(), name: "", ageGender: "", job: "", behavior: "", secret: "", showSecret: false, portraitUrl: "" }]);
-                     setSuspects(d.suspects?.length ? d.suspects : [{ id: Date.now()+1, name: "", ageGender: "", job: "", behavior: "", secret: "", portraitUrl: "", showSecret: false }]);
-                     setEvidenceList(d.evidenceList?.length ? d.evidenceList : [{ id: Date.now()+2, name: "", overview: "", contradiction: "", secret: "", showSecret: false }]);
-                     setCgList(d.cgList?.length ? d.cgList : [{ id: Date.now()+3, title: "", condition: "", dialogue: "", imageUrl: "", showDetails: false }]);
-                     setRouteList(d.routeList?.length ? d.routeList : [{ id: Date.now()+4, routeName: "", targetId: "", affectionChange: "+10", requiredCG: "" }]);
-                    }
-                    
-                    setScenarioImageUrl(selectedExploreScenario.imageUrl || ""); // 🌟 표지 증발 방어!
-                    setSelectedExploreScenario(null);
-                    setActiveTab("lobby");
-                    triggerToast("세팅 시작", `[${selectedExploreScenario.title}] 10 잉크가 차감되었습니다.`, <Play size={18} color="#fff"/>);
-                  }}
+                     // 🌟 핵심 방어: 시트에서 받아온 파싱 데이터를 그대로 살림! 빈칸으로 밀어버리지 않음!
+                     setMainPartners(d.mainPartners?.length > 0 ? d.mainPartners : [{ id: Date.now(), name: "", ageGender: "", job: "", behavior: "", secret: "", showSecret: false, portraitUrl: "" }]);
+                     setSuspects(d.suspects?.length > 0 ? d.suspects : [{ id: Date.now()+1, name: "", ageGender: "", job: "", behavior: "", secret: "", portraitUrl: "", showSecret: false }]);
+                     setEvidenceList(d.evidenceList?.length > 0 ? d.evidenceList : [{ id: Date.now()+2, name: "", overview: "", contradiction: "", secret: "", showSecret: false }]);
+                     setCgList(d.cgList?.length > 0 ? d.cgList : [{ id: Date.now()+3, title: "", condition: "", dialogue: "", imageUrl: "", showDetails: false }]);
+                     setRouteList(d.routeList?.length > 0 ? d.routeList : [{ id: Date.now()+4, routeName: "", targetId: "", affectionChange: "+10", requiredCG: "" }]);
+                   }
+                   
+                   setScenarioImageUrl(selectedExploreScenario.imageUrl || ""); 
+                   setSelectedExploreScenario(null);
+                   setActiveTab("lobby");
+                   triggerToast("세팅 시작", `[${selectedExploreScenario.title}] 10 잉크가 차감되었습니다.`, <Play size={18} color="#fff"/>);
+                 }}
                  style={{ flex: 1, height: "56px", backgroundColor: theme.accent, border: "none", borderRadius: "16px", color: isDarkMode ? "#1a1817" : "#fff", fontSize: "1.05rem", fontWeight: "800", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", cursor: "pointer", boxShadow: `0 8px 24px ${theme.accentGlow}`, transition: "transform 0.2s" }} 
                >
                  <Play size={20} strokeWidth={3} /> 바로 플레이
