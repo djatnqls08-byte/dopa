@@ -166,12 +166,83 @@ const TRAUMA_LIST = [
   "호흡발작", "빛민감증", "망각강박", "망상장애", "사물집착"
 ];
   
-// ── [서재 탭 UI 미리보기용 상태] ──
-const [mockLibrary, setMockLibrary] = useState([
-  { id: 1, title: "재로 덮인 요람", mode: "괴담 (FREEFORM)", date: "09. 30. 오전 02:13", imageUrl: "" },
-  { id: 2, title: "시간의 톱니바퀴", mode: "추리 (INVESTIGATION)", date: "09. 29. 오후 08:24", imageUrl: "" },
-  { id: 3, title: "달그림자 경매장의 밤", mode: "연애 (DATING)", date: "09. 29. 오후 08:20", imageUrl: "" }
-]);
+// ── [서재 및 로컬 스토리지 상태] ──
+const [savedLibrary, setSavedLibrary] = useState([]);
+const [libSearchQuery, setLibSearchQuery] = useState("");
+const [libFilter, setLibFilter] = useState("전체"); // 전체, 추리, 연애, 괴담
+const [showLibEditModal, setShowLibEditModal] = useState(false);
+const [editingLibItem, setEditingLibItem] = useState(null);
+
+// 마운트 시 로컬 스토리지에서 저장된 서재 데이터 불러오기
+useEffect(() => {
+  const stored = localStorage.getItem("secret_novel_library");
+  if (stored) {
+    try { setSavedLibrary(JSON.parse(stored)); } catch(e) {}
+  }
+}, []);
+
+// 💾 로비에서 서재로 저장하는 함수
+const handleSaveToLibrary = () => {
+  if (!scenarioTitle.trim()) {
+    triggerToast("저장 불가", "사건 개요서에 사건명(제목)을 입력해주세요.", "⚠️");
+    return;
+  }
+  
+  const newScenario = {
+    id: Date.now(),
+    title: scenarioTitle,
+    mode: selectedMode, // 영문 없이 "추리", "연애", "괴담" 저장
+    date: new Date().toLocaleString("ko-KR", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" }),
+    imageUrl: "", 
+    isDownloaded: false, // 탐색에서 다운받은 시나리오를 구분하는 뱃지 플래그
+    data: {
+      playPreference, pcName, pcAgeGender, pcJob, pcBackground, pcPortraitUrl, pcSecret, showPcSecret,
+      victimName, publicSynopsis, openingScene, suspects, evidenceList, culpritName, trickDetail, hiddenTruth,
+      horrorStats, horrorTraits, horrorTraumas, horrorInventory, abyssTriggers, usePartner, mainPartners,
+      cgList, routeList
+    }
+  };
+
+  const updatedLibrary = [newScenario, ...savedLibrary];
+  setSavedLibrary(updatedLibrary);
+  localStorage.setItem("secret_novel_library", JSON.stringify(updatedLibrary));
+  triggerToast("세팅 저장", "현재 작성 중인 서류가 서재에 보관되었습니다.", <Save size={20} color={theme.accent} strokeWidth={1.5} />);
+};
+
+// 📂 서재에서 로비로 불러오는 함수
+const handleLoadFromLibrary = (scen) => {
+  const d = scen.data;
+  if(!d) return;
+  
+  setSelectedMode(scen.mode);
+  setScenarioTitle(scen.title);
+  
+  // 데이터 복원
+  setPlayPreference(d.playPreference || ""); setPcName(d.pcName || ""); setPcAgeGender(d.pcAgeGender || ""); setPcJob(d.pcJob || ""); setPcBackground(d.pcBackground || ""); setPcPortraitUrl(d.pcPortraitUrl || ""); setPcSecret(d.pcSecret || ""); setShowPcSecret(d.showPcSecret || false);
+  setVictimName(d.victimName || ""); setPublicSynopsis(d.publicSynopsis || ""); setOpeningScene(d.openingScene || ""); setSuspects(d.suspects || []); setEvidenceList(d.evidenceList || []); setCulpritName(d.culpritName || ""); setTrickDetail(d.trickDetail || ""); setHiddenTruth(d.hiddenTruth || "");
+  
+  if(d.horrorStats) setHorrorStats(d.horrorStats);
+  if(d.horrorTraits) setHorrorTraits(d.horrorTraits);
+  if(d.horrorTraumas) setHorrorTraumas(d.horrorTraumas);
+  if(d.horrorInventory) setHorrorInventory(d.horrorInventory);
+  if(d.abyssTriggers) setAbyssTriggers(d.abyssTriggers);
+  if(d.usePartner !== undefined) setUsePartner(d.usePartner);
+  if(d.mainPartners) setMainPartners(d.mainPartners);
+  
+  if(d.cgList) setCgList(d.cgList);
+  if(d.routeList) setRouteList(d.routeList);
+
+  setActiveTab("lobby");
+  triggerToast("불러오기 완료", `[${scen.title}] 서류를 로비에 펼쳤습니다.`, "📂");
+};
+
+// 🗑 서재에서 삭제하는 함수
+const handleDeleteFromLibrary = (id) => {
+   const updated = savedLibrary.filter(item => item.id !== id);
+   setSavedLibrary(updated);
+   localStorage.setItem("secret_novel_library", JSON.stringify(updated));
+}; 
+ 
 const [showLibEditModal, setShowLibEditModal] = useState(false);
 const [editingLibItem, setEditingLibItem] = useState(null);
 
@@ -583,7 +654,7 @@ const [editingLibItem, setEditingLibItem] = useState(null);
                 <button onClick={() => setShowPasteModal(true)} title="시나리오 불러오기" style={{ background: "none", border: "none", cursor: "pointer", padding: "8px", color: theme.text, display: "flex", alignItems: "center" }}>
                   <FileUp size={20} strokeWidth={1.5} />
                 </button>
-                <button onClick={() => triggerToast("세팅 저장", "현재 작성 중인 서류가 로컬에 저장되었습니다.", <Save size={20} color={theme.accent} strokeWidth={1.5} />)} title="세팅 저장" style={{ background: "none", border: "none", cursor: "pointer", padding: "8px", color: theme.text, display: "flex", alignItems: "center" }}>
+                <button onClick={handleSaveToLibrary} title="세팅 저장" style={{ background: "none", border: "none", cursor: "pointer", padding: "8px", color: theme.text, display: "flex", alignItems: "center" }}>
                   <Save size={20} strokeWidth={1.5} color={theme.text} />
                 </button>
               </>
@@ -740,76 +811,104 @@ const [editingLibItem, setEditingLibItem] = useState(null);
             )}
          
 {/* 📚 서재 (Library) 탭 화면 */}
-            {activeTab === "library" && (
-              <div style={{ display: "flex", flexDirection: "column", gap: "16px", animation: "fadeIn 0.2s ease-out" }}>
-                
-                {/* 상단: + 새 시나리오 생성 버튼 */}
-                <button 
-                  onClick={() => setActiveTab("lobby")}
-                  style={{ width: "100%", padding: "16px", backgroundColor: theme.accent, border: "none", borderRadius: "12px", color: isDarkMode ? "#1a1817" : "#fff", fontSize: "1.05rem", fontWeight: "700", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", boxShadow: "0 6px 16px rgba(0,0,0,0.15)", transition: "transform 0.2s" }}
-                >
-                  <Plus size={20} strokeWidth={2.5} /> 새 시나리오 생성
-                </button>
+            {activeTab === "library" && (() => {
+              // 🌟 검색 및 필터링 로직
+              const filteredLibrary = savedLibrary.filter(scen => {
+                const matchFilter = libFilter === "전체" || scen.mode === libFilter;
+                const matchSearch = scen.title.toLowerCase().includes(libSearchQuery.toLowerCase());
+                return matchFilter && matchSearch;
+              });
 
-                {/* 세션 카드 그리드 리스트 */}
-                <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: "16px" }}>
-                  {mockLibrary.map(scen => (
-                    <div key={scen.id} style={{ backgroundColor: theme.panel, borderRadius: "16px", overflow: "hidden", border: `1px solid ${theme.border}`, boxShadow: "0 8px 24px rgba(0,0,0,0.06)", display: "flex", flexDirection: "column", position: "relative" }}>
-                      
-                      {/* 썸네일 영역 (16:9) */}
-                      <div style={{ width: "100%", aspectRatio: "16/9", backgroundColor: theme.panelAlt, position: "relative", display: "flex", alignItems: "center", justifyContent: "center", borderBottom: `1px solid ${theme.border}` }}>
-                        {scen.imageUrl ? (
-                          <img src={scen.imageUrl} alt="표지" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                        ) : (
-                          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "8px", color: theme.textMuted, opacity: 0.5 }}>
-                            <ImageIcon size={36} strokeWidth={1.5} />
-                            <span style={{ fontSize: "0.75rem", fontWeight: "600" }}>커버 이미지 없음</span>
-                          </div>
-                        )}
-                        
-                        {/* 🌟 수정(연필) 팝업 띄우기 버튼 */}
-                        <button 
-                          title="커버 수정" 
-                          onClick={() => {
-                            setEditingLibItem({ ...scen });
-                            setShowLibEditModal(true);
-                          }}
-                          style={{ position: "absolute", top: "12px", right: "12px", width: "32px", height: "32px", borderRadius: "8px", backgroundColor: "rgba(0, 0, 0, 0.65)", border: `1px solid rgba(255, 255, 255, 0.2)`, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", backdropFilter: "blur(4px)", zIndex: 10 }}
-                        >
-                          <PenTool size={16} strokeWidth={2.5} color="#f97316" />
-                        </button>
-                      </div>
-
-                      {/* 하단 카드 텍스트 정보 영역 */}
-                      <div style={{ padding: "16px", display: "flex", flexDirection: "column", gap: "12px" }}>
-                        <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                          <div style={{ fontWeight: "800", fontSize: "1.1rem", color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                            {scen.title}
-                          </div>
-                          <div style={{ fontSize: "0.75rem", fontWeight: "700", color: theme.textMuted, letterSpacing: "0.5px" }}>
-                            {scen.mode}
-                          </div>
-                        </div>
-
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingTop: "10px", borderTop: `1px dashed ${theme.borderHighlight || theme.border}` }}>
-                          <div style={{ display: "flex", alignItems: "center", gap: "6px", color: theme.textMuted, fontSize: "0.75rem", fontWeight: "500" }}>
-                            <Clock size={14} strokeWidth={2} /> {scen.date}
-                          </div>
-                          <div style={{ display: "flex", gap: "8px" }}>
-                            <button title="세션 플레이 시작" style={{ background: "none", border: "none", color: theme.accent, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: "4px" }}>
-                              <Play size={20} strokeWidth={2.5} />
-                            </button>
-                            <button title="삭제 (미리보기)" onClick={() => setMockLibrary(mockLibrary.filter(item => item.id !== scen.id))} style={{ background: "none", border: "none", color: theme.textMuted, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: "4px" }}>
-                              <Trash2 size={18} strokeWidth={2} />
-                            </button>
-                          </div>
-                        </div>
-                      </div>
+              return (
+                <div style={{ display: "flex", flexDirection: "column", gap: "16px", animation: "fadeIn 0.2s ease-out" }}>
+                  
+                  {/* 상단: 검색 바 및 새 시나리오 생성 (+) 버튼 */}
+                  <div style={{ display: "flex", gap: "8px" }}>
+                    <div style={{ flex: 1, display: "flex", alignItems: "center", backgroundColor: theme.panel, border: `1px solid ${theme.border}`, borderRadius: "12px", padding: "0 12px" }}>
+                      <Search size={18} color={theme.textMuted} />
+                      <input type="text" autoComplete="off" value={libSearchQuery} onChange={e => setLibSearchQuery(e.target.value)} placeholder="서재에서 시나리오 검색..." style={{ flex: 1, padding: "12px 10px", border: "none", backgroundColor: "transparent", color: theme.text, fontSize: "0.9rem", outline: "none" }} />
                     </div>
-                  ))}
+                    <button onClick={() => setActiveTab("lobby")} title="새 시나리오 작성" style={{ width: "48px", height: "48px", backgroundColor: theme.accent, border: "none", borderRadius: "12px", color: isDarkMode ? "#1a1817" : "#fff", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0 }}>
+                      <Plus size={24} strokeWidth={2.5} />
+                    </button>
+                  </div>
+
+                  {/* 탭 필터 (전체, 추리, 연애, 괴담) */}
+                  <div style={{ display: "flex", gap: "8px", overflowX: "auto", paddingBottom: "4px", WebkitOverflowScrolling: "touch" }}>
+                    {["전체", "추리", "연애", "괴담"].map(f => (
+                      <button key={f} onClick={() => setLibFilter(f)} style={{ padding: "8px 16px", borderRadius: "20px", border: `1px solid ${libFilter === f ? theme.accent : theme.border}`, backgroundColor: libFilter === f ? theme.accent : theme.panelAlt, color: libFilter === f ? "#fff" : theme.textMuted, fontSize: "0.85rem", fontWeight: "700", cursor: "pointer", whiteSpace: "nowrap", transition: "all 0.2s" }}>
+                        {f}
+                      </button>
+                    ))}
+                  </div>
+
+                  {filteredLibrary.length === 0 ? (
+                    <div style={{ padding: "40px 20px", backgroundColor: theme.panelAlt, borderRadius: "16px", border: `1px dashed ${theme.border}`, textAlign: "center", color: theme.textMuted, fontSize: "0.85rem", display: "flex", flexDirection: "column", alignItems: "center", gap: "12px" }}>
+                      <Database size={32} strokeWidth={1.5} opacity={0.5} />
+                      조건에 맞는 보관된 서류철이 없습니다.
+                    </div>
+                  ) : (
+                    <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: "16px" }}>
+                      {filteredLibrary.map(scen => (
+                        <div key={scen.id} style={{ backgroundColor: theme.panel, borderRadius: "16px", overflow: "hidden", border: `1px solid ${theme.border}`, boxShadow: "0 8px 24px rgba(0,0,0,0.06)", display: "flex", flexDirection: "column", position: "relative" }}>
+                          
+                          {/* 🌟 썸네일 영역 (연필 아이콘 삭제, 이미지 자체 클릭 시 수정 팝업) */}
+                          <div 
+                            title="클릭하여 커버 수정"
+                            onClick={() => { setEditingLibItem({ ...scen }); setShowLibEditModal(true); }}
+                            style={{ width: "100%", aspectRatio: "16/9", backgroundColor: theme.panelAlt, position: "relative", display: "flex", alignItems: "center", justifyContent: "center", borderBottom: `1px solid ${theme.border}`, cursor: "pointer" }}
+                          >
+                            {scen.imageUrl ? (
+                              <img src={scen.imageUrl} alt="표지" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                            ) : (
+                              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "8px", color: theme.textMuted, opacity: 0.5 }}>
+                                <ImageIcon size={36} strokeWidth={1.5} />
+                                <span style={{ fontSize: "0.75rem", fontWeight: "600" }}>커버 이미지 없음</span>
+                              </div>
+                            )}
+
+                            {/* 🌟 탐색 탭에서 다운로드한 시나리오 전용 뱃지 */}
+                            {scen.isDownloaded && (
+                              <div style={{ position: "absolute", top: "12px", left: "12px", padding: "4px 8px", backgroundColor: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)", borderRadius: "8px", color: "#60a5fa", fontSize: "0.7rem", fontWeight: "700", border: "1px solid rgba(96, 165, 250, 0.4)", display: "flex", alignItems: "center", gap: "4px" }}>
+                                <FileUp size={12} strokeWidth={2.5} /> 다운로드 됨
+                              </div>
+                            )}
+                          </div>
+
+                          {/* 하단 카드 텍스트 정보 영역 */}
+                          <div style={{ padding: "16px", display: "flex", flexDirection: "column", gap: "12px" }}>
+                            <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                              <div style={{ fontWeight: "800", fontSize: "1.1rem", color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                {scen.title}
+                              </div>
+                              <div style={{ fontSize: "0.75rem", fontWeight: "700", color: theme.textMuted }}>
+                                {scen.mode}
+                              </div>
+                            </div>
+
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingTop: "10px", borderTop: `1px dashed ${theme.borderHighlight || theme.border}` }}>
+                              <div style={{ display: "flex", alignItems: "center", gap: "6px", color: theme.textMuted, fontSize: "0.75rem", fontWeight: "500" }}>
+                                <Clock size={14} strokeWidth={2} /> {scen.date}
+                              </div>
+                              <div style={{ display: "flex", gap: "8px" }}>
+                                {/* 🌟 팝업 대신 로비 탭으로 데이터를 밀어넣는 폴더 열기(불러오기) 버튼 */}
+                                <button title="로비로 불러와서 세팅/시작하기" onClick={() => handleLoadFromLibrary(scen)} style={{ background: "none", border: "none", color: theme.accent, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: "4px" }}>
+                                  <FolderOpen size={18} strokeWidth={2.5} />
+                                </button>
+                                {/* 삭제 버튼 */}
+                                <button title="서류 폐기" onClick={() => handleDeleteFromLibrary(scen.id)} style={{ background: "none", border: "none", color: theme.textMuted, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: "4px" }}>
+                                  <Trash2 size={18} strokeWidth={2} />
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
-              </div>
-            )}
+              );
+            })()}
 
 
             {/* ✍️ 로비 (Lobby) 탭 화면 */}
@@ -2291,8 +2390,10 @@ color: "#fff", border: "none", cursor: "pointer",
 
               <button 
                 onClick={() => {
-                  // 수정된 내용을 메인 리스트에 반영
-                  setMockLibrary(mockLibrary.map(item => item.id === editingLibItem.id ? editingLibItem : item));
+                  // 수정한 이미지를 로컬 스토리지 전체 데이터에 갱신
+                  const updated = savedLibrary.map(item => item.id === editingLibItem.id ? editingLibItem : item);
+                  setSavedLibrary(updated);
+                  localStorage.setItem("secret_novel_library", JSON.stringify(updated));
                   setShowLibEditModal(false);
                   triggerToast("수정 완료", "커버 정보가 성공적으로 변경되었습니다.", <Save color={theme.accent} size={18}/>);
                 }} 
