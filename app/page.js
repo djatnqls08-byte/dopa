@@ -899,7 +899,8 @@ export default function GamePlatform() {
                               title="인물 삭제"
                               style={{
                                 position: "absolute", top: "-8px", right: "-8px", width: "22px", height: "22px", borderRadius: "50%",
-                                backgroundColor: theme.danger || "#ef4444", color: "#fff", border: "none", cursor: "pointer", 
+                                backgroundColor: isDarkMode ? "rgba(220, 38, 38, 0.8)" : "rgba(220, 38, 38, 0.9)", 
+color: "#fff", border: "none", cursor: "pointer", 
                                 display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.7rem", fontWeight: "bold", zIndex: 10,
                                 boxShadow: "0 2px 4px rgba(0,0,0,0.3)"
                               }}
@@ -1271,7 +1272,7 @@ export default function GamePlatform() {
                                 <button type="button" onClick={() => {
                                   if (isPcDetail) setShowPcSecret(!showPcSecret);
                                   else handleUpdateSuspect(cur.id, "showSecret", !cur.showSecret);
-                                }} style={{ width: "100%", textAlign: "left", background: "none", border: "none", fontSize: "0.8rem", color: "#db2777", cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center", padding: 0 }}>
+                                }} style={{ width: "100%", textAlign: "left", background: "none", border: "none", fontSize: "0.8rem", color: isDarkMode ? "#f472b6" : "#db2777", cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center", padding: 0 }}>
                                   <span style={{ fontWeight: "600", display: "flex", alignItems: "center", gap: "6px" }}>
                                     <Lock size={15} strokeWidth={2.5} /> 남모르는 비밀 / 진심
                                   </span>
@@ -1284,7 +1285,7 @@ export default function GamePlatform() {
                                   <input type="text" value={isPcDetail ? pcSecret : cur.secret} onChange={e => {
                                     if (isPcDetail) setPcSecret(e.target.value);
                                     else handleUpdateSuspect(cur.id, "secret", e.target.value);
-                                  }} placeholder="예: 사실 오래전부터 마음에 두고 있었다." style={{ width: "100%", boxSizing: "border-box", padding: "10px", marginTop: "12px", borderRadius: "8px", border: `1px solid #f9a8d4`, backgroundColor: theme.inputBg, color: "#be185d", fontSize: "0.85rem", outline: "none" }} />
+                                  }} placeholder="예: 사실 오래전부터 마음에 두고 있었다." style={{ width: "100%", boxSizing: "border-box", padding: "10px", marginTop: "12px", borderRadius: "8px", border: `1px solid #f9a8d4`, backgroundColor: theme.inputBg, color: isDarkMode ? "#f9a8d4" : "#be185d", fontSize: "0.85rem", outline: "none" }} />
                                 )}
                               </div>
                             </div>
@@ -1299,7 +1300,7 @@ export default function GamePlatform() {
                 <section style={{ ...GLASS_STYLE, padding: isMobile ? "16px" : "20px", backgroundColor: theme.panel, borderRadius: "18px", border: `1px solid ${theme.border}`, display: "flex", flexDirection: "column", gap: "12px" }}>
                   <button type="button" onClick={() => setShowCgGallery(!showCgGallery)} style={{ width: "100%", textAlign: "left", background: "none", border: "none", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer", padding: 0 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                      <ImageIcon size={22} strokeWidth={2} color="#ec4899" />
+                      <ImageIcon size={22} strokeWidth={2} color={isDarkMode ? "#f472b6" : "#ec4899"} />
                       <span style={{ fontWeight: "700", fontSize: "0.95rem", color: theme.text }}>이벤트 CG 갤러리</span>
                     </div>
                     <span style={{ display: "flex", alignItems: "center", color: theme.textMuted }}>{showCgGallery ? <ChevronUp size={18} strokeWidth={2} /> : <ChevronDown size={18} strokeWidth={2} />}</span>
@@ -1364,7 +1365,7 @@ export default function GamePlatform() {
                 <section style={{ ...GLASS_STYLE, padding: isMobile ? "16px" : "20px", backgroundColor: theme.panel, borderRadius: "18px", border: `1px solid ${theme.border}`, display: "flex", flexDirection: "column", gap: "12px" }}>
                   <button type="button" onClick={() => setShowRouteList(!showRouteList)} style={{ width: "100%", textAlign: "left", background: "none", border: "none", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer", padding: 0 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                      <FolderOpen size={22} strokeWidth={2} color="#ec4899" />
+                      <FolderOpen size={22} strokeWidth={2} color={isDarkMode ? "#f472b6" : "#ec4899"} />
                       <span style={{ fontWeight: "700", fontSize: "0.95rem", color: theme.text }}>선택지 분기 및 루트 설계</span>
                     </div>
                     <span style={{ display: "flex", alignItems: "center", color: theme.textMuted }}>{showRouteList ? <ChevronUp size={18} strokeWidth={2} /> : <ChevronDown size={18} strokeWidth={2} />}</span>
@@ -1375,7 +1376,7 @@ export default function GamePlatform() {
                       {routeList.map((route, idx) => (
                         <div key={route.id} style={{ display: "flex", flexDirection: isMobile ? "column" : "row", gap: "8px", backgroundColor: theme.panelAlt, border: `1px solid ${theme.border}`, borderRadius: "12px", padding: "14px", alignItems: isMobile ? "stretch" : "center" }}>
                           <div style={{ display: "flex", alignItems: "center", gap: "8px", flex: 2 }}>
-                            <span style={{ backgroundColor: "#fbcfe8", color: "#be185d", padding: "4px 8px", borderRadius: "8px", fontSize: "0.7rem", fontWeight: "700", whiteSpace: "nowrap" }}>분기 {idx + 1}</span>
+                            <span style={{ backgroundColor: "#fbcfe8", color: isDarkMode ? "#f9a8d4" : "#be185d", padding: "4px 8px", borderRadius: "8px", fontSize: "0.7rem", fontWeight: "700", whiteSpace: "nowrap" }}>분기 {idx + 1}</span>
                             <input type="text" value={route.routeName} onChange={e => setRouteList(routeList.map(r => r.id === route.id ? { ...r, routeName: e.target.value } : r))} placeholder="분기 설명 (예: 옥상에서 위로한다)" style={{ width: "100%", padding: "8px 10px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.8rem", outline: "none" }} />
                           </div>
                           <div style={{ display: "flex", alignItems: "center", gap: "8px", flex: 1 }}>
