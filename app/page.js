@@ -3939,7 +3939,6 @@ color: "#fff", border: "none", cursor: "pointer",
             </div>
 
             <div style={{ flex: 1, overflowY: "auto", paddingBottom: "100px", WebkitOverflowScrolling: "touch" }}>
-              {/* 🌟 메인 커버 이미지 (잘림 방지) */}
               <div style={{ width: "100%", aspectRatio: "16/9", backgroundColor: theme.panelAlt, position: "relative", display: "flex", alignItems: "center", justifyContent: "center" }}>
                  {selectedExploreScenario.imageUrl ? (
                    <img src={selectedExploreScenario.imageUrl} alt="커버" style={{ width: "100%", height: "100%", objectFit: "contain" }} />
@@ -3978,16 +3977,12 @@ color: "#fff", border: "none", cursor: "pointer",
                 ))}
               </div>
 
-<div style={{ padding: "24px 20px" }}>
+              <div style={{ padding: "24px 20px" }}>
                 {exploreDetailTab === "소개" && (
                   <div style={{ display: "flex", flexDirection: "column", gap: "28px" }}>
-                    
-                    {/* 🌟 (고침) 가짜 텍스트 싹 빼고! 진짜 publicSynopsis 불러옵니다! 줄바꿈 유지! */}
                     <div style={{ fontSize: "0.95rem", color: theme.text, lineHeight: 1.8, fontWeight: "500", whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
                       {selectedExploreScenario.data?.publicSynopsis || "등록된 소개글이 없습니다."}
                     </div>
-
-                    {/* 트리거 워닝이 있을 때만 경고창 띄우기! */}
                     {selectedExploreScenario.data?.triggerWarning && (
                       <div style={{ backgroundColor: isDarkMode ? "rgba(220, 38, 38, 0.08)" : "#fef2f2", border: `1px solid ${theme.danger}`, borderRadius: "16px", padding: "16px", display: "flex", flexDirection: "column", gap: "10px" }}>
                         <span style={{ display: "flex", alignItems: "center", gap: "6px", color: theme.danger, fontWeight: "800", fontSize: "0.9rem" }}>
@@ -3998,7 +3993,6 @@ color: "#fff", border: "none", cursor: "pointer",
                         </div>
                       </div>
                     )}
-
                     <div style={{ display: "flex", flexDirection: "column", gap: "12px", padding: "20px", backgroundColor: theme.panelAlt, borderRadius: "16px", border: `1px solid ${theme.borderHighlight}` }}>
                       <span style={{ fontWeight: "800", fontSize: "1rem", color: theme.text }}>이용 안내</span>
                       <ul style={{ margin: 0, paddingLeft: "22px", fontSize: "0.85rem", color: theme.textMuted, lineHeight: 1.8, display: "flex", flexDirection: "column", gap: "8px", fontWeight: "500" }}>
@@ -4043,8 +4037,6 @@ color: "#fff", border: "none", cursor: "pointer",
 
             {/* 🌟 하단 플로팅 액션 바 */}
             <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "16px 20px max(16px, env(safe-area-inset-bottom))", background: `linear-gradient(to top, ${theme.panel} 70%, transparent 100%)`, display: "flex", gap: "12px", zIndex: 20 }}>
-               
-               {/* 💖 하트(좋아요) 버튼 추가 */}
                <button 
                  onClick={() => {
                    const isLiked = likedScenarios.some(s => s.id === selectedExploreScenario.id);
@@ -4062,7 +4054,6 @@ color: "#fff", border: "none", cursor: "pointer",
                  <Heart size={24} color={likedScenarios.some(s => s.id === selectedExploreScenario.id) ? theme.danger : theme.textMuted} fill={likedScenarios.some(s => s.id === selectedExploreScenario.id) ? theme.danger : "none"} strokeWidth={2} />
                </button>
 
-               {/* 서재 다운로드 버튼 (기존) */}
                <button 
                  onClick={() => {
                    if (savedLibrary.some(s => s.title === selectedExploreScenario.title)) {
@@ -4081,7 +4072,7 @@ color: "#fff", border: "none", cursor: "pointer",
                      imageUrl: selectedExploreScenario.imageUrl || "", 
                      isDownloaded: true, 
                      hasUpdate: false, 
-                     data: selectedExploreScenario.data // 🌟 (핵심!) 가짜 텍스트 대신 구글 시트에서 파싱한 진짜 데이터를 그대로 넘겨줍니다!!
+                     data: selectedExploreScenario.data
                    };
                    
                    const updatedLibrary = [newDownloadedScenario, ...savedLibrary];
@@ -4095,19 +4086,17 @@ color: "#fff", border: "none", cursor: "pointer",
                  <FileUp size={24} strokeWidth={2} />
                </button>
                
-               {/* 바로 플레이 버튼 (수정완료!) */}
                <button 
                  onClick={() => {
                    setIsGuestPlay(true);
                    if (userInk < 10) { triggerToast("잉크 부족", "보유한 잉크가 부족합니다.", "💧"); return; }
                    setUserInk(prev => prev - 10);
-
-// 🌟 데이터베이스의 조회수(plays) 1 올리기! (오리지널이 아닐 때만)
+                   
+                   // 🌟 데이터베이스의 조회수(plays) 1 올리기! (오리지널이 아닐 때만)
                    if (!selectedExploreScenario.isOriginal) {
                      supabase.from('scenarios').update({ plays: selectedExploreScenario.plays + 1 }).eq('id', selectedExploreScenario.id).then();
                    }
 
-                   // 🌟 (핵심 고침!) 로비로 모든 데이터를 쫙 뿌려주는 로직을 가져옵니다.
                    const d = selectedExploreScenario.data;
                    if (d) {
                      setSelectedMode(selectedExploreScenario.mode);
