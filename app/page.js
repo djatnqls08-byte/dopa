@@ -293,29 +293,6 @@ export default function GamePlatform() {
 
   // ── [3. 상태 관리] ──
   const [activeTab, setActiveTab] = useState("explore");
-
-  // 🌟 (여기에 추가!) 메인 화면 공지사항 팝업 스위치 & 로직
-  const [showMainNoticePopup, setShowMainNoticePopup] = useState(false);
-  
-  useEffect(() => {
-    if (notices && notices.length > 0) {
-      const hiddenUntil = localStorage.getItem("hide_notice_until");
-      const lastNoticeId = localStorage.getItem("last_notice_id");
-      const now = new Date().getTime();
-      
-      // 어드민이 새 공지를 올렸거나(ID가 다름), 일주일이 지났다면 팝업을 띄움!
-      if (lastNoticeId !== notices[0].id.toString() || !hiddenUntil || now > parseInt(hiddenUntil)) {
-        setShowMainNoticePopup(true);
-      }
-    }
-  }, [notices]);
-
-  const handleHideNoticeForWeek = () => {
-    const oneWeekLater = new Date().getTime() + 7 * 24 * 60 * 60 * 1000;
-    localStorage.setItem("hide_notice_until", oneWeekLater.toString());
-    localStorage.setItem("last_notice_id", notices[0]?.id.toString());
-    setShowMainNoticePopup(false);
-  };
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [showPasteModal, setShowPasteModal] = useState(false);
   const [pastedText, setPastedText] = useState("");
@@ -567,7 +544,39 @@ const [showSupportModal, setShowSupportModal] = useState(false);
     { id: 1, text: "시크릿 노벨 클로즈 베타 테스트에 오신 것을 환영합니다! 🎉\n버그 제보 및 피드백은 고객센터를 이용해 주세요.", date: "2026-10-01" }
   ]);
   const [newNotice, setNewNotice] = useState("");
+// ── [11. 관리자 및 추가 기능 상태] ──
+  const MY_ADMIN_EMAIL = "usb1201@naver.com"; 
+  const isAdmin = currentUser?.email === MY_ADMIN_EMAIL; // 이메일이 일치할 때만 어드민 권한 부여
+  const [showNoticeModal, setShowNoticeModal] = useState(false);
+  const [notices, setNotices] = useState([
+    { id: 1, text: "시크릿 노벨 클로즈 베타 테스트에 오신 것을 환영합니다! 🎉\n버그 제보 및 피드백은 고객센터를 이용해 주세요.", date: "2026-10-01" }
+  ]);
+  const [newNotice, setNewNotice] = useState("");
   const [likedScenarios, setLikedScenarios] = useState([]); // 💖 관심 시나리오 보관함
+
+  // 🌟 [이곳으로 이사 완료!] 메인 화면 공지사항 팝업 로직
+  const [showMainNoticePopup, setShowMainNoticePopup] = useState(false);
+  
+  useEffect(() => {
+    if (notices && notices.length > 0) {
+      const hiddenUntil = localStorage.getItem("hide_notice_until");
+      const lastNoticeId = localStorage.getItem("last_notice_id");
+      const now = new Date().getTime();
+      
+      // 어드민이 새 공지를 올렸거나(ID가 다름), 일주일이 지났다면 팝업을 띄움!
+      if (lastNoticeId !== notices[0].id.toString() || !hiddenUntil || now > parseInt(hiddenUntil)) {
+        setShowMainNoticePopup(true);
+      }
+    }
+  }, [notices]);
+
+  const handleHideNoticeForWeek = () => {
+    const oneWeekLater = new Date().getTime() + 7 * 24 * 60 * 60 * 1000;
+    localStorage.setItem("hide_notice_until", oneWeekLater.toString());
+    localStorage.setItem("last_notice_id", notices[0]?.id.toString());
+    setShowMainNoticePopup(false);
+  };
+  
  
  
   // ── [7. 인게임 UI 토글 상태 관리 (누락된 변수 추가)] ──
