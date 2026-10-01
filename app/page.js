@@ -126,6 +126,10 @@ export default function GamePlatform() {
     { id: 1, routeName: "", targetId: "", affectionChange: "+10", requiredCG: "" }
   ]);
 
+  const [showCgGallery, setShowCgGallery] = useState(false); // CG 갤러리 접기/펴기
+  const [showRouteList, setShowRouteList] = useState(false); // 공략 루트 접기/펴기
+  const [showPhoneDetail, setShowPhoneDetail] = useState(false); // 📱 핸드폰 상세 프로필 화면 전환용
+
   // ── [7. 인게임 UI 토글 상태 관리 (누락된 변수 추가)] ──
   const [isPhoneDrawerOpen, setIsPhoneDrawerOpen] = useState(false);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
@@ -190,8 +194,10 @@ export default function GamePlatform() {
     setEvidenceList(evidenceList.map(ev => ev.id === id ? { ...ev, [field]: value } : ev));
   };
 
+ // 🌟 AI 백엔드와 통신하는 스마트 파서 엔진 (연애 모드 CG, 루트 연동 완료!)
   const handleApplyPastedScenario = async () => {
     if (!pastedText.trim()) return;
+
     triggerToast("파싱 중...", "AI가 서류를 분석하고 있습니다. 잠시만 기다려주세요.", "⏳");
 
     try {
@@ -206,16 +212,22 @@ export default function GamePlatform() {
         })
       });
 
-      if (!response.ok) throw new Error("서버 에러가 발생했습니다.");
+      if (!response.ok) {
+        throw new Error("서버 에러가 발생했습니다.");
+      }
+
       const data = await response.json();
 
+      // 1. 기본 정보 맵핑
       if (data.scenarioTitle) setScenarioTitle(data.scenarioTitle);
       if (data.publicSynopsis) setPublicSynopsis(data.publicSynopsis);
       if (data.openingScene) setOpeningScene(data.openingScene);
       if (data.hiddenTruth) setHiddenTruth(data.hiddenTruth);
 
+      // 2. 용의자/공략대상(NPC) 리스트 자동 생성
+      let generatedSuspects = [];
       if (data.npcs && data.npcs.length > 0) {
-        const newSuspects = data.npcs.map((npc, idx) => ({
+        generatedSuspects = data.npcs.map((npc, idx) => ({
           id: Date.now() + idx,
           name: npc.name || "",
           job: npc.job || "",
@@ -225,12 +237,13 @@ export default function GamePlatform() {
           portraitUrl: "",
           showSecret: false
         }));
-        setSuspects(newSuspects);
+        setSuspects(generatedSuspects);
       }
 
+      // 3. 단서(Handouts) 리스트 자동 생성
       if (data.handouts && data.handouts.length > 0) {
         const newEvidence = data.handouts.map((h, idx) => ({
-          id: Date.now() + idx,
+          id: Date.now() + idx + 1000,
           name: h.title || "",
           overview: h.overview || "",
           secret: h.secret || "",
@@ -238,6 +251,34 @@ export default function GamePlatform() {
           showSecret: false
         }));
         setEvidenceList(newEvidence);
+      }
+
+      // 🌟 4. [연애 모드 추가] 이벤트 CG 갤러리 맵핑
+      if (data.cgList && data.cgList.length > 0) {
+        const newCgs = data.cgList.map((cg, idx) => ({
+          id: Date.now() + idx + 2000,
+          title: cg.title || "",
+          condition: cg.condition || "",
+          imageUrl: "",
+          showDetails: false
+        }));
+        setCgList(newCgs);
+      }
+
+      // 🌟 5. [연애 모드 추가] 분기점/루트 맵핑
+      if (data.routeList && data.routeList.length > 0) {
+        const newRoutes = data.routeList.map((rt, idx) => {
+          // AI가 뽑아준 targetName과 일치하는 NPC의 ID를 찾아 연결해줍니다.
+          const matchedNpc = generatedSuspects.find(s => s.name === rt.targetName);
+          return {
+            id: Date.now() + idx + 3000,
+            routeName: rt.routeName || "",
+            targetId: matchedNpc ? matchedNpc.id : "",
+            affectionChange: rt.affectionChange || "+10",
+            requiredCG: ""
+          };
+        });
+        setRouteList(newRoutes);
       }
 
       setShowPasteModal(false);
@@ -757,7 +798,7 @@ export default function GamePlatform() {
                       <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1.2fr 1fr 1fr", gap: "8px" }}>
                         <div>
                           <label style={{ fontSize: "0.7rem", color: theme.textMuted, fontWeight: "700", display: "block", marginBottom: "3px" }}>이름</label>
-                          <input type="text" value={pcName} onChange={e => setPcName(e.target.value)} placeholder="예: 엄수빈" style={{ width: "100%", boxSizing: "border-box", padding: "8px 10px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.82rem", outline: "none" }} />
+                          <input type="text" value={pcName} onChange={e => setPcName(e.target.value)} placeholder="예: 레베카" style={{ width: "100%", boxSizing: "border-box", padding: "8px 10px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.82rem", outline: "none" }} />
                         </div>
                         <div>
                           <label style={{ fontSize: "0.7rem", color: theme.textMuted, fontWeight: "700", display: "block", marginBottom: "3px" }}>나이/성별</label>
@@ -1016,300 +1057,243 @@ export default function GamePlatform() {
               </>
             )}
 
-            {/* 🌸 연애 모드 전체 구역 */}
+{/* 🌸 연애 모드 전체 구역 */}
             {selectedMode === "연애" && (
-              <>
-                {/* 1. 주인공 메신저 프로필 설정 */}
-                <section style={{ ...GLASS_STYLE, padding: isMobile ? "16px" : "20px", backgroundColor: theme.panel, borderRadius: "18px", border: `1px solid ${theme.border}`, display: "flex", flexDirection: "column", gap: "16px", marginBottom: "16px" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                    <Heart size={22} strokeWidth={2} color="#ec4899" />
-                    <span style={{ fontWeight: "900", fontSize: "0.95rem", color: theme.text }}>내 메신저 프로필 설정</span>
+              <div style={{ display: "flex", flexDirection: "column", gap: "20px", alignItems: "center", marginBottom: "20px" }}>
+
+                {/* 📱 1. 스마트폰 메신저 UI (로비에 박제된 핸드폰) */}
+                <div style={{
+                  width: "100%", maxWidth: "380px", backgroundColor: theme.panel,
+                  border: isDarkMode ? "12px solid #3f3f46" : "12px solid #e2e8f0", 
+                  borderRadius: "40px", overflow: "hidden", display: "flex", flexDirection: "column",
+                  boxShadow: "0 25px 50px -12px rgba(0,0,0,0.25)", position: "relative",
+                  height: "650px", flexShrink: 0
+                }}>
+                  {/* 핸드폰 상단바 (노치 디자인 흉내) */}
+                  <div style={{ height: "24px", backgroundColor: isDarkMode ? "#3f3f46" : "#e2e8f0", display: "flex", justifyContent: "center", alignItems: "center" }}>
+                    <div style={{ width: "60px", height: "6px", backgroundColor: isDarkMode ? "#52525b" : "#cbd5e1", borderRadius: "10px" }} />
                   </div>
 
-                  <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", gap: "16px", width: "100%" }}>
-                    <div
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setActivePortraitSuspectId("pc");
-                        setShowPortraitModal(true);
-                      }}
-                      title="프로필 사진 등록 (클릭)"
-                      style={{
-                        flex: isMobile ? "none" : "0 0 120px",
-                        width: isMobile ? "120px" : "auto",
-                        margin: isMobile ? "0 auto" : "0",
-                        display: "flex", flexDirection: "column", alignItems: "center", position: "relative",
-                        cursor: "pointer"
-                      }}
-                    >
-                      <div
-                        style={{
-                          width: "100%", aspectRatio: "1/1", backgroundColor: isDarkMode ? "#332d2a" : "#fce7f3", 
-                          borderRadius: "40%", overflow: "hidden", border: `2px solid #fbcfe8`,
-                          display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", position: "relative",
-                          boxShadow: "0 4px 14px rgba(236, 72, 153, 0.15)"
-                        }}
-                      >
-                        {pcPortraitUrl ? (
-                          <img src={pcPortraitUrl} alt="주인공" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                        ) : (
-                          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "4px", color: "#f43f5e", fontSize: "0.68rem" }}>
-                            <ImageIcon size={24} strokeWidth={1.5} />
-                            <span style={{ fontWeight: "800" }}>사진 등록</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    <div style={{ flex: 1, padding: "14px", backgroundColor: theme.panelAlt, borderRadius: "12px", border: `1.5px solid ${theme.borderHighlight || theme.border}`, display: "flex", flexDirection: "column", gap: "10px" }}>
-                      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: "8px" }}>
-                        <div>
-                          <label style={{ fontSize: "0.7rem", color: theme.textMuted, fontWeight: "700", display: "block", marginBottom: "3px" }}>이름 (메신저 닉네임)</label>
-                          <input type="text" value={pcName} onChange={e => setPcName(e.target.value)} placeholder="예: 수빈" style={{ width: "100%", boxSizing: "border-box", padding: "8px 10px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.82rem", outline: "none" }} />
-                        </div>
-                        <div>
-                          <label style={{ fontSize: "0.7rem", color: theme.textMuted, fontWeight: "700", display: "block", marginBottom: "3px" }}>나이/성별 (선택)</label>
-                          <input type="text" value={pcAgeGender} onChange={e => setPcAgeGender(e.target.value)} placeholder="예: 26세 여성" style={{ width: "100%", boxSizing: "border-box", padding: "8px 10px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.82rem", outline: "none" }} />
-                        </div>
-                      </div>
-                      <div>
-                        <label style={{ fontSize: "0.7rem", color: theme.textMuted, fontWeight: "700", display: "block", marginBottom: "3px" }}>상태 메시지 (소개글)</label>
-                        <textarea rows={2} value={pcBackground} onChange={e => setPcBackground(e.target.value)} placeholder="메신저 프로필에 띄워둘 상태 메시지나 짧은 소개글을 적어주세요..." style={{ width: "100%", boxSizing: "border-box", padding: "8px 10px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.82rem", outline: "none", resize: "vertical" }} />
-                      </div>
-                    </div>
-                  </div>
-                </section>
-
-                {/* 🌟 2. 공략 대상 (인연) 프로필 리스트 */}
-                <section style={{ ...GLASS_STYLE, padding: isMobile ? "16px" : "20px", backgroundColor: theme.panel, borderRadius: "18px", border: `1px solid ${theme.border}`, display: "flex", flexDirection: "column", gap: "16px", marginBottom: "16px" }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "10px" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                      <Heart size={22} strokeWidth={2} color="#f43f5e" />
-                      <span style={{ fontSize: "0.95rem", color: theme.text }}>
-                        <strong style={{ fontWeight: "900" }}>주요 인물 (공략 대상)</strong>
-                        <span style={{ fontWeight: "500", color: theme.textMuted, marginLeft: "4px" }}>({suspects.length}명 / 최대 15명)</span>
-                      </span>
-                    </div>
-                    <button type="button" onClick={handleAddSuspect} style={{ padding: "6px 14px", backgroundColor: theme.panelAlt, border: `1px solid #fbcfe8`, borderRadius: "16px", color: "#db2777", fontSize: "0.76rem", fontWeight: "600", cursor: "pointer", transition: "all 0.2s" }}>
-                      ＋ 인물 추가
-                    </button>
-                  </div>
-
-                  {/* 메신저 친구 목록 스타일 가로 스크롤 */}
-                  <div style={{ 
-                    display: "flex", gap: "14px", overflowX: "auto", padding: "14px 10px 14px 4px", WebkitOverflowScrolling: "touch" 
-                  }}>
-                    {suspects.map((s, idx) => {
-                      const isSelected = (selectedSuspectId || suspects[0]?.id) === s.id;
-                      return (
-                        <div
-                          key={s.id}
-                          onClick={() => setSelectedSuspectId(s.id)}
-                          style={{
-                            flex: "0 0 95px", display: "flex", flexDirection: "column", alignItems: "center", gap: "8px",
-                            position: "relative", cursor: "pointer", transform: isSelected ? "scale(1.05)" : "scale(1)", transition: "all 0.2s ease"
-                          }}
-                        >
-                          {suspects.length > 1 && (
-                            <button
-                              type="button"
-                              onClick={(e) => handleDeleteSuspect(e, s.id)}
-                              title="인물 삭제"
-                              style={{
-                                position: "absolute", top: "0", right: "0", width: "22px", height: "22px", borderRadius: "50%",
-                                backgroundColor: theme.danger || "#ef4444", color: "#fff", border: "none", cursor: "pointer", 
-                                display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.7rem", fontWeight: "bold", zIndex: 10,
-                                boxShadow: "0 2px 4px rgba(0,0,0,0.3)"
-                              }}
-                            >✕</button>
-                          )}
-
-                          <div
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setActivePortraitSuspectId(s.id);
-                              setShowPortraitModal(true);
-                            }}
-                            title="사진 등록 및 확인"
-                            style={{
-                              width: "75px", height: "75px", backgroundColor: isDarkMode ? "#332d2a" : "#fce7f3",
-                              borderRadius: "40%", overflow: "hidden", border: isSelected ? `2.5px solid #ec4899` : `2px solid transparent`,
-                              display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-                              boxShadow: isSelected ? "0 6px 16px rgba(236, 72, 153, 0.25)" : "0 2px 8px rgba(0,0,0,0.08)",
-                              cursor: "pointer"
-                            }}
-                          >
-                            {s.portraitUrl ? (
-                              <img src={s.portraitUrl} alt="공략대상" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                  {!showPhoneDetail ? (
+                    /* 📱 화면 A: 메신저 친구 목록 뷰 */
+                    <div style={{ flex: 1, overflowY: "auto", padding: "20px", display: "flex", flexDirection: "column", gap: "24px", backgroundColor: theme.bg }}>
+                      
+                      {/* 내 프로필 (빠른 수정 지원) */}
+                      <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                        <span style={{ fontSize: "0.8rem", fontWeight: "900", color: theme.textMuted }}>내 프로필</span>
+                        <div style={{ display: "flex", alignItems: "center", gap: "12px", backgroundColor: theme.panelAlt, padding: "14px", borderRadius: "18px", border: `1px solid ${theme.border}` }}>
+                          {/* 사진 */}
+                          <label title="내 사진 변경" style={{ flex: "0 0 64px", height: "64px", borderRadius: "40%", overflow: "hidden", border: `2px solid #fbcfe8`, cursor: "pointer", position: "relative" }}>
+                            {pcPortraitUrl ? (
+                              <img src={pcPortraitUrl} alt="주인공" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                             ) : (
-                              <UserRound size={28} strokeWidth={1.5} color={isDarkMode ? "#b3aaa0" : "#f472b6"} />
+                              <div style={{ width: "100%", height: "100%", backgroundColor: "#fce7f3", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                <ImageIcon size={20} color="#f43f5e" />
+                              </div>
                             )}
+                            <input type="file" accept="image/*" style={{ display: "none" }} onChange={(e) => {
+                              const file = e.target.files[0];
+                              if (file) {
+                                const r = new FileReader();
+                                r.onload = (ev) => setPcPortraitUrl(ev.target.result);
+                                r.readAsDataURL(file);
+                              }
+                            }} />
+                          </label>
+                          {/* 정보 입력 */}
+                          <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "6px" }}>
+                            <input type="text" value={pcName} onChange={e => setPcName(e.target.value)} placeholder="내 이름 (닉네임)" style={{ border: "none", background: "transparent", fontSize: "1.05rem", fontWeight: "900", color: theme.text, outline: "none", padding: 0 }} />
+                            <input type="text" value={pcBackground} onChange={e => setPcBackground(e.target.value)} placeholder="상태 메시지를 입력하세요..." style={{ border: "none", background: "transparent", fontSize: "0.75rem", color: theme.textMuted, outline: "none", padding: 0 }} />
+                          </div>
+                        </div>
+                      </div>
+
+                      <hr style={{ border: "none", borderTop: `1px solid ${theme.border}`, margin: 0 }} />
+
+                      {/* 공략 대상 리스트 */}
+                      <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                          <span style={{ fontSize: "0.8rem", fontWeight: "900", color: theme.textMuted }}>공략 대상 ({suspects.length})</span>
+                          <button onClick={handleAddSuspect} style={{ background: "none", border: "none", color: "#ec4899", fontWeight: "800", fontSize: "0.8rem", cursor: "pointer" }}>＋ 추가</button>
+                        </div>
+                        
+                        {suspects.map(s => (
+                          <div 
+                            key={s.id} 
+                            onClick={() => { setSelectedSuspectId(s.id); setShowPhoneDetail(true); }}
+                            style={{ display: "flex", alignItems: "center", gap: "14px", cursor: "pointer", padding: "8px", borderRadius: "12px", transition: "background 0.2s" }}
+                            onMouseEnter={e => e.currentTarget.style.backgroundColor = theme.panelAlt}
+                            onMouseLeave={e => e.currentTarget.style.backgroundColor = "transparent"}
+                          >
+                            <div style={{ width: "54px", height: "54px", borderRadius: "40%", overflow: "hidden", border: `1.5px solid ${theme.borderHighlight}` }}>
+                              {s.portraitUrl ? <img src={s.portraitUrl} alt="공략대상" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <div style={{ width: "100%", height: "100%", backgroundColor: isDarkMode ? "#333" : "#f1f5f9", display: "flex", alignItems: "center", justifyContent: "center" }}><UserRound size={20} color={theme.textMuted} /></div>}
+                            </div>
+                            <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "4px" }}>
+                              <span style={{ fontWeight: "900", fontSize: "0.95rem", color: theme.text }}>{s.name || "이름 미상"}</span>
+                              <span style={{ fontSize: "0.75rem", color: theme.textMuted, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s.behavior || "상태 메시지가 없습니다."}</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ) : (
+                    /* 📱 화면 B: 특정 공략 대상 상세 프로필 및 수정 뷰 */
+                    (() => {
+                      const curIdx = suspects.findIndex(s => s.id === selectedSuspectId);
+                      const cur = suspects[curIdx] || suspects[0];
+                      const goPrev = (e) => { e.stopPropagation(); setSelectedSuspectId(suspects[(curIdx - 1 + suspects.length) % suspects.length].id); };
+                      const goNext = (e) => { e.stopPropagation(); setSelectedSuspectId(suspects[(curIdx + 1) % suspects.length].id); };
+
+                      return (
+                        <div style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", backgroundColor: theme.panel }}>
+                          
+                          {/* 상단 네비게이션 */}
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px", borderBottom: `1px solid ${theme.border}` }}>
+                            <button onClick={() => setShowPhoneDetail(false)} style={{ background: "none", border: "none", color: theme.text, cursor: "pointer", display: "flex", alignItems: "center" }}>
+                              <X size={24} strokeWidth={2.5} />
+                            </button>
+                            <span style={{ fontWeight: "900", fontSize: "0.95rem" }}>프로필 편집</span>
+                            {suspects.length > 1 ? (
+                              <button onClick={(e) => { e.stopPropagation(); handleDeleteSuspect(e, cur.id); setShowPhoneDetail(false); }} style={{ background: "none", border: "none", color: theme.danger, cursor: "pointer", fontWeight: "800", fontSize: "0.8rem" }}>삭제</button>
+                            ) : <div style={{ width: "24px" }}/>}
                           </div>
 
-                          <div style={{ textAlign: "center", width: "100%" }}>
-                            <div style={{ fontWeight: isSelected ? "900" : "700", fontSize: "0.82rem", color: isSelected ? "#db2777" : theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                              {s.name || `인물 ${idx + 1}`}
+                          <div style={{ padding: "24px 20px", display: "flex", flexDirection: "column", gap: "20px" }}>
+                            
+                            {/* 좌우 스와이프 흉내 (화살표) & 프사 */}
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                              <button onClick={goPrev} style={{ background: "none", border: "none", cursor: "pointer", color: theme.textMuted }}>◀</button>
+                              
+                              <label title="사진 변경" style={{ width: "110px", height: "110px", borderRadius: "40%", overflow: "hidden", border: `3px solid #ec4899`, cursor: "pointer", position: "relative", boxShadow: "0 8px 20px rgba(236, 72, 153, 0.2)" }}>
+                                {cur.portraitUrl ? <img src={cur.portraitUrl} alt="공략대상" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <div style={{ width: "100%", height: "100%", backgroundColor: "#fce7f3", display: "flex", alignItems: "center", justifyContent: "center" }}><ImageIcon size={32} color="#f43f5e" /></div>}
+                                <input type="file" accept="image/*" style={{ display: "none" }} onChange={(e) => {
+                                  const file = e.target.files[0];
+                                  if (file) {
+                                    const r = new FileReader();
+                                    r.onload = (ev) => handleUpdateSuspect(cur.id, "portraitUrl", ev.target.result);
+                                    r.readAsDataURL(file);
+                                  }
+                                }} />
+                              </label>
+
+                              <button onClick={goNext} style={{ background: "none", border: "none", cursor: "pointer", color: theme.textMuted }}>▶</button>
+                            </div>
+
+                            {/* 정보 수정 폼 */}
+                            <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+                              <input type="text" value={cur.name} onChange={e => handleUpdateSuspect(cur.id, "name", e.target.value)} placeholder="이름 (예: 이시현)" style={{ width: "100%", boxSizing: "border-box", padding: "12px", borderRadius: "10px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "1rem", fontWeight: "900", outline: "none", textAlign: "center" }} />
+                              
+                              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+                                <div>
+                                  <label style={{ fontSize: "0.7rem", color: theme.textMuted, fontWeight: "700", display: "block", marginBottom: "4px" }}>나이/성별</label>
+                                  <input type="text" value={cur.ageGender} onChange={e => handleUpdateSuspect(cur.id, "ageGender", e.target.value)} placeholder="28세 여성" style={{ width: "100%", boxSizing: "border-box", padding: "10px", borderRadius: "10px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.85rem", outline: "none" }} />
+                                </div>
+                                <div>
+                                  <label style={{ fontSize: "0.7rem", color: theme.textMuted, fontWeight: "700", display: "block", marginBottom: "4px" }}>직업/접점</label>
+                                  <input type="text" value={cur.job} onChange={e => handleUpdateSuspect(cur.id, "job", e.target.value)} placeholder="같은 팀 선임" style={{ width: "100%", boxSizing: "border-box", padding: "10px", borderRadius: "10px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.85rem", outline: "none" }} />
+                                </div>
+                              </div>
+
+                              <div>
+                                <label style={{ fontSize: "0.7rem", color: theme.textMuted, fontWeight: "700", display: "block", marginBottom: "4px" }}>성격 및 상태 메시지 (관계성)</label>
+                                <textarea rows={3} value={cur.behavior} onChange={e => handleUpdateSuspect(cur.id, "behavior", e.target.value)} placeholder="겉으론 무뚝뚝하지만 나에게만 다정하다..." style={{ width: "100%", boxSizing: "border-box", padding: "10px", borderRadius: "10px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.85rem", outline: "none", resize: "vertical" }} />
+                              </div>
+
+                              <div style={{ backgroundColor: isDarkMode ? "rgba(0,0,0,0.2)" : "#fdf2f8", borderRadius: "10px", border: `1px solid #f9a8d4`, padding: "12px" }}>
+                                <button type="button" onClick={() => handleUpdateSuspect(cur.id, "showSecret", !cur.showSecret)} style={{ width: "100%", textAlign: "left", background: "none", border: "none", fontSize: "0.8rem", color: "#db2777", cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                                  <span style={{ fontWeight: "800", display: "flex", alignItems: "center", gap: "6px" }}><Lock size={15} strokeWidth={2.5} /> 남모르는 비밀 / 진심</span>
+                                  <span style={{ fontWeight: "500", fontSize: "0.85rem" }}>{cur.showSecret ? "▲" : "▼"}</span>
+                                </button>
+                                {cur.showSecret && (
+                                  <input type="text" value={cur.secret} onChange={e => handleUpdateSuspect(cur.id, "secret", e.target.value)} placeholder="사실 오래전부터 나를 마음에 두고 있었다." style={{ width: "100%", boxSizing: "border-box", padding: "10px", marginTop: "10px", borderRadius: "8px", border: `1px solid #f9a8d4`, backgroundColor: theme.inputBg, color: "#be185d", fontSize: "0.85rem", outline: "none" }} />
+                                )}
+                              </div>
                             </div>
                           </div>
                         </div>
                       );
-                    })}
-                  </div>
+                    })()
+                  )}
+                </div>
 
-                  {/* 선택된 공략 대상 상세 프로필 입력 */}
-                  {(() => {
-                    const curId = selectedSuspectId || suspects[0]?.id;
-                    const cur = suspects.find(s => s.id === curId) || suspects[0];
-                    if (!cur) return null;
-
-                    return (
-                      <div style={{ padding: isMobile ? "14px" : "18px", backgroundColor: theme.panelAlt, borderRadius: "16px", border: `1px solid ${theme.borderHighlight || theme.border}`, display: "flex", flexDirection: "column", gap: "12px", marginTop: "4px" }}>
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: `1px dashed #fbcfe8`, paddingBottom: "8px" }}>
-                          <span style={{ fontSize: "0.88rem", fontWeight: "900", color: "#db2777", display: "flex", alignItems: "center", gap: "6px" }}>
-                            <UserRound size={18} strokeWidth={2.5} /> [{cur.name || "신원 미상"}] 프로필 설정
-                          </span>
-                        </div>
-
-                        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1.2fr 1fr 1fr", gap: "8px" }}>
-                          <div>
-                            <label style={{ fontSize: "0.7rem", color: theme.textMuted, fontWeight: "700", display: "block", marginBottom: "3px" }}>이름</label>
-                            <input type="text" value={cur.name} onChange={e => handleUpdateSuspect(cur.id, "name", e.target.value)} placeholder="예: 이시현" style={{ width: "100%", boxSizing: "border-box", padding: "8px 10px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.82rem", outline: "none" }} />
-                          </div>
-                          <div>
-                            <label style={{ fontSize: "0.7rem", color: theme.textMuted, fontWeight: "700", display: "block", marginBottom: "3px" }}>나이/성별</label>
-                            <input type="text" value={cur.ageGender} onChange={e => handleUpdateSuspect(cur.id, "ageGender", e.target.value)} placeholder="예: 28세 여성" style={{ width: "100%", boxSizing: "border-box", padding: "8px 10px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.82rem", outline: "none" }} />
-                          </div>
-                          <div>
-                            <label style={{ fontSize: "0.7rem", color: theme.textMuted, fontWeight: "700", display: "block", marginBottom: "3px" }}>직업 및 접점</label>
-                            <input type="text" value={cur.job} onChange={e => handleUpdateSuspect(cur.id, "job", e.target.value)} placeholder="예: 같은 팀 선임, 소꿉친구" style={{ width: "100%", boxSizing: "border-box", padding: "8px 10px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.82rem", outline: "none" }} />
-                          </div>
-                        </div>
-
-                        <div>
-                          <label style={{ fontSize: "0.7rem", color: theme.textMuted, fontWeight: "700", display: "block", marginBottom: "3px" }}>성격 및 첫인상 (관계성)</label>
-                          <textarea rows={3} value={cur.behavior} onChange={e => handleUpdateSuspect(cur.id, "behavior", e.target.value)} placeholder="예: 겉으로는 냉철하고 무뚝뚝하지만, 주인공에게만은 유독 시선이 머문다. 적당한 거리감을 유지하려 애쓰는 중." style={{ width: "100%", boxSizing: "border-box", padding: "8px 10px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.82rem", outline: "none", resize: "vertical" }} />
-                        </div>
-
-                        <div style={{ backgroundColor: isDarkMode ? "rgba(0,0,0,0.2)" : "#fdf2f8", borderRadius: "8px", border: `1px solid #f9a8d4`, padding: "10px 12px", marginTop: "4px" }}>
-                          <button type="button" onClick={() => handleUpdateSuspect(cur.id, "showSecret", !cur.showSecret)} style={{ width: "100%", textAlign: "left", background: "none", border: "none", fontSize: "0.76rem", color: "#db2777", cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                            <span style={{ fontWeight: "800", display: "flex", alignItems: "center", gap: "6px" }}>
-                              <Lock size={15} strokeWidth={2.5} /> 남모르는 비밀 / 진심
-                            </span>
-                            <span style={{ fontWeight: "500", fontSize: "0.85rem" }}>{cur.showSecret ? "▲" : "▼"}</span>
-                          </button>
-                          
-                          {cur.showSecret && (
-                            <input type="text" value={cur.secret} onChange={e => handleUpdateSuspect(cur.id, "secret", e.target.value)} placeholder="예: 사실 아주 오래전부터 주인공을 마음에 두고 있었다." style={{ width: "100%", boxSizing: "border-box", padding: "8px 10px", marginTop: "8px", borderRadius: "6px", border: `1px solid #f9a8d4`, backgroundColor: theme.inputBg, color: "#be185d", fontSize: "0.82rem", outline: "none" }} />
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })()}
-                </section>
-                    {/* 🌟 3. 이벤트 CG 갤러리 및 해금 조건 */}
-                <section style={{ ...GLASS_STYLE, padding: isMobile ? "16px" : "20px", backgroundColor: theme.panel, borderRadius: "18px", border: `1px solid ${theme.border}`, display: "flex", flexDirection: "column", gap: "16px", marginBottom: "16px" }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "10px" }}>
+                {/* 🌟 2. 이벤트 CG 갤러리 (아코디언 접기/펴기) */}
+                <section style={{ width: "100%", ...GLASS_STYLE, padding: "16px", backgroundColor: theme.panel, borderRadius: "18px", border: `1px solid ${theme.border}`, display: "flex", flexDirection: "column", gap: "12px" }}>
+                  <button type="button" onClick={() => setShowCgGallery(!showCgGallery)} style={{ width: "100%", textAlign: "left", background: "none", border: "none", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer", padding: 0 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                       <ImageIcon size={22} strokeWidth={2} color="#ec4899" />
-                      <span style={{ fontSize: "0.95rem", color: theme.text }}>
-                        <strong style={{ fontWeight: "900" }}>이벤트 CG 갤러리</strong>
-                      </span>
+                      <span style={{ fontWeight: "900", fontSize: "0.95rem", color: theme.text }}>이벤트 CG 갤러리</span>
                     </div>
-                    <button type="button" onClick={() => setCgList([...cgList, { id: Date.now(), title: "", condition: "", imageUrl: "", showDetails: true }])} style={{ padding: "6px 14px", backgroundColor: theme.panelAlt, border: `1px solid #fbcfe8`, borderRadius: "16px", color: "#db2777", fontSize: "0.76rem", fontWeight: "600", cursor: "pointer", transition: "all 0.2s" }}>
-                      ＋ CG 추가
-                    </button>
-                  </div>
+                    <span style={{ color: theme.text, fontSize: "0.85rem", fontWeight: "500" }}>{showCgGallery ? "▲" : "▼"}</span>
+                  </button>
 
-                  <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: "12px" }}>
-                    {cgList.map((item, idx) => (
-                      <div key={item.id} style={{ backgroundColor: theme.panelAlt, border: `1px solid ${theme.border}`, borderRadius: "12px", padding: "14px", display: "flex", flexDirection: "column", gap: "10px" }}>
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "6px" }}>
-                          <input type="text" value={item.title} onChange={e => setCgList(cgList.map(c => c.id === item.id ? { ...c, title: e.target.value } : c))} placeholder={`CG ${idx + 1} 명칭 (예: 벚꽃 아래 만남)`} style={{ flex: 1, padding: "8px 10px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.82rem", fontWeight: "800", outline: "none" }} />
-                          {cgList.length > 1 && (
-                            <button type="button" onClick={() => setCgList(cgList.filter(c => c.id !== item.id))} style={{ background: "none", border: "none", color: theme.danger, cursor: "pointer", padding: "2px", fontSize: "0.8rem" }}>🗑</button>
-                          )}
-                        </div>
-                        
-                        <div style={{ display: "flex", gap: "10px", alignItems: "flex-start" }}>
-                          {/* CG 이미지 업로드 (썸네일) */}
-                          <label title="CG 이미지 등록" style={{ flex: "0 0 80px", height: "80px", backgroundColor: theme.inputBg, border: `1px dashed ${theme.border}`, borderRadius: "8px", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", position: "relative" }}>
-                            {item.imageUrl ? (
-                              <img src={item.imageUrl} alt="CG" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                            ) : (
-                              <div style={{ color: theme.textMuted, fontSize: "0.65rem", display: "flex", flexDirection: "column", alignItems: "center", gap: "4px" }}>
-                                <ImageIcon size={18} />
-                                <span>이미지 등록</span>
-                              </div>
-                            )}
-                            <input 
-                              type="file" accept="image/*" style={{ display: "none" }} 
-                              onChange={(e) => {
-                                const file = e.target.files[0];
-                                if (!file) return;
-                                const reader = new FileReader();
-                                reader.onload = (ev) => {
-                                  setCgList(cgList.map(c => c.id === item.id ? { ...c, imageUrl: ev.target.result } : c));
-                                };
-                                reader.readAsDataURL(file);
-                                e.target.value = null; 
-                              }} 
-                            />
-                          </label>
-
-                          <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "6px" }}>
-                            <label style={{ fontSize: "0.7rem", color: theme.textMuted, fontWeight: "700" }}>해금 조건 및 상황</label>
-                            <textarea rows={2} value={item.condition} onChange={e => setCgList(cgList.map(c => c.id === item.id ? { ...c, condition: e.target.value } : c))} placeholder="예: 체육관 이벤트에서 시현 선택 시" style={{ width: "100%", boxSizing: "border-box", padding: "6px 8px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.78rem", outline: "none", resize: "none" }} />
+                  {showCgGallery && (
+                    <div style={{ display: "flex", flexDirection: "column", gap: "12px", marginTop: "4px" }}>
+                      <button type="button" onClick={() => setCgList([...cgList, { id: Date.now(), title: "", condition: "", imageUrl: "", showDetails: true }])} style={{ padding: "12px", backgroundColor: isDarkMode ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.02)", border: `1.5px dashed ${theme.borderHighlight}`, borderRadius: "12px", color: "#ec4899", fontSize: "0.82rem", fontWeight: "800", cursor: "pointer", transition: "all 0.2s" }}>
+                        ＋ 새로운 CG 추가
+                      </button>
+                      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: "12px" }}>
+                        {cgList.map((item, idx) => (
+                          <div key={item.id} style={{ backgroundColor: theme.panelAlt, border: `1px solid ${theme.border}`, borderRadius: "12px", padding: "14px", display: "flex", flexDirection: "column", gap: "10px" }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "6px" }}>
+                              <input type="text" value={item.title} onChange={e => setCgList(cgList.map(c => c.id === item.id ? { ...c, title: e.target.value } : c))} placeholder={`CG ${idx + 1} 명칭`} style={{ flex: 1, padding: "8px 10px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.82rem", fontWeight: "800", outline: "none" }} />
+                              {cgList.length > 1 && <button type="button" onClick={() => setCgList(cgList.filter(c => c.id !== item.id))} style={{ background: "none", border: "none", color: theme.danger, cursor: "pointer" }}>🗑</button>}
+                            </div>
+                            <div style={{ display: "flex", gap: "10px", alignItems: "flex-start" }}>
+                              <label title="CG 이미지 등록" style={{ flex: "0 0 80px", height: "80px", backgroundColor: theme.inputBg, border: `1px dashed ${theme.border}`, borderRadius: "8px", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", position: "relative" }}>
+                                {item.imageUrl ? <img src={item.imageUrl} alt="CG" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <div style={{ color: theme.textMuted, fontSize: "0.65rem", display: "flex", flexDirection: "column", alignItems: "center" }}><ImageIcon size={18} /><span>이미지</span></div>}
+                                <input type="file" accept="image/*" style={{ display: "none" }} onChange={(e) => {
+                                  const file = e.target.files[0];
+                                  if (file) {
+                                    const r = new FileReader();
+                                    r.onload = (ev) => setCgList(cgList.map(c => c.id === item.id ? { ...c, imageUrl: ev.target.result } : c));
+                                    r.readAsDataURL(file);
+                                  }
+                                }} />
+                              </label>
+                              <textarea rows={3} value={item.condition} onChange={e => setCgList(cgList.map(c => c.id === item.id ? { ...c, condition: e.target.value } : c))} placeholder="해금 조건 (예: 옥상 이벤트 성공)" style={{ flex: 1, padding: "8px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.78rem", outline: "none", resize: "none" }} />
+                            </div>
                           </div>
-                        </div>
+                        ))}
                       </div>
-                    ))}
-                  </div>
+                    </div>
+                  )}
                 </section>
 
-                {/* 🌟 4. 공략 루트 및 분기점 설계 */}
-                <section style={{ ...GLASS_STYLE, padding: isMobile ? "16px" : "20px", backgroundColor: theme.panel, borderRadius: "18px", border: `1px solid ${theme.border}`, display: "flex", flexDirection: "column", gap: "16px", marginBottom: "16px" }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "10px" }}>
+                {/* 🌟 3. 선택지 분기 및 루트 설계 (아코디언 접기/펴기) */}
+                <section style={{ width: "100%", ...GLASS_STYLE, padding: "16px", backgroundColor: theme.panel, borderRadius: "18px", border: `1px solid ${theme.border}`, display: "flex", flexDirection: "column", gap: "12px" }}>
+                  <button type="button" onClick={() => setShowRouteList(!showRouteList)} style={{ width: "100%", textAlign: "left", background: "none", border: "none", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer", padding: 0 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                       <FolderOpen size={22} strokeWidth={2} color="#ec4899" />
-                      <span style={{ fontSize: "0.95rem", color: theme.text }}>
-                        <strong style={{ fontWeight: "900" }}>선택지 분기 및 루트 설계</strong>
-                      </span>
+                      <span style={{ fontWeight: "900", fontSize: "0.95rem", color: theme.text }}>선택지 분기 및 루트 설계</span>
                     </div>
-                    <button type="button" onClick={() => setRouteList([...routeList, { id: Date.now(), routeName: "", targetId: "", affectionChange: "+10", requiredCG: "" }])} style={{ padding: "6px 14px", backgroundColor: theme.panelAlt, border: `1px solid #fbcfe8`, borderRadius: "16px", color: "#db2777", fontSize: "0.76rem", fontWeight: "600", cursor: "pointer", transition: "all 0.2s" }}>
-                      ＋ 분기 추가
-                    </button>
-                  </div>
+                    <span style={{ color: theme.text, fontSize: "0.85rem", fontWeight: "500" }}>{showRouteList ? "▲" : "▼"}</span>
+                  </button>
 
-                  <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                    {routeList.map((route, idx) => (
-                      <div key={route.id} style={{ display: "flex", flexDirection: isMobile ? "column" : "row", gap: "8px", backgroundColor: theme.panelAlt, border: `1px solid ${theme.border}`, borderRadius: "10px", padding: "12px", alignItems: isMobile ? "stretch" : "center" }}>
-                        
-                        <div style={{ display: "flex", alignItems: "center", gap: "8px", flex: 2 }}>
-                          <span style={{ backgroundColor: "#fbcfe8", color: "#be185d", padding: "4px 8px", borderRadius: "8px", fontSize: "0.7rem", fontWeight: "900", whiteSpace: "nowrap" }}>
-                            분기 {idx + 1}
-                          </span>
-                          <input type="text" value={route.routeName} onChange={e => setRouteList(routeList.map(r => r.id === route.id ? { ...r, routeName: e.target.value } : r))} placeholder="분기 설명 (예: 옥상에서 시현을 위로한다)" style={{ width: "100%", padding: "6px 10px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.8rem", outline: "none" }} />
+                  {showRouteList && (
+                    <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginTop: "4px" }}>
+                      <button type="button" onClick={() => setRouteList([...routeList, { id: Date.now(), routeName: "", targetId: "", affectionChange: "+10", requiredCG: "" }])} style={{ padding: "12px", backgroundColor: isDarkMode ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.02)", border: `1.5px dashed ${theme.borderHighlight}`, borderRadius: "12px", color: "#ec4899", fontSize: "0.82rem", fontWeight: "800", cursor: "pointer", transition: "all 0.2s" }}>
+                        ＋ 새로운 루트/분기 추가
+                      </button>
+                      {routeList.map((route, idx) => (
+                        <div key={route.id} style={{ display: "flex", flexDirection: isMobile ? "column" : "row", gap: "8px", backgroundColor: theme.panelAlt, border: `1px solid ${theme.border}`, borderRadius: "10px", padding: "12px", alignItems: isMobile ? "stretch" : "center" }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: "8px", flex: 2 }}>
+                            <span style={{ backgroundColor: "#fbcfe8", color: "#be185d", padding: "4px 8px", borderRadius: "8px", fontSize: "0.7rem", fontWeight: "900", whiteSpace: "nowrap" }}>분기 {idx + 1}</span>
+                            <input type="text" value={route.routeName} onChange={e => setRouteList(routeList.map(r => r.id === route.id ? { ...r, routeName: e.target.value } : r))} placeholder="분기 설명 (예: 옥상에서 위로한다)" style={{ width: "100%", padding: "6px 10px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.8rem", outline: "none" }} />
+                          </div>
+                          <div style={{ display: "flex", alignItems: "center", gap: "8px", flex: 1 }}>
+                            <select value={route.targetId} onChange={e => setRouteList(routeList.map(r => r.id === route.id ? { ...r, targetId: e.target.value } : r))} style={{ flex: 1, padding: "6px 8px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.78rem", outline: "none", cursor: "pointer" }}>
+                              <option value="">영향받는 인물</option>
+                              {suspects.map(s => <option key={s.id} value={s.id}>{s.name || "이름 미상"}</option>)}
+                            </select>
+                            <input type="text" value={route.affectionChange} onChange={e => setRouteList(routeList.map(r => r.id === route.id ? { ...r, affectionChange: e.target.value } : r))} placeholder="호감도 (예: +10)" style={{ width: "75px", padding: "6px 10px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.accent, fontWeight: "800", fontSize: "0.78rem", outline: "none", textAlign: "center" }} />
+                            {routeList.length > 1 && <button type="button" onClick={() => setRouteList(routeList.filter(r => r.id !== route.id))} style={{ background: "none", border: "none", color: theme.textMuted, cursor: "pointer" }}>✕</button>}
+                          </div>
                         </div>
-
-                        <div style={{ display: "flex", alignItems: "center", gap: "8px", flex: 1 }}>
-                          {/* 🌟 우리가 추가했던 공략 대상(suspects) 데이터와 실시간 연동되는 셀렉트 박스 */}
-                          <select value={route.targetId} onChange={e => setRouteList(routeList.map(r => r.id === route.id ? { ...r, targetId: e.target.value } : r))} style={{ flex: 1, padding: "6px 8px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.78rem", outline: "none", cursor: "pointer" }}>
-                            <option value="">영향받는 인물</option>
-                            {suspects.map(s => (
-                              <option key={s.id} value={s.id}>{s.name || "이름 미상"}</option>
-                            ))}
-                          </select>
-                          <input type="text" value={route.affectionChange} onChange={e => setRouteList(routeList.map(r => r.id === route.id ? { ...r, affectionChange: e.target.value } : r))} placeholder="호감도 변화" style={{ width: "75px", padding: "6px 10px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.accent, fontWeight: "800", fontSize: "0.78rem", outline: "none", textAlign: "center" }} />
-                          
-                          {routeList.length > 1 && (
-                            <button type="button" onClick={() => setRouteList(routeList.filter(r => r.id !== route.id))} style={{ background: "none", border: "none", color: theme.textMuted, cursor: "pointer", padding: "4px" }}>✕</button>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
+                  )}
                 </section>
-              </>
+              </div>
             )}
 
             {selectedMode === "괴담" && (
@@ -1501,9 +1485,9 @@ export default function GamePlatform() {
             }}
           >
             {[
-              { key: "explore", icon: <Search size={20} strokeWidth={2.5} />, label: "탐색" },
+              { key: "explore", icon: <Search size={20} strokeWidth={2.5} />, label: "시나리오 탐색" },
               { key: "library", icon: <LibraryBig size={20} strokeWidth={2.5} />, label: "서재" },
-              { key: "lobby", icon: <PenTool size={20} strokeWidth={2.5} />, label: "창작" },
+              { key: "lobby", icon: <PenTool size={20} strokeWidth={2.5} />, label: "로비" },
               { key: "profile", icon: <UserRound size={20} strokeWidth={2.5} />, label: "내정보" }
             ].map((tab, idx, arr) => {
               const isSelected = activeTab === tab.key;
