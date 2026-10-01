@@ -35,142 +35,6 @@ const GLASS_STYLE = { backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(
 // ==========================================
 const GOOGLE_SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQQEA39XlsqHKGn0GPzmVH42jhimki3yJUIbKHkXjgzmLA5bD66WQvXw3-nHy9PJSxwg727wfSGznYa/pub?gid=0&single=true&output=csv";
 
-function parseCSV(text) {
-  let p = '', c = '', r = [];
-  let q = false;
-  let row = [''];
-  for (let i = 0; i < text.length; i++) {
-    c = text[i];
-    let next = text[i + 1];
-    if (c === '"') {
-      if (q && next === '"') { row[row.length - 1] += '"'; i++; }
-      else { q = !q; }
-    } else if (c === ',' && !q) {
-      row.push('');
-    } else if ((c === '\r' || c === '\n') && !q) {
-      if (c === '\r' && next === '\n') { i++; }
-      r.push(row);
-      row = [''];
-    } else {
-      row[row.length - 1] += c;
-    }
-  }
-  if (row.length > 1 || row[0] !== '') r.push(row);
-  return r;
-}
-
-function convertRowToPreset(row, index, headers = []) {
-  if (!row || row.length === 0) return null;
-
-  const cleanHeaders = (headers || []).map(h => (h || "").toString().replace(/[\s_]/g, "").toLowerCase());
-  const findIdx = (regex) => cleanHeaders.findIndex(h => regex.test(h));
-
-  // 1. 상태 및 기본 정보
-  const pubIdx = findIdx(/^(공개여부|공개|공개\/비공개|상태|open|public)$/i);
-  let isHidden = false;
-  const firstColVal = (row[0] || "").toString().trim().toUpperCase();
-
-  if (pubIdx !== -1) {
-    const pubVal = (row[pubIdx] || "").toString().trim().toUpperCase();
-    isHidden = pubVal === "FALSE" || pubVal === "비공개" || pubVal === "X" || pubVal === "N";
-  } else if (firstColVal === "TRUE" || firstColVal === "FALSE") {
-    isHidden = firstColVal === "FALSE";
-  }
-
-  let titleIdx = findIdx(/^(제목|사건명|시나리오제목|title)$/i);
-  if (titleIdx === -1) titleIdx = pubIdx !== -1 ? pubIdx + 1 : 2; 
-  const title = (row[titleIdx] || "").toString().trim();
-
-  if (isHidden || !title || title.startsWith("//")) return null;
-
-  const getVal = (regex) => {
-    const hIdx = findIdx(regex);
-    return hIdx !== -1 && hIdx < row.length ? (row[hIdx] || "").toString().trim() : "";
-  };
-
-  const modeRaw = getVal(/^(룰|룰모드|모드|장르|mode)$/i);
-  let mode = "추리";
-  if (/연애|미연시|로맨스|dating/i.test(modeRaw)) mode = "연애";
-  else if (/괴담|인세인|호러|insane/i.test(modeRaw)) mode = "괴담";
-
-  // 🌟 (강화됨!) 어떤 단어를 쓰든 찰떡같이 잡아냅니다!
-  const tags = getVal(/^(태그|키워드|장르톤|서사태그)$/i);
-  const synopsis = getVal(/^(개요|공개시놉시스|시놉시스|소개글)$/i);
-  const opening = getVal(/^(도입부|서막|오프닝|첫오프닝)$/i);
-  const truth = getVal(/^(진상|기밀|비밀|진실|사건내막|진상봉투)$/i);
-  const sessionCardImg = getVal(/^(세션카드|썸네일|표지|이미지|커버이미지|커버)$/i);
-
-  const pcName = getVal(/^(pc|주인공|탐색자|수사관)(?:이름|명칭)?$/i);
-  const pcAgeGender = getVal(/^(pc|주인공|탐색자|수사관)(?:나이성별|성별나이|나이|성별)$/i);
-  const pcJob = getVal(/^(pc|주인공|탐색자|수사관)(?:직업|역할|접점)$/i);
-  const pcBackground = getVal(/^(pc|주인공|탐색자|수사관)(?:성격|배경|설정|특징)$/i);
-  const pcSecret = getVal(/^(pc|주인공|탐색자|수사관)(?:비밀|약점|진실)$/i);
-  const pcPortraitUrl = getVal(/^(pc|주인공|탐색자|수사관)(?:초상화|사진|이미지|프사)$/i);
-
-  const abyssTriggers = {
-    30: getVal(/^이상충동30$/i),
-    60: getVal(/^이상충동60$/i),
-    90: getVal(/^이상충동90$/i)
-  };
-
-  // 🌟 (강화됨!) 숫자가 앞에 있든 뒤에 있든, 띄어쓰기가 있든 무조건 다 읽어오는 괴물 추출기!
-  const extractList = (maxCount, prefixRegex, fields, transformFn) => {
-    const list = [];
-    for (let i = 1; i <= maxCount; i++) {
-      const extracted = {};
-      let hasData = false;
-      fields.forEach(fieldGrp => {
-        const num = i === 1 ? `(?:1)?` : `${i}`;
-        // "인물1이름", "인물이름1", "인물이름" 모두 완벽하게 매칭!
-        const regexStr = `^(?:${prefixRegex})${num}(?:${fieldGrp})$|^(?:${prefixRegex})(?:${fieldGrp})${num}$`;
-        const val = getVal(new RegExp(regexStr, 'i'));
-        const mainKey = fieldGrp.split('|')[0]; 
-        extracted[mainKey] = val;
-        if (val) hasData = true;
-      });
-      if (hasData) list.push(transformFn(extracted, i));
-    }
-    return list;
-  };
-
-  const mainPartners = extractList(5, "메인파트너|파트너|동행자", ["이름", "나이성별|성별나이|나이", "직업|역할", "특징|성격|상태", "비밀|이면|진심", "초상화|사진|이미지|프사"], (d, i) => ({
-    id: `partner_${Date.now()}_${i}`, name: d.이름, ageGender: d.나이성별, job: d.직업, behavior: d.특징, secret: d.비밀, portraitUrl: d.초상화, showSecret: false
-  }));
-
-  const suspects = extractList(15, "등장인물|공략대상|인물|대상|npc|용의자", ["이름", "나이성별|성별나이|나이", "직업|역할", "특징|성격|상태|행적", "비밀|진심|약점", "초상화|사진|이미지|프사"], (d, i) => ({
-    id: `suspect_${Date.now()}_${i}`, name: d.이름, ageGender: d.나이성별, job: d.직업, behavior: d.특징, secret: d.비밀, portraitUrl: d.초상화, showSecret: false
-  }));
-
-  const evidenceList = extractList(15, "단서|증거|물증|핸드아웃", ["이름|명칭", "개요|설명|위치", "비밀|진상|모순|이면"], (d, i) => ({
-    id: `evidence_${Date.now()}_${i}`, name: d.이름, overview: d.개요, secret: d.비밀, contradiction: "", showSecret: false
-  }));
-
-  const cgList = extractList(10, "cg|이벤트cg|이벤트", ["이름|명칭|제목", "조건|해금조건", "대사|상황|지문", "사진|이미지|초상화"], (d, i) => ({
-    id: `cg_${Date.now()}_${i}`, title: d.이름, condition: d.조건, dialogue: d.대사, imageUrl: d.사진, showDetails: false
-  }));
-
-  const routeList = extractList(10, "분기|루트|선택지", ["이름|명칭|설명", "대상|인물|영향", "호감도|변화|점수"], (d, i) => {
-    return { id: `route_${Date.now()}_${i}`, routeName: d.이름, targetId: "", affectionChange: d.호감도 || "+10", requiredCG: "" };
-  });
-
-  return {
-    id: 9000000000000 + index,
-    title: title,
-    mode: mode,
-    author: "공식 에디터",
-    likes: Math.floor(Math.random() * 500) + 500 + "K",
-    plays: Math.floor(Math.random() * 900) + 100 + "K",
-    isOriginal: true,
-    imageUrl: sessionCardImg,
-    isDownloaded: false,
-    data: {
-      playPreference: tags, publicSynopsis: synopsis, openingScene: opening, hiddenTruth: truth,
-      pcName, pcAgeGender, pcJob, pcBackground, pcSecret, pcPortraitUrl, showPcSecret: false,
-      abyssTriggers, mainPartners, usePartner: mainPartners.length > 0, suspects, evidenceList, cgList, routeList
-    }
-  };
-}
-
 export default function GamePlatform() {
   // ── [3. 상태 관리] ──
   const [isMounted, setIsMounted] = useState(false); // 🌟 에러 #423 방어막
@@ -435,9 +299,21 @@ const handleLoadFromLibrary = (scen) => {
   setSelectedMode(scen.mode);
   setScenarioTitle(scen.title);
   
-  // 데이터 복원
-  setPlayPreference(d.playPreference || ""); setPcName(d.pcName || ""); setPcAgeGender(d.pcAgeGender || ""); setPcJob(d.pcJob || ""); setPcBackground(d.pcBackground || ""); setPcPortraitUrl(d.pcPortraitUrl || ""); setPcSecret(d.pcSecret || ""); setShowPcSecret(d.showPcSecret || false);
-  setVictimName(d.victimName || ""); setPublicSynopsis(d.publicSynopsis || ""); setOpeningScene(d.openingScene || ""); setCulpritName(d.culpritName || ""); setTrickDetail(d.trickDetail || ""); setHiddenTruth(d.hiddenTruth || "");
+  // 기본 텍스트 데이터 복원
+  setPlayPreference(d.playPreference || ""); 
+  setPcName(d.pcName || ""); 
+  setPcAgeGender(d.pcAgeGender || ""); 
+  setPcJob(d.pcJob || ""); 
+  setPcBackground(d.pcBackground || ""); 
+  setPcPortraitUrl(d.pcPortraitUrl || ""); 
+  setPcSecret(d.pcSecret || ""); 
+  setShowPcSecret(d.showPcSecret || false);
+  setVictimName(d.victimName || ""); 
+  setPublicSynopsis(d.publicSynopsis || ""); 
+  setOpeningScene(d.openingScene || ""); 
+  setCulpritName(d.culpritName || ""); 
+  setTrickDetail(d.trickDetail || ""); 
+  setHiddenTruth(d.hiddenTruth || "");
   
   if(d.horrorStats) setHorrorStats(d.horrorStats);
   if(d.horrorTraits) setHorrorTraits(d.horrorTraits);
@@ -446,12 +322,12 @@ const handleLoadFromLibrary = (scen) => {
   if(d.abyssTriggers) setAbyssTriggers(d.abyssTriggers);
   if(d.usePartner !== undefined) setUsePartner(d.usePartner);
 
-  // 🌟 (핵심 방어막!) 파싱 실패로 데이터가 없더라도, 빈칸 1개를 강제로 만들어서 화면 증발(오류)을 막아줍니다!
-  setSuspects(d.suspects?.length ? d.suspects : [{ id: Date.now(), name: "", ageGender: "", job: "", behavior: "", secret: "", portraitUrl: "", showSecret: false }]);
-  setEvidenceList(d.evidenceList?.length ? d.evidenceList : [{ id: Date.now(), name: "", overview: "", contradiction: "", secret: "", showSecret: false }]);
-  setCgList(d.cgList?.length ? d.cgList : [{ id: Date.now(), title: "", condition: "", dialogue: "", imageUrl: "", showDetails: false }]);
-  setRouteList(d.routeList?.length ? d.routeList : [{ id: Date.now(), routeName: "", targetId: "", affectionChange: "+10", requiredCG: "" }]);
+  // 🌟 (핵심 방어막!) 파싱 실패로 데이터가 비어있어도, 빈칸 1개를 강제로 만들어서 화면 증발 오류를 100% 막아줍니다!
   setMainPartners(d.mainPartners?.length ? d.mainPartners : [{ id: Date.now(), name: "", ageGender: "", job: "", behavior: "", secret: "", showSecret: false, portraitUrl: "" }]);
+  setSuspects(d.suspects?.length ? d.suspects : [{ id: Date.now()+1, name: "", ageGender: "", job: "", behavior: "", secret: "", portraitUrl: "", showSecret: false }]);
+  setEvidenceList(d.evidenceList?.length ? d.evidenceList : [{ id: Date.now()+2, name: "", overview: "", contradiction: "", secret: "", showSecret: false }]);
+  setCgList(d.cgList?.length ? d.cgList : [{ id: Date.now()+3, title: "", condition: "", dialogue: "", imageUrl: "", showDetails: false }]);
+  setRouteList(d.routeList?.length ? d.routeList : [{ id: Date.now()+4, routeName: "", targetId: "", affectionChange: "+10", requiredCG: "" }]);
 
   setActiveTab("lobby");
   triggerToast("불러오기 완료", `[${scen.title}] 서류를 로비에 펼쳤습니다.`, "📂");
