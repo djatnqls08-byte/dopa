@@ -162,8 +162,8 @@ const opening = getVal(/^(도입부|서막|오프닝)$/i);
     title: title,
     mode: mode,
     author: "공식 에디터",
-    likes: Math.floor(Math.random() * 500) + 500 + "K",
-    plays: Math.floor(Math.random() * 900) + 100 + "K",
+    likes: 0, // 🌟 가짜 데이터 삭제! 정직하게 0부터 시작!
+    plays: 0, // 🌟 여기도 0부터 시작!
     isOriginal: true,
     imageUrl: sessionCardImg,
     isDownloaded: false,
@@ -347,6 +347,7 @@ export default function GamePlatform() {
   const [pcBackground, setPcBackground] = useState("");
   const [pcPortraitUrl, setPcPortraitUrl] = useState(""); 
   const [pcSecret, setPcSecret] = useState(""); // 🌟 주인공 비밀 내용 저장
+  const [originalPcName, setOriginalPcName] = useState(""); // 🌟 (추가!) 주인공 원래 이름 기억 장치
   const [showPcSecret, setShowPcSecret] = useState(false); // 🌟 주인공 비밀 아코디언 스위치
 
   const [scenarioTitle, setScenarioTitle] = useState("");
@@ -469,7 +470,7 @@ const handleLoadFromLibrary = (scen) => {
   
   // 기본 텍스트 데이터 복원
   setPlayPreference(d.playPreference || ""); 
-  setPcName(d.pcName || ""); 
+  setPcName(d.pcName || ""); setOriginalPcName(d.pcName || "");
   setPcAgeGender(d.pcAgeGender || ""); 
   setPcJob(d.pcJob || ""); 
   setPcBackground(d.pcBackground || ""); 
@@ -878,7 +879,7 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
     }
   };
 
-  // ── [10. 코어 엔진: 세션 시작 및 통신] ──
+// ── [10. 코어 엔진: 세션 시작 및 통신] ──
   const startNewSession = async () => {
     if (!scenarioTitle.trim()) {
       triggerToast("제목 입력", "이야기를 시작하려면 제목을 입력해주세요.", "⚠️");
@@ -886,32 +887,50 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
     }
 
     const pName = pcName.trim() || "주인공";
+    
+    // 🌟 [전방위 이름 치환 마법!] 텍스트뿐만 아니라 배열/객체를 통째로 스캔해서 이름을 싹 다 바꿔버립니다!
+    const deepReplace = (data) => {
+      if (!originalPcName || originalPcName === pName) return data;
+      // 객체나 배열을 통째로 문자열로 만들어서 이름을 싹 바꾸고 다시 조립하는 완벽한 꼼수!
+      let str = typeof data === 'string' ? data : JSON.stringify(data);
+      str = str.replace(new RegExp(originalPcName, 'g'), pName);
+      return typeof data === 'string' ? str : JSON.parse(str);
+    };
+
+    // 🌟 서막, 시놉시스, 진상 치환
+    const finalOpening = deepReplace(openingScene);
+    const finalSynopsis = deepReplace(publicSynopsis);
+    const finalTruth = deepReplace(hiddenTruth);
+
     const initialSheet = {
       name: pName,
       job: pcJob || "조사원",
       ageGender: pcAgeGender || "",
-      background: pcBackground || "",
-      secret: pcSecret || "", // 🌟 주인공의 비밀 추가
+      background: deepReplace(pcBackground || ""),
+      secret: deepReplace(pcSecret || ""),
       portrait: pcPortraitUrl || "",
       hp: 100, 
       maxHp: 100,
-      npcs: suspects.map(s => ({ ...s, secretRevealed: false })), 
-      handouts: evidenceList.map(e => ({ ...e, revealed: false })), 
+      npcs: deepReplace(suspects).map(s => ({ ...s, secretRevealed: false })), // NPC 관계도/비밀 치환
+      handouts: deepReplace(evidenceList).map(e => ({ ...e, revealed: false })), // 단서 설명/모순점 치환
       fatigue: 0,
-      // 🌟 [추가됨] 시크릿 노벨 괴담 모드 독자 시스템 데이터 연동
       horrorStats: horrorStats,
       horrorTraits: horrorTraits,
       horrorTraumas: horrorTraumas,
-      abyssTriggers: abyssTriggers,
+      abyssTriggers: deepReplace(abyssTriggers), // 괴담 모드 발현 지문 치환
+      cgGallery: deepReplace(cgList),          // 🌟 AI가 CG 조건과 대사도 알 수 있게 뇌에 주입! (이름 치환 완비)
+      routes: deepReplace(routeList),          // 🌟 AI가 공략 루트와 호감도 변화도 알 수 있게 추가!
+      partners: deepReplace(mainPartners)      // 🌟 메인 파트너 정보 주입!
     };
-   
+    
     const newId = Date.now();
     const newSession = {
       id: newId,
       title: scenarioTitle,
       ruleMode: selectedMode === "추리" ? "freeform" : selectedMode === "연애" ? "dating" : "insane",
       preference: playPreference.trim(),
-      scenarioText: `[시나리오 제목: ${scenarioTitle}]\n\n[공개 시놉시스]\n${publicSynopsis}\n\n[초기 배경/서막]\n${openingScene}\n\n[키퍼 전용 기밀/진상]\n${hiddenTruth}`,
+      // 🌟 AI에게 치환이 완료된(final) 텍스트를 전달합니다!
+      scenarioText: `[시나리오 제목: ${scenarioTitle}]\n\n[공개 시놉시스]\n${finalSynopsis}\n\n[초기 배경/서막]\n${finalOpening}\n\n[키퍼 전용 기밀/진상]\n${finalTruth}`,
       sheet: initialSheet,
       messages: [], 
       suggestedActions: [] 
@@ -4102,7 +4121,7 @@ color: "#fff", border: "none", cursor: "pointer",
                    if (d) {
                      setSelectedMode(selectedExploreScenario.mode);
                      setScenarioTitle(selectedExploreScenario.title);
-                     setPlayPreference(d.playPreference || ""); setPcName(d.pcName || ""); setPcAgeGender(d.pcAgeGender || ""); setPcJob(d.pcJob || ""); setPcBackground(d.pcBackground || ""); setPcPortraitUrl(d.pcPortraitUrl || ""); setPcSecret(d.pcSecret || ""); setShowPcSecret(d.showPcSecret || false);
+                     setPlayPreference(d.playPreference || ""); setPcName(d.pcName || ""); setOriginalPcName(d.pcName || ""); setPcAgeGender(d.pcAgeGender || ""); setPcJob(d.pcJob || ""); setPcBackground(d.pcBackground || ""); setPcPortraitUrl(d.pcPortraitUrl || ""); setPcSecret(d.pcSecret || ""); setShowPcSecret(d.showPcSecret || false);
                      setVictimName(d.victimName || ""); setPublicSynopsis(d.publicSynopsis || ""); setOpeningScene(d.openingScene || ""); setCulpritName(d.culpritName || ""); setTrickDetail(d.trickDetail || ""); setHiddenTruth(d.hiddenTruth || "");
                      
                      if(d.horrorStats) setHorrorStats(d.horrorStats);
