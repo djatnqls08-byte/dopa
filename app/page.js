@@ -458,7 +458,7 @@ const [showReviewModal, setShowReviewModal] = useState(false);
 const [showSupportModal, setShowSupportModal] = useState(false);
  
 // ── [11. 관리자 및 추가 기능 상태] ──
-  const MY_ADMIN_EMAIL = "subin@secretnovel.com"; 
+  const MY_ADMIN_EMAIL = "usb1201@naver.com"; 
   const isAdmin = currentUser?.email === MY_ADMIN_EMAIL; // 이메일이 일치할 때만 어드민 권한 부여
   const [showNoticeModal, setShowNoticeModal] = useState(false);
   const [notices, setNotices] = useState([
@@ -799,7 +799,7 @@ const [showSupportModal, setShowSupportModal] = useState(false);
     return (
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", width: "100vw", height: "100dvh", backgroundColor: theme.bg, color: theme.text, padding: "20px", position: "relative" }}>
         
-        {/* 🌟 로그인 화면용 토스트 알림창 추가!! (이게 없어서 안 보였던 거였어요!) */}
+        {/* 🌟 로그인 화면용 토스트 알림창 */}
         {toast && (
           <div onClick={() => setToast(null)} style={{ ...GLASS_STYLE, position: "absolute", top: "20px", left: "50%", transform: "translateX(-50%)", zIndex: 99999, backgroundColor: isDarkMode ? "rgba(35, 30, 28, 0.96)" : "rgba(255, 255, 255, 0.96)", border: `1.5px solid ${theme.accent}`, color: theme.text, padding: "12px 20px", borderRadius: "24px", display: "flex", alignItems: "center", gap: "10px", boxShadow: "0 10px 30px rgba(0,0,0,0.15)", cursor: "pointer", animation: "fadeIn 0.2s ease-out", width: "max-content", maxWidth: "90vw" }}>
             <span style={{ display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontSize: "1.15rem" }}>{toast.icon}</span>
@@ -807,6 +807,28 @@ const [showSupportModal, setShowSupportModal] = useState(false);
             {toast.message && <span style={{ fontSize: "0.8rem", opacity: 0.85, wordBreak: "keep-all" }}>{toast.message}</span>}
           </div>
         )}
+
+        {/* 🌟 약관 내용 팝업창 */}
+        {showTermsModal && (
+          <div onClick={() => setShowTermsModal(false)} style={{ position: "absolute", inset: 0, backgroundColor: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: "20px", borderRadius: "24px" }}>
+            <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: "380px", backgroundColor: theme.panelAlt, border: `1px solid ${theme.border}`, borderRadius: "16px", padding: "20px", display: "flex", flexDirection: "column", gap: "16px", boxShadow: "0 20px 40px rgba(0,0,0,0.3)" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: `1px solid ${theme.border}`, paddingBottom: "10px" }}>
+                <span style={{ fontWeight: "800", fontSize: "0.95rem", color: theme.text }}>이용약관 및 개인정보 처리방침</span>
+                <button onClick={() => setShowTermsModal(false)} style={{ background: "none", border: "none", color: theme.textMuted, cursor: "pointer" }}><X size={20}/></button>
+              </div>
+              <div style={{ maxHeight: "250px", overflowY: "auto", fontSize: "0.75rem", color: theme.text, lineHeight: 1.6, whiteSpace: "pre-wrap" }}>
+                {`제 1 조 (목적)\n본 약관은 Secret Novel이 제공하는 제반 서비스의 이용과 관련하여 회원과의 권리, 의무 및 책임사항을 규정함을 목적으로 합니다.\n\n제 2 조 (개인정보의 수집 및 이용)\n1. 수집 항목: 이메일 주소, 비밀번호\n2. 이용 목적: 회원 식별, 서비스 제공 및 부정 이용 방지\n3. 보유 기간: 회원 탈퇴 시까지 안전하게 보관됩니다.\n\n제 3 조 (창작물의 권리)\n회원이 서비스 내에 게시한 시나리오 및 창작물의 저작권은 회원에게 귀속되며, 원치 않을 경우 언제든 비공개 및 삭제가 가능합니다.`}
+              </div>
+              <button 
+                onClick={() => { setAgreeTerms(true); setShowTermsModal(false); }} 
+                style={{ width: "100%", padding: "12px", backgroundColor: theme.accent, color: "#fff", border: "none", borderRadius: "10px", fontWeight: "700", cursor: "pointer" }}
+              >
+                동의하고 닫기
+              </button>
+            </div>
+          </div>
+        )}
+
         <div style={{ ...GLASS_STYLE, backgroundColor: theme.panel, border: `1px solid ${theme.border}`, borderRadius: "24px", padding: "40px 30px", display: "flex", flexDirection: "column", alignItems: "center", gap: "24px", width: "100%", maxWidth: "380px", boxShadow: "0 20px 50px rgba(0,0,0,0.1)" }}>
           
           <div style={{ textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center" }}>
@@ -833,7 +855,6 @@ const [showSupportModal, setShowSupportModal] = useState(false);
               style={{ width: "100%", padding: "14px", backgroundColor: theme.inputBg, border: `1px solid ${theme.border}`, borderRadius: "12px", color: theme.text, fontSize: "0.9rem", outline: "none", boxSizing: "border-box" }}
             />
             
-            {/* 🌟 개인정보 동의 체크박스 및 내용보기 버튼 */}
             <label style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "0.75rem", color: theme.textMuted, marginTop: "4px", paddingLeft: "4px" }}>
               <input 
                 type="checkbox" 
@@ -841,7 +862,7 @@ const [showSupportModal, setShowSupportModal] = useState(false);
                 onChange={(e) => setAgreeTerms(e.target.checked)} 
                 style={{ width: "16px", height: "16px", accentColor: theme.accent, cursor: "pointer" }} 
               />
-              <span onClick={() => setAgreeTerms(!agreeTerms)} style={{ cursor: "pointer" }}>(필수) 서비스 이용약관 및 개인정보 처리방침 동의</span>
+              <span onClick={() => setAgreeTerms(!agreeTerms)} style={{ cursor: "pointer" }}>(필수) 서비스 이용약관 동의</span>
               <span 
                 onClick={(e) => { e.preventDefault(); setShowTermsModal(true); }} 
                 style={{ color: theme.accent, fontWeight: "700", cursor: "pointer", textDecoration: "underline", marginLeft: "auto" }}
@@ -851,30 +872,7 @@ const [showSupportModal, setShowSupportModal] = useState(false);
             </label>
           </div>
 
-          {/* 🌟 약관 내용 팝업창 (로그인 박스 위에 덮어씌워짐) */}
-          {showTermsModal && (
-            <div onClick={() => setShowTermsModal(false)} style={{ position: "absolute", inset: 0, backgroundColor: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: "20px", borderRadius: "24px" }}>
-              <div onClick={e => e.stopPropagation()} style={{ width: "100%", backgroundColor: theme.panelAlt, border: `1px solid ${theme.border}`, borderRadius: "16px", padding: "20px", display: "flex", flexDirection: "column", gap: "16px", boxShadow: "0 20px 40px rgba(0,0,0,0.3)" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: `1px solid ${theme.border}`, paddingBottom: "10px" }}>
-                  <span style={{ fontWeight: "800", fontSize: "0.95rem", color: theme.text }}>이용약관 및 개인정보 처리방침</span>
-                  <button onClick={() => setShowTermsModal(false)} style={{ background: "none", border: "none", color: theme.textMuted, cursor: "pointer" }}><X size={20}/></button>
-                </div>
-                <div style={{ maxHeight: "250px", overflowY: "auto", fontSize: "0.75rem", color: theme.text, lineHeight: 1.6, whiteSpace: "pre-wrap" }}>
-                  {`제 1 조 (목적)\n본 약관은 Secret Novel이 제공하는 제반 서비스의 이용과 관련하여 회원과의 권리, 의무 및 책임사항을 규정함을 목적으로 합니다.\n\n제 2 조 (개인정보의 수집 및 이용)\n1. 수집 항목: 이메일 주소, 비밀번호\n2. 이용 목적: 회원 식별, 서비스 제공 및 부정 이용 방지\n3. 보유 기간: 회원 탈퇴 시까지 안전하게 보관됩니다.\n\n제 3 조 (창작물의 권리)\n회원이 서비스 내에 게시한 시나리오 및 창작물의 저작권은 회원에게 귀속되며, 원치 않을 경우 언제든 비공개 및 삭제가 가능합니다.`}
-                </div>
-                <button 
-                  onClick={() => { setAgreeTerms(true); setShowTermsModal(false); }} 
-                  style={{ width: "100%", padding: "12px", backgroundColor: theme.accent, color: "#fff", border: "none", borderRadius: "10px", fontWeight: "700", cursor: "pointer" }}
-                >
-                  동의하고 닫기
-                </button>
-              </div>
-            </div>
-          )}
-
           <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: "8px", marginTop: "4px" }}>
-            
-            {/* 🌟 진짜 로그인 버튼 */}
             <button 
               disabled={isLoginLoading || !loginEmail || !loginPassword || !agreeTerms}
               onClick={async () => {
@@ -899,7 +897,6 @@ const [showSupportModal, setShowSupportModal] = useState(false);
               {isLoginLoading ? "확인 중..." : "로그인"}
             </button>
 
-            {/* 🌟 진짜 회원가입 버튼 */}
             <button 
               disabled={isLoginLoading || !loginEmail || !loginPassword || !agreeTerms}
               onClick={async () => {
@@ -920,7 +917,7 @@ const [showSupportModal, setShowSupportModal] = useState(false);
             >
               회원가입
             </button>
-                {/* 🌟👇 여기에 추가! 비밀번호 찾기 (준비 중) */}
+
             <div style={{ display: "flex", justifyContent: "center", marginTop: "12px" }}>
               <span 
                 onClick={() => triggerToast("안내", "비밀번호 초기화 기능은 준비 중입니다. 고객센터(support@secretnovel.com)로 문의해주세요.", "💌")}
@@ -931,18 +928,11 @@ const [showSupportModal, setShowSupportModal] = useState(false);
                 비밀번호를 잊으셨나요?
               </span>
             </div>
-            
           </div>
         </div>
       </div>
     );
   }
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   
   return (
     <div style={{ display: "flex", height: "100dvh", width: "100vw", backgroundColor: theme.bg, color: theme.text, overflow: "hidden", position: "relative" }}>
