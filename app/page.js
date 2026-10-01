@@ -799,7 +799,7 @@ const TRAUMA_LIST = [
 
             {selectedMode === "추리" && (
               <>
-                <section style={{ ...GLASS_STYLE, padding: isMobile ? "16px" : "20px", backgroundColor: theme.panel, borderRadius: "18px", border: `1px solid ${theme.border}`, display: "flex", flexDirection: "column", gap: "16px", marginBottom: "16px" }}>
+                <section style={{ ...GLASS_STYLE, padding: isMobile ? "16px" : "20px", backgroundColor: theme.panel, borderRadius: "18px", border: `1px solid ${theme.border}`, display: "flex", flexDirection: "column", gap: "16px" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                     <UserRound size={22} strokeWidth={2} color={theme.accent} />
                     <span style={{ fontWeight: "700", fontSize: "0.95rem", color: theme.text }}>주인공 (수사관) 프로필</span>
@@ -1451,7 +1451,7 @@ color: "#fff", border: "none", cursor: "pointer",
 {selectedMode === "괴담" && (
               <>
                 {/* 1. 사건 개요서 */}
-                <section style={{ ...GLASS_STYLE, padding: isMobile ? "16px" : "20px", backgroundColor: theme.panel, borderRadius: "18px", border: `1px solid ${theme.border}`, display: "flex", flexDirection: "column", gap: "12px", marginBottom: "16px" }}>
+                <section style={{ ...GLASS_STYLE, padding: isMobile ? "16px" : "20px", backgroundColor: theme.panel, borderRadius: "18px", border: `1px solid ${theme.border}`, display: "flex", flexDirection: "column", gap: "12px" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                     <ClipboardList size={22} strokeWidth={2} color={theme.accent} />
                     <span style={{ fontWeight: "700", fontSize: "0.95rem", color: theme.text }}>사건 개요서</span>
@@ -1465,7 +1465,7 @@ color: "#fff", border: "none", cursor: "pointer",
                 </section>
 
                 {/* 2. 탐색자 프로필 및 스탯 */}
-                <section style={{ ...GLASS_STYLE, padding: isMobile ? "16px" : "20px", backgroundColor: theme.panel, borderRadius: "18px", border: `1px solid ${theme.border}`, display: "flex", flexDirection: "column", gap: "16px", marginBottom: "16px" }}>
+                <section style={{ ...GLASS_STYLE, padding: isMobile ? "16px" : "20px", backgroundColor: theme.panel, borderRadius: "18px", border: `1px solid ${theme.border}`, display: "flex", flexDirection: "column", gap: "16px" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                     <Skull size={22} strokeWidth={2} color={theme.accent} />
                     <span style={{ fontWeight: "700", fontSize: "0.95rem", color: theme.text }}>탐색자 프로필 및 스탯</span>
@@ -1562,8 +1562,8 @@ color: "#fff", border: "none", cursor: "pointer",
                   </div>
                 </section>
 
-                {/* 3. 메인 파트너 설정 (다수 파트너 지원) */}
-                <section style={{ ...GLASS_STYLE, padding: isMobile ? "16px" : "20px", backgroundColor: theme.panel, borderRadius: "18px", border: `1px solid ${theme.border}`, display: "flex", flexDirection: "column", gap: "16px", marginBottom: "16px" }}>
+                {/* 3. 메인 파트너 설정 (5명 제한 & 삭제 버튼 위치 수정) */}
+                <section style={{ ...GLASS_STYLE, padding: isMobile ? "16px" : "20px", backgroundColor: theme.panel, borderRadius: "18px", border: `1px solid ${theme.border}`, display: "flex", flexDirection: "column", gap: "16px" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                       <UserRound size={22} strokeWidth={2} color={theme.accent} />
@@ -1571,7 +1571,13 @@ color: "#fff", border: "none", cursor: "pointer",
                     </div>
                     <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
                       {usePartner && (
-                         <button type="button" onClick={() => setMainPartners([...mainPartners, { id: Date.now(), name: "", ageGender: "", job: "", behavior: "", secret: "", showSecret: false, portraitUrl: "" }])} style={{ padding: "4px 10px", backgroundColor: theme.panelAlt, border: `1px solid ${theme.accent}`, borderRadius: "16px", color: theme.accent, fontSize: "0.72rem", fontWeight: "700", cursor: "pointer" }}>＋ 인물 추가</button>
+                         <button type="button" onClick={() => {
+                           if (mainPartners.length >= 5) {
+                             triggerToast("한도 초과", "메인 파트너는 최대 5명까지만 추가할 수 있습니다.", "⚠️");
+                             return;
+                           }
+                           setMainPartners([...mainPartners, { id: Date.now(), name: "", ageGender: "", job: "", behavior: "", secret: "", showSecret: false, portraitUrl: "" }]);
+                         }} style={{ padding: "4px 10px", backgroundColor: theme.panelAlt, border: `1px solid ${theme.accent}`, borderRadius: "16px", color: theme.accent, fontSize: "0.72rem", fontWeight: "700", cursor: "pointer" }}>＋ 인물 추가</button>
                       )}
                       <button onClick={() => setUsePartner(!usePartner)} style={{ background: "none", border: "none", display: "flex", alignItems: "center", gap: "6px", cursor: "pointer", color: usePartner ? theme.accent : theme.textMuted, padding: 0 }}>
                         <span style={{ fontSize: "0.8rem", fontWeight: "700" }}>{usePartner ? "동행 중" : "나홀로 조사"}</span>
@@ -1583,8 +1589,15 @@ color: "#fff", border: "none", cursor: "pointer",
                   {usePartner && (
                     <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
                       {mainPartners.map((partner, idx) => (
-                        <div key={partner.id} style={{ display: "flex", flexDirection: isMobile ? "column" : "row", gap: "16px", padding: "14px", backgroundColor: theme.panelAlt, borderRadius: "12px", border: `1px solid ${theme.border}`, alignItems: "flex-start" }}>
+                        <div key={partner.id} style={{ position: "relative", display: "flex", flexDirection: isMobile ? "column" : "row", gap: "16px", padding: "16px", backgroundColor: theme.panelAlt, borderRadius: "12px", border: `1px solid ${theme.border}`, alignItems: "flex-start" }}>
                           
+                          {/* 🌟 우측 상단 예쁜 삭제 버튼 (인물이 2명 이상일 때만 표시) */}
+                          {mainPartners.length > 1 && (
+                            <button type="button" onClick={() => setMainPartners(mainPartners.filter(p => p.id !== partner.id))} style={{ position: "absolute", top: "12px", right: "12px", background: "none", border: "none", color: theme.textMuted, cursor: "pointer", padding: "4px", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "50%", transition: "all 0.2s" }} onMouseEnter={e => e.currentTarget.style.color = theme.danger} onMouseLeave={e => e.currentTarget.style.color = theme.textMuted}>
+                              <X size={18} strokeWidth={2.5} />
+                            </button>
+                          )}
+
                           {/* 파트너 초상화 */}
                           <div
                             onClick={(e) => { e.stopPropagation(); setActivePortraitSuspectId(partner.id); setShowPortraitModal(true); }}
@@ -1599,16 +1612,12 @@ color: "#fff", border: "none", cursor: "pointer",
                             </div>
                           </div>
 
-                          <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: "8px", width: "100%" }}>
-                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                              <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1.2fr 1fr 1fr", gap: "6px", width: "100%" }}>
-                                <input type="text" value={partner.name} onChange={e => setMainPartners(mainPartners.map(p => p.id === partner.id ? {...p, name: e.target.value} : p))} placeholder="이름" style={{ padding: "8px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.82rem", outline: "none", width: "100%", boxSizing: "border-box" }} />
-                                <input type="text" value={partner.ageGender} onChange={e => setMainPartners(mainPartners.map(p => p.id === partner.id ? {...p, ageGender: e.target.value} : p))} placeholder="나이/성별" style={{ padding: "8px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.82rem", outline: "none", width: "100%", boxSizing: "border-box" }} />
-                                <input type="text" value={partner.job} onChange={e => setMainPartners(mainPartners.map(p => p.id === partner.id ? {...p, job: e.target.value} : p))} placeholder="직업/역할" style={{ padding: "8px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.82rem", outline: "none", width: "100%", boxSizing: "border-box" }} />
-                              </div>
-                              {mainPartners.length > 1 && (
-                                <button onClick={() => setMainPartners(mainPartners.filter(p => p.id !== partner.id))} style={{ background: "none", border: "none", color: theme.danger, cursor: "pointer", marginLeft: "8px" }}>🗑</button>
-                              )}
+                          <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: "8px", width: "100%", marginTop: isMobile ? "0" : "4px" }}>
+                            {/* 삭제 버튼 공간을 위해 PC 환경일 때 우측 여백(paddingRight) 확보 */}
+                            <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1.2fr 1fr 1fr", gap: "6px", width: "100%", paddingRight: mainPartners.length > 1 && !isMobile ? "24px" : "0" }}>
+                              <input type="text" value={partner.name} onChange={e => setMainPartners(mainPartners.map(p => p.id === partner.id ? {...p, name: e.target.value} : p))} placeholder="이름" style={{ padding: "8px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.82rem", outline: "none", width: "100%", boxSizing: "border-box" }} />
+                              <input type="text" value={partner.ageGender} onChange={e => setMainPartners(mainPartners.map(p => p.id === partner.id ? {...p, ageGender: e.target.value} : p))} placeholder="나이/성별" style={{ padding: "8px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.82rem", outline: "none", width: "100%", boxSizing: "border-box" }} />
+                              <input type="text" value={partner.job} onChange={e => setMainPartners(mainPartners.map(p => p.id === partner.id ? {...p, job: e.target.value} : p))} placeholder="직업/역할" style={{ padding: "8px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.82rem", outline: "none", width: "100%", boxSizing: "border-box" }} />
                             </div>
                             <textarea rows={2} value={partner.behavior} onChange={e => setMainPartners(mainPartners.map(p => p.id === partner.id ? {...p, behavior: e.target.value} : p))} placeholder="파트너의 성격 및 탐색자와의 관계성..." style={{ width: "100%", padding: "8px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.82rem", outline: "none", resize: "vertical", boxSizing: "border-box" }} />
                             
@@ -1630,23 +1639,31 @@ color: "#fff", border: "none", cursor: "pointer",
                   )}
                 </section>
 
-                {/* 4. 등장 인물 세팅 (엑스트라 NPC/용의자망 코드 완전 구현) */}
-                <section style={{ ...GLASS_STYLE, padding: isMobile ? "16px" : "20px", backgroundColor: theme.panel, borderRadius: "18px", border: `1px solid ${theme.border}`, display: "flex", flexDirection: "column", gap: "16px", marginBottom: "16px" }}>
+{/* 4. 등장 인물 세팅 */}
+                <section style={{ ...GLASS_STYLE, padding: isMobile ? "16px" : "20px", backgroundColor: theme.panel, borderRadius: "18px", border: `1px solid ${theme.border}`, display: "flex", flexDirection: "column", gap: "16px" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "10px" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                       <Ghost size={22} strokeWidth={2} color={theme.textMuted} />
                       <span style={{ fontSize: "0.95rem", color: theme.text, fontWeight: "700" }}>등장 인물</span>
                     </div>
-                    <button type="button" onClick={handleAddSuspect} style={{ padding: "6px 14px", backgroundColor: theme.panelAlt, border: `1px solid ${theme.accent}`, borderRadius: "16px", color: theme.accent, fontSize: "0.76rem", fontWeight: "600", cursor: "pointer" }}>＋ 인물 추가</button>
+                    <button type="button" onClick={() => {
+                      if (suspects.length >= 10) {
+                        triggerToast("한도 초과", "등장 인물은 최대 10명까지만 추가할 수 있습니다.", "⚠️");
+                        return;
+                      }
+                      handleAddSuspect();
+                    }} style={{ padding: "6px 14px", backgroundColor: theme.panelAlt, border: `1px solid ${theme.accent}`, borderRadius: "16px", color: theme.accent, fontSize: "0.76rem", fontWeight: "600", cursor: "pointer" }}>＋ 인물 추가</button>
                   </div>
 
-                  <div style={{ display: isMobile ? "flex" : "grid", gridTemplateColumns: isMobile ? "none" : "repeat(auto-fill, minmax(135px, 1fr))", gap: "12px", overflowX: isMobile ? "auto" : "visible", padding: "4px 4px 14px 4px", WebkitOverflowScrolling: "touch" }}>
+                  {/* 🌟 잘림 현상 해결: padding을 "12px 12px 14px 12px"로 늘려 X 버튼이 숨쉴 공간 확보 */}
+                  <div style={{ display: isMobile ? "flex" : "grid", gridTemplateColumns: isMobile ? "none" : "repeat(auto-fill, minmax(135px, 1fr))", gap: "12px", overflowX: isMobile ? "auto" : "visible", padding: "12px 12px 14px 12px", WebkitOverflowScrolling: "touch" }}>
                     {suspects.map((s, idx) => {
                       const isSelected = (selectedSuspectId || suspects[0]?.id) === s.id;
                       return (
                         <div key={s.id} onClick={() => setSelectedSuspectId(s.id)} style={{ flex: isMobile ? "0 0 125px" : "auto", backgroundColor: theme.polaroidBg || "#ded7cb", borderRadius: "6px", padding: "8px 8px 12px 8px", color: theme.polaroidText || "#292524", boxShadow: isSelected ? `0 0 0 2px ${theme.accent}, 0 8px 24px rgba(0,0,0,0.3)` : "0 3px 10px rgba(0,0,0,0.18)", position: "relative", cursor: "pointer", transform: isSelected ? "scale(1.03)" : "scale(1)", transition: "all 0.15s ease", display: "flex", flexDirection: "column", alignItems: "center" }}>
                           {suspects.length > 1 && (
-                            <button type="button" onClick={(e) => handleDeleteSuspect(e, s.id)} style={{ position: "absolute", top: "-8px", right: "-8px", width: "22px", height: "22px", borderRadius: "50%", backgroundColor: isDarkMode ? "rgba(220, 38, 38, 0.8)" : "rgba(220, 38, 38, 0.9)", color: "#fff", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.7rem", fontWeight: "bold", zIndex: 10, boxShadow: "0 2px 4px rgba(0,0,0,0.3)" }}>✕</button>
+                            {/* 🌟 X 버튼 위치 미세 조정: 모서리에 예쁘게 걸치도록 top과 right를 -6px로 수정 */}
+                            <button type="button" onClick={(e) => handleDeleteSuspect(e, s.id)} style={{ position: "absolute", top: "-6px", right: "-6px", width: "22px", height: "22px", borderRadius: "50%", backgroundColor: isDarkMode ? "rgba(220, 38, 38, 0.8)" : "rgba(220, 38, 38, 0.9)", color: "#fff", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.7rem", fontWeight: "bold", zIndex: 10, boxShadow: "0 2px 4px rgba(0,0,0,0.3)" }}>✕</button>
                           )}
                           <div onClick={(e) => { e.stopPropagation(); setActivePortraitSuspectId(s.id); setShowPortraitModal(true); }} style={{ width: "100%", aspectRatio: "1/1", backgroundColor: isDarkMode ? "#332d2a" : "#eae4db", borderRadius: "3px", overflow: "hidden", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
                             {s.portraitUrl ? <img src={s.portraitUrl} alt="인물" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <ImageIcon size={24} strokeWidth={1} color={theme.textMuted} />}
@@ -1685,59 +1702,7 @@ color: "#fff", border: "none", cursor: "pointer",
                       </div>
                     );
                   })()}
-                </section>
-
-                {/* 5. 조사 구역 및 기괴한 단서 */}
-                <section style={{ ...GLASS_STYLE, padding: isMobile ? "16px" : "20px", backgroundColor: theme.panel, borderRadius: "18px", border: `1px solid ${theme.border}`, display: "flex", flexDirection: "column", gap: "12px", marginBottom: "16px" }}>
-                  <button type="button" onClick={() => setShowEvidence(!showEvidence)} style={{ width: "100%", textAlign: "left", background: "none", border: "none", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer", padding: 0 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                      <Search size={22} strokeWidth={2} color={theme.accent} />
-                      <span style={{ fontWeight: "700", fontSize: "0.95rem", color: theme.text }}>조사 구역 및 기괴한 단서</span>
-                    </div>
-                    <span style={{ display: "flex", alignItems: "center", color: theme.textMuted }}>
-                      {showEvidence ? <ChevronUp size={18} strokeWidth={2} /> : <ChevronDown size={18} strokeWidth={2} />}
-                    </span>
-                  </button>
-
-                  {showEvidence && (
-                    <div style={{ display: "flex", flexDirection: "column", gap: "12px", marginTop: "4px" }}>
-                      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: "12px" }}>
-                        {evidenceList.map((item, idx) => (
-                          <div key={item.id} style={{ backgroundColor: theme.panelAlt, border: `1px solid ${theme.border}`, borderRadius: "12px", padding: "14px", display: "flex", flexDirection: "column", gap: "10px" }}>
-                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "6px" }}>
-                              <input type="text" value={item.name} onChange={e => handleUpdateEvidence(item.id, "name", e.target.value)} placeholder="명칭" style={{ flex: 1, padding: "8px 10px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.82rem", fontWeight: "600", outline: "none", minWidth: 0 }} />
-                              {evidenceList.length > 1 && (
-                                <button type="button" onClick={(e) => handleDeleteEvidence(e, item.id)} style={{ background: "none", border: "none", color: theme.danger, cursor: "pointer", padding: "2px", fontSize: "0.8rem" }}>🗑</button>
-                              )}
-                            </div>
-                            <input type="text" value={item.overview} onChange={e => handleUpdateEvidence(item.id, "overview", e.target.value)} placeholder="발견 위치 및 표면적 겉모습..." style={{ width: "100%", padding: "8px 10px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.78rem", outline: "none", boxSizing: "border-box" }} />
-                            
-                            <div style={{ backgroundColor: isDarkMode ? "rgba(0,0,0,0.2)" : "rgba(255,255,255,0.6)", borderRadius: "8px", border: `1px solid ${theme.danger}`, padding: "10px 12px" }}>
-                              <button type="button" onClick={() => handleUpdateEvidence(item.id, "showSecret", !item.showSecret)} style={{ width: "100%", textAlign: "left", background: "none", border: "none", fontSize: "0.76rem", color: theme.danger, cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center", padding: 0 }}>
-                                <span style={{ fontWeight: "600", display: "flex", alignItems: "center", gap: "6px" }}>
-                                  <Eye size={15} strokeWidth={2.5} /> 이면의 진실
-                                </span>
-                                {item.showSecret ? <ChevronUp size={18} strokeWidth={2} /> : <ChevronDown size={18} strokeWidth={2} />}
-                              </button>
-                              {item.showSecret && (
-                                <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginTop: "10px" }}>
-                                  <input type="text" value={item.secret} onChange={e => handleUpdateEvidence(item.id, "secret", e.target.value)} placeholder="해금 성공 시 밝혀질 이면..." style={{ width: "100%", boxSizing: "border-box", padding: "6px 10px", borderRadius: "6px", border: `1px solid ${theme.danger}`, backgroundColor: theme.inputBg, color: theme.danger, fontSize: "0.78rem", outline: "none" }} />
-                                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                                    <span style={{ fontSize: "0.7rem", color: theme.danger, fontWeight: "600" }}>침식도 코스트:</span>
-                                    <input type="number" value={item.contradiction || 10} onChange={e => handleUpdateEvidence(item.id, "contradiction", e.target.value)} placeholder="+10" style={{ width: "60px", padding: "4px 8px", borderRadius: "4px", border: `1px solid ${theme.danger}`, backgroundColor: theme.inputBg, color: theme.danger, fontSize: "0.75rem", outline: "none", textAlign: "center" }} />
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                      <button type="button" onClick={handleAddEvidence} style={{ width: "100%", padding: "12px", backgroundColor: isDarkMode ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.02)", border: `1.5px dashed ${theme.borderHighlight || theme.border}`, borderRadius: "12px", color: theme.accent, fontSize: "0.82rem", fontWeight: "600", cursor: "pointer", transition: "all 0.2s" }}>
-                        ＋ 구역/단서 추가
-                      </button>
-                    </div>
-                  )}
-                </section>
+                </section>>
                 
                 {/* 6. 사건 진상 봉투 */}
                 <section style={{ ...GLASS_STYLE, padding: isMobile ? "16px" : "20px", backgroundColor: theme.panel, borderRadius: "18px", border: `1px solid ${theme.border}`, display: "flex", flexDirection: "column", gap: "12px" }}>
