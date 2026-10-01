@@ -3802,10 +3802,11 @@ color: "#fff", border: "none", cursor: "pointer",
 {/* 💳 잉크 상점 구역 (베타 한정 무료 충전) */}
               <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <span style={{ fontSize: "0.9rem", fontWeight: "800", color: theme.text }}>스토어 충전</span>
-                  <span style={{ display: "flex", alignItems: "center", gap: "4px" }}><Gift size="{12}" strokeWidth="{2.5}"/> 베타 한정 무료!</span>
-                  </span>
-                </div>
+                <span style={{ fontSize: "0.9rem", fontWeight: "800", color: theme.text }}>스토어 충전</span>
+                <span style={{ fontSize: "0.7rem", color: "#fff", backgroundColor: theme.danger, padding: "4px 8px", borderRadius: "8px", fontWeight: "800", boxShadow: "0 2px 8px rgba(220,38,38,0.4)", display: "flex", alignItems: "center", gap: "4px" }}>
+                  <Gift size={12} strokeWidth={2.5} /> 베타 한정 무료!
+                </span>
+              </div>
                 {[
                   { amount: 100, price: "₩ 1,200", bonus: "", bonusAmt: 0 },
                   { amount: 500, price: "₩ 5,500", bonus: "+50 방울 보너스", bonusAmt: 50 },
