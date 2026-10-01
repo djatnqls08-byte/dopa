@@ -610,8 +610,7 @@ const [showSupportModal, setShowSupportModal] = useState(false);
     }
   }, [showReviewModal, isAdmin]);
 
-  const [showNoticeModal, setShowNoticeModal] = useState(false);
-  const [showNoticeModal, setShowNoticeModal] = useState(false);
+const [showNoticeModal, setShowNoticeModal] = useState(false);
   
   // 🌟 (서버 연동 완료!) 공지사항 데이터 상자 및 안테나
   const [notices, setNotices] = useState([]);
@@ -627,8 +626,7 @@ const [showSupportModal, setShowSupportModal] = useState(false);
     };
     fetchNotices();
   }, []);
-  
-  const [newNotice, setNewNotice] = useState("");
+
   const [likedScenarios, setLikedScenarios] = useState([]); // 💖 관심 시나리오 보관함
 
   // 🌟 [핵심 해결!] 컴퓨터가 이해할 수 있는 안전한 위치로 이사 온 메인 팝업 로직!
