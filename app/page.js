@@ -801,7 +801,7 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
       const prevTarget = filtered[deletedIndex - 1] || filtered[0];
       setSelectedSuspectId(prevTarget.id);
     }
-    triggerToast("인물 삭제", "수사망에서 제외되었습니다.", <Trash2 size="{16}" strokeWidth="{2}"/>);
+    triggerToast("인물 삭제", "수사망에서 제외되었습니다.", <Trash2 size={16} strokeWidth={2}/>);
   };
 
   const handleUpdateSuspect = (id, field, value) => {
@@ -1575,7 +1575,7 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
                       {originalScenarios.length > 0 && (
                         <div>
                           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px", padding: "0 4px" }}>
-                            <span style={{ display: "flex", alignItems: "center", gap: "6px" }}><LayoutGrid size="{18}" strokeWidth="{2.5}"/> 공식 대표 작품! 오리지널</span>
+                            <span style={{ display: "flex", alignItems: "center", gap: "6px" }}><LayoutGrid size={18} strokeWidth={2.5}/> 공식 대표 작품! 오리지널</span>
                             <span onClick={() => setExploreFilter("전체")} style={{ fontSize: "0.8rem", fontWeight: "700", color: theme.textMuted, cursor: "pointer" }}>전체보기 〉</span>
                           </div>
                           <div style={{ display: "flex", gap: "14px", overflowX: "auto", paddingBottom: "10px", WebkitOverflowScrolling: "touch" }}>
@@ -1596,7 +1596,7 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
                       {/* C. 실시간 인기 사건 (가로 스크롤) */}
                       <div>
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px", padding: "0 4px" }}>
-                          <span style={{ display: "flex", alignItems: "center", gap: "6px" }}><Flame color="{theme.danger}" size="{18}" strokeWidth="{2.5}"/> 지금 뜨는 인기 사건</span>
+                          <span style={{ display: "flex", alignItems: "center", gap: "6px" }}><Flame color={theme.danger} size={18} strokeWidth={2.5}/> 지금 뜨는 인기 사건</span>
                           <span onClick={() => setExploreFilter("전체")} style={{ fontSize: "0.8rem", fontWeight: "700", color: theme.textMuted, cursor: "pointer" }}>전체보기 〉</span>
                         </div>
                         <div style={{ display: "flex", gap: "14px", overflowX: "auto", paddingBottom: "10px", WebkitOverflowScrolling: "touch" }}>
@@ -2656,7 +2656,7 @@ color: "#fff", border: "none", cursor: "pointer",
                       </div>
 
                       <button type="button" onClick={() => setShowTraitModal(true)} style={{ width: "100%", padding: "10px", backgroundColor: theme.panelAlt, border: `1.5px dashed ${theme.borderHighlight}`, borderRadius: "8px", color: theme.accent, fontSize: "0.82rem", fontWeight: "700", cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                        <span style={{ display: "flex", alignItems: "center", gap: "6px" }}><Tag size="{16}" strokeWidth="{2.5}"/> 특성 및 트라우마</span>
+                        <span style={{ display: "flex", alignItems: "center", gap: "6px" }}><Tag size={16} strokeWidth={2.5}/> 특성 및 트라우마</span>
                         <span style={{ fontSize: "0.75rem", color: theme.textMuted }}>선택 완료: 특성 {horrorTraits.length} | 트라우마 {horrorTraumas.length}</span>
                       </button>
 
@@ -3131,8 +3131,6 @@ color: "#fff", border: "none", cursor: "pointer",
               isSheetOpen={isSheetOpen}
               setIsSheetOpen={setIsSheetOpen}
               isDarkMode={isDarkMode}
-              setActivePortraitTarget={setActivePortraitTarget}
-              setShowPortraitEditModal={setShowPortraitEditModal}
               handleSaveCurrentAsPreset={handleSaveCurrentAsPreset}
               handleSaveSessionAsLobbyPreset={handleSaveSessionAsLobbyPreset}
             />
