@@ -996,8 +996,7 @@ const [showSupportModal, setShowSupportModal] = useState(false);
                                 {scen.hasUpdate && (
                                   <button 
                                     onClick={(e) => {
-                                      e.stopPropagation(); // 썸네일 클릭 시 커버 수정 모달이 뜨는 것을 방지
-                                      // 해당 시나리오의 hasUpdate 상태를 false로 변경하여 뱃지를 없앰
+                                      e.stopPropagation(); // 썸네일 클릭 시 커버 수정 모달 방지
                                       const updated = savedLibrary.map(item => item.id === scen.id ? { ...item, hasUpdate: false } : item);
                                       setSavedLibrary(updated);
                                       localStorage.setItem("secret_novel_library", JSON.stringify(updated));
@@ -1012,7 +1011,15 @@ const [showSupportModal, setShowSupportModal] = useState(false);
                               </div>
                             )}
 
-                          {/* 🌟 하단 카드 텍스트 정보 영역 (날아갔던 부분 복구 완료) */}
+                            {/* 심사 대기 중 뱃지 */}
+                            {scen.status === "심사 대기" && (
+                              <div style={{ position: "absolute", top: "12px", left: "12px", padding: "4px 8px", backgroundColor: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)", borderRadius: "8px", color: theme.warning, fontSize: "0.7rem", fontWeight: "700", border: `1px solid rgba(245, 158, 11, 0.4)`, display: "flex", alignItems: "center", gap: "4px", zIndex: 5 }}>
+                                <Clock size={12} strokeWidth={2.5} /> 심사 대기 중
+                              </div>
+                            )}
+                          </div>
+
+                          {/* 🌟 하단 카드 텍스트 정보 영역 */}
                           <div style={{ padding: "16px", display: "flex", flexDirection: "column", gap: "12px" }}>
                             <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
                               <div style={{ fontWeight: "800", fontSize: "1.1rem", color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
