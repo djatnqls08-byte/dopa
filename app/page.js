@@ -22,7 +22,7 @@ const THEME_PALETTES = {
 const GLASS_STYLE = { backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)" };
 
 export default function GamePlatform() {
-  // ── [0. 폰트 강제 로드] ──
+ // ── [0. 폰트 강제 로드] ──
   useEffect(() => {
     const style = document.createElement("style");
     style.innerHTML = `
@@ -33,7 +33,12 @@ export default function GamePlatform() {
         font-weight: 400;
         font-style: normal;
       }
-      * { font-family: 'Pretendard', sans-serif; }
+      * { 
+        font-family: 'Pretendard', sans-serif; 
+        /* 🌟 다크 모드에서 폰트가 뚱뚱해지는 것을 막고 선명하게 다듬어주는 코드 */
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+      }
       .serif-text { font-family: 'RIDIBatang', serif !important; }
       ::-webkit-scrollbar { width: 5px; height: 5px; }
       ::-webkit-scrollbar-track { background: transparent; }
@@ -288,7 +293,7 @@ export default function GamePlatform() {
 
       setShowPasteModal(false);
       setPastedText("");
-      triggerToast("파싱 완료!", "AI가 사건 서류철 배치를 완료했습니다.", "✨");
+      triggerToast("파싱 완료", "AI가 사건 서류철 배치를 완료했습니다.", "✨");
 
     } catch (error) {
       console.error(error);
@@ -299,7 +304,7 @@ export default function GamePlatform() {
   // ── [10. 코어 엔진: 세션 시작 및 통신] ──
   const startNewSession = async () => {
     if (!scenarioTitle.trim()) {
-      triggerToast("사건명 입력 필요", "이야기를 시작하려면 사건명을 입력해주세요.", "⚠️");
+      triggerToast("제목 입력", "이야기를 시작하려면 제목을 입력해주세요.", "⚠️");
       return;
     }
 
@@ -461,7 +466,7 @@ export default function GamePlatform() {
       {toast && (
         <div onClick={() => setToast(null)} style={{ ...GLASS_STYLE, position: "fixed", top: "20px", left: "50%", transform: "translateX(-50%)", zIndex: 99999, backgroundColor: isDarkMode ? "rgba(35, 30, 28, 0.96)" : "rgba(255, 255, 255, 0.96)", border: `1.5px solid ${theme.accent}`, color: theme.text, padding: "10px 18px", borderRadius: "24px", display: "flex", alignItems: "center", gap: "8px", boxShadow: "0 10px 30px rgba(0,0,0,0.15)", cursor: "pointer", animation: "fadeIn 0.2s ease-out" }}>
           <span style={{ fontSize: "1.15rem" }}>{toast.icon}</span>
-          <span style={{ fontSize: "0.84rem", fontWeight: "800", color: theme.accent }}>{toast.title}</span>
+          <span style={{ fontSize: "0.84rem", fontWeight: "600", color: theme.accent }}>{toast.title}</span>
           {toast.message && <span style={{ fontSize: "0.76rem", opacity: 0.85 }}>{toast.message}</span>}
         </div>
       )}
@@ -470,7 +475,7 @@ export default function GamePlatform() {
       
       <aside style={{ position: "fixed", top: 0, bottom: 0, left: 0, zIndex: 110, width: isMobile ? "100vw" : "320px", transform: isDrawerOpen ? "translateX(0)" : "translateX(-100%)", transition: "transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1)", backgroundColor: theme.sidebar, borderRight: `1px solid ${theme.border}`, display: "flex", flexDirection: "column", boxShadow: isDrawerOpen ? "10px 0 40px rgba(0,0,0,0.5)" : "none" }}>
         <div style={{ padding: "16px", borderBottom: `1px solid ${theme.border}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <span style={{ fontWeight: "900", fontSize: "1rem" }}>세션 보관함</span>
+          <span style={{ fontWeight: "700", fontSize: "1rem" }}>세션 보관함</span>
           <button onClick={() => setIsDrawerOpen(false)} style={{ background: "none", border: "none", color: theme.text, fontSize: "1.3rem", cursor: "pointer" }}>✕</button>
         </div>
         
@@ -487,7 +492,7 @@ export default function GamePlatform() {
               style={{ 
                 flex: 1, padding: "12px", backgroundColor: theme.danger || "#ef4444", 
                 border: "none", borderRadius: "8px", color: "#fff", fontSize: "0.85rem", 
-                fontWeight: "800", cursor: "pointer", boxShadow: "0 4px 12px rgba(239, 68, 68, 0.3)",
+                fontWeight: "600", cursor: "pointer", boxShadow: "0 4px 12px rgba(239, 68, 68, 0.3)",
                 display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" 
               }}
             >
@@ -517,7 +522,7 @@ export default function GamePlatform() {
             </button>
             
             {activeSession && (
-              <span style={{ fontWeight: "800", fontSize: "0.85rem", color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "200px" }}>
+              <span style={{ fontWeight: "600", fontSize: "0.85rem", color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "200px" }}>
                 {activeSession.title}
               </span>
             )}
@@ -559,7 +564,7 @@ export default function GamePlatform() {
                     >
                       <Smartphone size={20} strokeWidth={1.5} />
                       {unreadCount > 0 && (
-                        <span style={{ position: "absolute", top: "-2px", right: "-2px", backgroundColor: theme.danger, color: "#fff", borderRadius: "10px", minWidth: "16px", height: "16px", fontSize: "0.6rem", fontWeight: "900", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        <span style={{ position: "absolute", top: "-2px", right: "-2px", backgroundColor: theme.danger, color: "#fff", borderRadius: "10px", minWidth: "16px", height: "16px", fontSize: "0.6rem", fontWeight: "700", display: "flex", alignItems: "center", justifyContent: "center" }}>
                           {unreadCount > 9 ? "9+" : unreadCount}
                         </span>
                       )}
@@ -653,7 +658,7 @@ export default function GamePlatform() {
           <main style={{ flex: 1, overflowY: "auto", padding: isMobile ? "16px 14px 140px 14px" : "20px 16px 160px 16px", maxWidth: "860px", margin: "0 auto", width: "100%", display: "flex", flexDirection: "column", gap: isMobile ? "14px" : "18px", boxSizing: "border-box" }}>
               
             <section style={{ ...GLASS_STYLE, padding: isMobile ? "14px" : "18px", backgroundColor: theme.panel, borderRadius: "16px", border: `1px solid ${theme.border}` }}>
-              <div style={{ fontSize: "0.9rem", fontWeight: "800", marginBottom: "12px", color: theme.text }}>
+              <div style={{ fontSize: "0.9rem", fontWeight: "600", marginBottom: "12px", color: theme.text }}>
                 1. 룰 시스템 선택
               </div>
               
@@ -699,7 +704,7 @@ export default function GamePlatform() {
                       </div>
                       
                       <div style={{ textAlign: "center", width: "100%" }}>
-                        <div style={{ fontWeight: "900", fontSize: "0.95rem", color: isSel ? theme.accent : theme.text }}>{m.title}</div>
+                        <div style={{ fontWeight: "700", fontSize: "0.95rem", color: isSel ? theme.accent : theme.text }}>{m.title}</div>
                         {!isMobile && (
                           <div style={{ fontSize: "0.72rem", color: theme.textMuted, marginTop: "6px", wordBreak: "keep-all" }}>
                             {m.desc}
@@ -714,7 +719,7 @@ export default function GamePlatform() {
 
             <section style={{ ...GLASS_STYLE, padding: isMobile ? "14px" : "18px", backgroundColor: theme.panel, borderRadius: "16px", border: `1px solid ${theme.border}`, display: "flex", flexDirection: "column", gap: "10px" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <span style={{ fontSize: "0.9rem", fontWeight: "800", color: theme.text }}>2. 장르 톤 (서사 태그)</span>
+                <span style={{ fontSize: "0.9rem", fontWeight: "600", color: theme.text }}>2. 장르 톤 (서사 태그)</span>
               </div>
               
               <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", minHeight: isMobile ? "110px" : "80px", alignContent: "flex-start" }}>
@@ -758,7 +763,7 @@ export default function GamePlatform() {
                 <section style={{ ...GLASS_STYLE, padding: isMobile ? "16px" : "20px", backgroundColor: theme.panel, borderRadius: "18px", border: `1px solid ${theme.border}`, display: "flex", flexDirection: "column", gap: "16px", marginBottom: "16px" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                     <UserRound size={22} strokeWidth={2} color={theme.accent} />
-                    <span style={{ fontWeight: "900", fontSize: "0.95rem", color: theme.text }}>주인공 (수사관) 프로필</span>
+                    <span style={{ fontWeight: "700", fontSize: "0.95rem", color: theme.text }}>주인공 (수사관) 프로필</span>
                   </div>
 
                   <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", gap: "16px", width: "100%" }}>
@@ -795,7 +800,7 @@ export default function GamePlatform() {
                         )}
                       </div>
                       <div style={{ marginTop: "6px", textAlign: "center", width: "100%" }}>
-                        <div style={{ fontWeight: "900", fontSize: "0.82rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{pcName || "이름 미상"}</div>
+                        <div style={{ fontWeight: "700", fontSize: "0.82rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{pcName || "이름 미상"}</div>
                       </div>
                     </div>
 
@@ -822,7 +827,7 @@ export default function GamePlatform() {
                       {/* 🌟 주인공 전용 남모르는 비밀 (추리 모드용 빨간색 테마 적용) */}
                       <div style={{ backgroundColor: isDarkMode ? "rgba(0,0,0,0.2)" : "rgba(255,255,255,0.6)", borderRadius: "8px", border: `1px solid ${theme.danger}`, padding: "10px 12px", marginTop: "4px" }}>
                         <button type="button" onClick={() => setShowPcSecret(!showPcSecret)} style={{ width: "100%", textAlign: "left", background: "none", border: "none", fontSize: "0.76rem", color: theme.danger, cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center", padding: 0 }}>
-                          <span style={{ fontWeight: "800", display: "flex", alignItems: "center", gap: "6px" }}>
+                          <span style={{ fontWeight: "600", display: "flex", alignItems: "center", gap: "6px" }}>
                             <Lock size={15} strokeWidth={2.5} /> 수사관의 숨겨진 비밀 / 약점
                           </span>
                           <span style={{ display: "flex", alignItems: "center" }}>
@@ -842,7 +847,7 @@ export default function GamePlatform() {
                 <section style={{ ...GLASS_STYLE, padding: isMobile ? "16px" : "20px", backgroundColor: theme.panel, borderRadius: "18px", border: `1px solid ${theme.border}`, display: "flex", flexDirection: "column", gap: "12px" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                     <ClipboardList size={22} strokeWidth={2} color={theme.accent} />
-                    <span style={{ fontWeight: "900", fontSize: "0.95rem", color: theme.text }}>사건 개요서</span>
+                    <span style={{ fontWeight: "700", fontSize: "0.95rem", color: theme.text }}>사건 개요서</span>
                   </div>
                   <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "2fr 1fr", gap: "10px" }}>
                     <input type="text" value={scenarioTitle} onChange={e => setScenarioTitle(e.target.value)} placeholder="사건명 (예: 심야 펜트하우스 살인사건)" style={{ padding: "10px 12px", borderRadius: "8px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.85rem", outline: "none" }} />
@@ -857,7 +862,7 @@ export default function GamePlatform() {
                     <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                       <Pin size={22} strokeWidth={2} color={theme.danger} style={{ transform: "rotate(45deg)" }} />
                       <span style={{ fontSize: "0.95rem", color: theme.text }}>
-                        <strong style={{ fontWeight: "900" }}>용의자 수사망</strong>
+                        <strong style={{ fontWeight: "700" }}>용의자 수사망</strong>
                         <span style={{ fontWeight: "500", color: theme.textMuted, marginLeft: "4px" }}>({suspects.length}명 / 최대 15명)</span>
                       </span>
                     </div>
@@ -926,7 +931,7 @@ export default function GamePlatform() {
                           </div>
 
                           <div style={{ marginTop: "6px", textAlign: "center", width: "100%" }}>
-                            <div style={{ fontWeight: "900", fontSize: "0.82rem", color: theme.polaroidText, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                            <div style={{ fontWeight: "700", fontSize: "0.82rem", color: theme.polaroidText, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                               {s.name || `인물 ${idx + 1}`}
                             </div>
                             <div style={{ fontSize: "0.66rem", opacity: 0.75, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginTop: "1px" }}>
@@ -946,7 +951,7 @@ export default function GamePlatform() {
                     return (
                       <div style={{ padding: isMobile ? "14px" : "16px", backgroundColor: theme.panelAlt, borderRadius: "12px", border: `1.5px solid ${theme.borderHighlight || theme.border}`, display: "flex", flexDirection: "column", gap: "12px", marginTop: "4px" }}>
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: `1px dashed ${theme.border}`, paddingBottom: "8px", flexWrap: "wrap", gap: "8px" }}>
-                          <span style={{ fontSize: "0.88rem", fontWeight: "900", color: theme.accent, display: "flex", alignItems: "center", gap: "6px" }}>
+                          <span style={{ fontSize: "0.88rem", fontWeight: "700", color: theme.accent, display: "flex", alignItems: "center", gap: "6px" }}>
                             <FolderOpen size={18} strokeWidth={2.5} /> 수사 서류: [{cur.name || "신원 미상"}]
                           </span>
                         </div>
@@ -973,7 +978,7 @@ export default function GamePlatform() {
 
                         <div style={{ backgroundColor: isDarkMode ? "rgba(0,0,0,0.2)" : "rgba(255,255,255,0.6)", borderRadius: "8px", border: `1px solid ${theme.danger}`, padding: "10px 12px", marginTop: "4px" }}>
                           <button type="button" onClick={() => handleUpdateSuspect(cur.id, "showSecret", !cur.showSecret)} style={{ width: "100%", textAlign: "left", background: "none", border: "none", fontSize: "0.76rem", color: theme.danger, cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center", padding: 0 }}>
-                          <span style={{ fontWeight: "800", display: "flex", alignItems: "center", gap: "6px" }}>
+                          <span style={{ fontWeight: "600", display: "flex", alignItems: "center", gap: "6px" }}>
                             <Lock size={15} strokeWidth={2.5} /> 숨겨진 비밀 / 약점
                           </span>
                           <span style={{ display: "flex", alignItems: "center" }}>
@@ -1012,7 +1017,7 @@ export default function GamePlatform() {
                         {evidenceList.map((item, idx) => (
                           <div key={item.id} style={{ backgroundColor: theme.panelAlt, border: `1px solid ${theme.border}`, borderRadius: "12px", padding: "14px", display: "flex", flexDirection: "column", gap: "10px" }}>
                             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "6px" }}>
-                              <input type="text" value={item.name} onChange={e => handleUpdateEvidence(item.id, "name", e.target.value)} placeholder={`단서 ${idx + 1} 명칭`} style={{ flex: 1, padding: "8px 10px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.82rem", fontWeight: "800", outline: "none" }} />
+                              <input type="text" value={item.name} onChange={e => handleUpdateEvidence(item.id, "name", e.target.value)} placeholder={`단서 ${idx + 1} 명칭`} style={{ flex: 1, padding: "8px 10px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.82rem", fontWeight: "600", outline: "none" }} />
                               {evidenceList.length > 1 && (
                                 <button type="button" onClick={(e) => handleDeleteEvidence(e, item.id)} style={{ background: "none", border: "none", color: theme.danger, cursor: "pointer", padding: "2px", fontSize: "0.8rem" }}>🗑</button>
                               )}
@@ -1020,7 +1025,7 @@ export default function GamePlatform() {
                             <input type="text" value={item.overview} onChange={e => handleUpdateEvidence(item.id, "overview", e.target.value)} placeholder="발견 위치 및 겉모습..." style={{ width: "100%", boxSizing: "border-box", padding: "8px 10px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.78rem", outline: "none" }} />
                             <div style={{ backgroundColor: isDarkMode ? "rgba(0,0,0,0.2)" : "rgba(255,255,255,0.6)", borderRadius: "8px", border: `1px solid ${theme.danger}`, padding: "10px 12px" }}>
                               <button type="button" onClick={() => handleUpdateEvidence(item.id, "showSecret", !item.showSecret)} style={{ width: "100%", textAlign: "left", background: "none", border: "none", fontSize: "0.72rem", color: theme.danger, cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                                <span style={{ fontWeight: "800", display: "flex", alignItems: "center", gap: "6px" }}>
+                                <span style={{ fontWeight: "600", display: "flex", alignItems: "center", gap: "6px" }}>
                                   <Lock size={15} strokeWidth={2.5} /> 감식 진상 / 모순
                                 </span>
                                <span style={{ display: "flex", alignItems: "center", color: theme.textMuted }}>
@@ -1045,7 +1050,7 @@ export default function GamePlatform() {
                           width: "100%", padding: "12px", 
                           backgroundColor: isDarkMode ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.02)", 
                           border: `1.5px dashed ${theme.borderHighlight || theme.border}`, 
-                          borderRadius: "12px", color: theme.accent, fontSize: "0.82rem", fontWeight: "800", 
+                          borderRadius: "12px", color: theme.accent, fontSize: "0.82rem", fontWeight: "600", 
                           cursor: "pointer", transition: "all 0.2s"
                         }}
                       >
@@ -1107,7 +1112,7 @@ export default function GamePlatform() {
                       
                       {/* 내 프로필 */}
                       <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                        <span style={{ fontSize: "0.8rem", fontWeight: "900", color: theme.textMuted }}>내 프로필</span>
+                        <span style={{ fontSize: "0.8rem", fontWeight: "700", color: theme.textMuted }}>내 프로필</span>
                         <div 
                           onClick={() => { setSelectedSuspectId("pc"); setShowPhoneDetail(true); }}
                           style={{ display: "flex", alignItems: "center", gap: "14px", cursor: "pointer", padding: "8px", borderRadius: "12px", transition: "background 0.2s" }}
@@ -1126,7 +1131,7 @@ export default function GamePlatform() {
                             {pcPortraitUrl ? <img src={pcPortraitUrl} alt="주인공" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <div style={{ width: "100%", height: "100%", backgroundColor: isDarkMode ? "#333" : "#f1f5f9", display: "flex", alignItems: "center", justifyContent: "center" }}><UserRound size={24} color={theme.textMuted} /></div>}
                           </div>
                           <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "4px" }}>
-                            <span style={{ fontWeight: "900", fontSize: "1.05rem", color: theme.text }}>{pcName || "내 이름"}</span>
+                            <span style={{ fontWeight: "700", fontSize: "1.05rem", color: theme.text }}>{pcName || "내 이름"}</span>
                             <span style={{ fontSize: "0.8rem", color: theme.textMuted, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{pcBackground || "상태 메시지가 없습니다."}</span>
                           </div>
                         </div>
@@ -1137,8 +1142,8 @@ export default function GamePlatform() {
                       {/* 공략 대상 리스트 */}
                       <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingBottom: "4px" }}>
-                          <span style={{ fontSize: "0.8rem", fontWeight: "900", color: theme.textMuted }}>공략 대상 ({suspects.length})</span>
-                          <button onClick={handleAddSuspect} style={{ background: "none", border: "none", color: "#ec4899", fontWeight: "800", fontSize: "0.8rem", cursor: "pointer" }}>＋ 추가</button>
+                          <span style={{ fontSize: "0.8rem", fontWeight: "700", color: theme.textMuted }}>공략 대상 ({suspects.length})</span>
+                          <button onClick={handleAddSuspect} style={{ background: "none", border: "none", color: "#ec4899", fontWeight: "600", fontSize: "0.8rem", cursor: "pointer" }}>＋ 추가</button>
                         </div>
                         
                         {suspects.map(s => (
@@ -1161,7 +1166,7 @@ export default function GamePlatform() {
                               {s.portraitUrl ? <img src={s.portraitUrl} alt="공략대상" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <div style={{ width: "100%", height: "100%", backgroundColor: isDarkMode ? "#333" : "#f1f5f9", display: "flex", alignItems: "center", justifyContent: "center" }}><UserRound size={20} color={theme.textMuted} /></div>}
                             </div>
                             <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "4px" }}>
-                              <span style={{ fontWeight: "900", fontSize: "0.95rem", color: theme.text }}>{s.name || "이름 미상"}</span>
+                              <span style={{ fontWeight: "700", fontSize: "0.95rem", color: theme.text }}>{s.name || "이름 미상"}</span>
                               <span style={{ fontSize: "0.75rem", color: theme.textMuted, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s.behavior || "상태 메시지가 없습니다."}</span>
                             </div>
                           </div>
@@ -1204,9 +1209,9 @@ export default function GamePlatform() {
                             <button onClick={() => setShowPhoneDetail(false)} style={{ background: "none", border: "none", color: theme.text, cursor: "pointer", display: "flex", alignItems: "center" }}>
                               <X size={24} strokeWidth={2.5} />
                             </button>
-                            <span style={{ fontWeight: "900", fontSize: "0.95rem" }}>{isPcDetail ? "내 프로필 편집" : "프로필 편집"}</span>
+                            <span style={{ fontWeight: "700", fontSize: "0.95rem" }}>{isPcDetail ? "내 프로필 편집" : "프로필 편집"}</span>
                             {!isPcDetail && suspects.length > 1 ? (
-                              <button onClick={(e) => { e.stopPropagation(); handleDeleteSuspect(e, cur.id); setShowPhoneDetail(false); }} style={{ background: "none", border: "none", color: theme.danger, cursor: "pointer", fontWeight: "800", fontSize: "0.8rem" }}>삭제</button>
+                              <button onClick={(e) => { e.stopPropagation(); handleDeleteSuspect(e, cur.id); setShowPhoneDetail(false); }} style={{ background: "none", border: "none", color: theme.danger, cursor: "pointer", fontWeight: "600", fontSize: "0.8rem" }}>삭제</button>
                             ) : <div style={{ width: "24px" }}/>}
                           </div>
 
@@ -1242,23 +1247,23 @@ export default function GamePlatform() {
                             <div style={{ display: "flex", flexDirection: "column", gap: "20px", marginTop: "10px" }}>
                               
                               <div>
-                                <label style={{ fontSize: "0.7rem", color: theme.textMuted, fontWeight: "800", paddingLeft: "4px" }}>이름 (닉네임)</label>
-                                <input type="text" value={cur.name} onChange={e => updateCur("name", e.target.value)} placeholder="이름을 입력하세요" style={{ ...thinInputStyle, fontSize: "1.1rem", fontWeight: "900", textAlign: "center" }} />
+                                <label style={{ fontSize: "0.7rem", color: theme.textMuted, fontWeight: "600", paddingLeft: "4px" }}>이름 (닉네임)</label>
+                                <input type="text" value={cur.name} onChange={e => updateCur("name", e.target.value)} placeholder="이름을 입력하세요" style={{ ...thinInputStyle, fontSize: "1.1rem", fontWeight: "700", textAlign: "center" }} />
                               </div>
                               
                               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
                                 <div>
-                                  <label style={{ fontSize: "0.7rem", color: theme.textMuted, fontWeight: "800", paddingLeft: "4px" }}>나이/성별</label>
+                                  <label style={{ fontSize: "0.7rem", color: theme.textMuted, fontWeight: "600", paddingLeft: "4px" }}>나이/성별</label>
                                   <input type="text" value={cur.ageGender} onChange={e => updateCur("ageGender", e.target.value)} placeholder="예: 28세 여성" style={thinInputStyle} />
                                 </div>
                                 <div>
-                                  <label style={{ fontSize: "0.7rem", color: theme.textMuted, fontWeight: "800", paddingLeft: "4px" }}>직업/접점</label>
+                                  <label style={{ fontSize: "0.7rem", color: theme.textMuted, fontWeight: "600", paddingLeft: "4px" }}>직업/접점</label>
                                   <input type="text" value={cur.job} onChange={e => updateCur("job", e.target.value)} placeholder="예: 같은 팀 선임" style={thinInputStyle} />
                                 </div>
                               </div>
 
                               <div>
-                                <label style={{ fontSize: "0.7rem", color: theme.textMuted, fontWeight: "800", paddingLeft: "4px" }}>성격 및 상태 메시지 (관계성)</label>
+                                <label style={{ fontSize: "0.7rem", color: theme.textMuted, fontWeight: "600", paddingLeft: "4px" }}>성격 및 상태 메시지 (관계성)</label>
                                 <textarea rows={2} value={cur.behavior} onChange={e => updateCur("behavior", e.target.value)} placeholder="상태 메시지나 성격을 입력하세요..." style={{ ...thinInputStyle, resize: "none" }} />
                               </div>
 
@@ -1267,7 +1272,7 @@ export default function GamePlatform() {
                                   if (isPcDetail) setShowPcSecret(!showPcSecret);
                                   else handleUpdateSuspect(cur.id, "showSecret", !cur.showSecret);
                                 }} style={{ width: "100%", textAlign: "left", background: "none", border: "none", fontSize: "0.8rem", color: "#db2777", cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center", padding: 0 }}>
-                                  <span style={{ fontWeight: "800", display: "flex", alignItems: "center", gap: "6px" }}>
+                                  <span style={{ fontWeight: "600", display: "flex", alignItems: "center", gap: "6px" }}>
                                     <Lock size={15} strokeWidth={2.5} /> 남모르는 비밀 / 진심
                                   </span>
                                   <span style={{ display: "flex", alignItems: "center" }}>
@@ -1295,7 +1300,7 @@ export default function GamePlatform() {
                   <button type="button" onClick={() => setShowCgGallery(!showCgGallery)} style={{ width: "100%", textAlign: "left", background: "none", border: "none", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer", padding: 0 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                       <ImageIcon size={22} strokeWidth={2} color="#ec4899" />
-                      <span style={{ fontWeight: "900", fontSize: "0.95rem", color: theme.text }}>이벤트 CG 갤러리</span>
+                      <span style={{ fontWeight: "700", fontSize: "0.95rem", color: theme.text }}>이벤트 CG 갤러리</span>
                     </div>
                     <span style={{ display: "flex", alignItems: "center", color: theme.textMuted }}>{showCgGallery ? <ChevronUp size={18} strokeWidth={2} /> : <ChevronDown size={18} strokeWidth={2} />}</span>
                   </button>
@@ -1330,7 +1335,7 @@ export default function GamePlatform() {
 
                             {/* 2. CG 명칭 및 삭제 버튼 */}
                             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "8px" }}>
-                              <input type="text" value={item.title} onChange={e => setCgList(cgList.map(c => c.id === item.id ? { ...c, title: e.target.value } : c))} placeholder={`CG ${idx + 1} 명칭`} style={{ flex: 1, padding: "10px 12px", borderRadius: "8px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.85rem", fontWeight: "800", outline: "none" }} />
+                              <input type="text" value={item.title} onChange={e => setCgList(cgList.map(c => c.id === item.id ? { ...c, title: e.target.value } : c))} placeholder={`CG ${idx + 1} 명칭`} style={{ flex: 1, padding: "10px 12px", borderRadius: "8px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.85rem", fontWeight: "600", outline: "none" }} />
                               {cgList.length > 1 && (
                                 <button type="button" onClick={() => setCgList(cgList.filter(c => c.id !== item.id))} style={{ background: "none", border: "none", color: theme.danger, cursor: "pointer", padding: "4px" }}>
                                   🗑
@@ -1348,7 +1353,7 @@ export default function GamePlatform() {
                         ))}
                       </div>
                       
-                      <button type="button" onClick={() => setCgList([...cgList, { id: Date.now(), title: "", condition: "", dialogue: "", imageUrl: "", showDetails: true }])} style={{ width: "100%", padding: "12px", backgroundColor: isDarkMode ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.02)", border: `1.5px dashed ${theme.borderHighlight || theme.border}`, borderRadius: "12px", color: "#ec4899", fontSize: "0.82rem", fontWeight: "800", cursor: "pointer", transition: "all 0.2s" }}>
+                      <button type="button" onClick={() => setCgList([...cgList, { id: Date.now(), title: "", condition: "", dialogue: "", imageUrl: "", showDetails: true }])} style={{ width: "100%", padding: "12px", backgroundColor: isDarkMode ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.02)", border: `1.5px dashed ${theme.borderHighlight || theme.border}`, borderRadius: "12px", color: "#ec4899", fontSize: "0.82rem", fontWeight: "600", cursor: "pointer", transition: "all 0.2s" }}>
                         ＋ 새로운 CG 추가 ({cgList.length})
                       </button>
                     </div>
@@ -1360,7 +1365,7 @@ export default function GamePlatform() {
                   <button type="button" onClick={() => setShowRouteList(!showRouteList)} style={{ width: "100%", textAlign: "left", background: "none", border: "none", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer", padding: 0 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                       <FolderOpen size={22} strokeWidth={2} color="#ec4899" />
-                      <span style={{ fontWeight: "900", fontSize: "0.95rem", color: theme.text }}>선택지 분기 및 루트 설계</span>
+                      <span style={{ fontWeight: "700", fontSize: "0.95rem", color: theme.text }}>선택지 분기 및 루트 설계</span>
                     </div>
                     <span style={{ display: "flex", alignItems: "center", color: theme.textMuted }}>{showRouteList ? <ChevronUp size={18} strokeWidth={2} /> : <ChevronDown size={18} strokeWidth={2} />}</span>
                   </button>
@@ -1370,7 +1375,7 @@ export default function GamePlatform() {
                       {routeList.map((route, idx) => (
                         <div key={route.id} style={{ display: "flex", flexDirection: isMobile ? "column" : "row", gap: "8px", backgroundColor: theme.panelAlt, border: `1px solid ${theme.border}`, borderRadius: "12px", padding: "14px", alignItems: isMobile ? "stretch" : "center" }}>
                           <div style={{ display: "flex", alignItems: "center", gap: "8px", flex: 2 }}>
-                            <span style={{ backgroundColor: "#fbcfe8", color: "#be185d", padding: "4px 8px", borderRadius: "8px", fontSize: "0.7rem", fontWeight: "900", whiteSpace: "nowrap" }}>분기 {idx + 1}</span>
+                            <span style={{ backgroundColor: "#fbcfe8", color: "#be185d", padding: "4px 8px", borderRadius: "8px", fontSize: "0.7rem", fontWeight: "700", whiteSpace: "nowrap" }}>분기 {idx + 1}</span>
                             <input type="text" value={route.routeName} onChange={e => setRouteList(routeList.map(r => r.id === route.id ? { ...r, routeName: e.target.value } : r))} placeholder="분기 설명 (예: 옥상에서 위로한다)" style={{ width: "100%", padding: "8px 10px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.8rem", outline: "none" }} />
                           </div>
                           <div style={{ display: "flex", alignItems: "center", gap: "8px", flex: 1 }}>
@@ -1378,13 +1383,13 @@ export default function GamePlatform() {
                               <option value="">영향받는 인물</option>
                               {suspects.map(s => <option key={s.id} value={s.id}>{s.name || "이름 미상"}</option>)}
                             </select>
-                            <input type="text" value={route.affectionChange} onChange={e => setRouteList(routeList.map(r => r.id === route.id ? { ...r, affectionChange: e.target.value } : r))} placeholder="호감도 (예: +10)" style={{ width: "75px", padding: "8px 10px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.accent, fontWeight: "800", fontSize: "0.78rem", outline: "none", textAlign: "center" }} />
+                            <input type="text" value={route.affectionChange} onChange={e => setRouteList(routeList.map(r => r.id === route.id ? { ...r, affectionChange: e.target.value } : r))} placeholder="호감도 (예: +10)" style={{ width: "75px", padding: "8px 10px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.accent, fontWeight: "600", fontSize: "0.78rem", outline: "none", textAlign: "center" }} />
                             {routeList.length > 1 && <button type="button" onClick={() => setRouteList(routeList.filter(r => r.id !== route.id))} style={{ background: "none", border: "none", color: theme.danger, cursor: "pointer", fontSize: "0.8rem" }}>🗑</button>}
                           </div>
                         </div>
                       ))}
                       
-                      <button type="button" onClick={() => setRouteList([...routeList, { id: Date.now(), routeName: "", targetId: "", affectionChange: "+10", requiredCG: "" }])} style={{ width: "100%", padding: "12px", backgroundColor: isDarkMode ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.02)", border: `1.5px dashed ${theme.borderHighlight || theme.border}`, borderRadius: "12px", color: "#ec4899", fontSize: "0.82rem", fontWeight: "800", cursor: "pointer", transition: "all 0.2s" }}>
+                      <button type="button" onClick={() => setRouteList([...routeList, { id: Date.now(), routeName: "", targetId: "", affectionChange: "+10", requiredCG: "" }])} style={{ width: "100%", padding: "12px", backgroundColor: isDarkMode ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.02)", border: `1.5px dashed ${theme.borderHighlight || theme.border}`, borderRadius: "12px", color: "#ec4899", fontSize: "0.82rem", fontWeight: "600", cursor: "pointer", transition: "all 0.2s" }}>
                         ＋ 새로운 루트/분기 추가 ({routeList.length})
                       </button>
                     </div>
@@ -1395,7 +1400,7 @@ export default function GamePlatform() {
 
             {selectedMode === "괴담" && (
               <div style={{ ...GLASS_STYLE, padding: "40px 20px", textAlign: "center", color: theme.textMuted, borderRadius: "16px", border: `1.5px dashed ${theme.border}`, display: "flex", flexDirection: "column", alignItems: "center", gap: "8px" }}>
-                <span style={{ fontSize: "2rem" }}>🕯️</span><span style={{ fontSize: "0.92rem", fontWeight: "800", color: theme.accent }}>괴담 모드 서류철 준비 중</span>
+                <span style={{ fontSize: "2rem" }}>🕯️</span><span style={{ fontSize: "0.92rem", fontWeight: "600", color: theme.accent }}>괴담 모드 서류철 준비 중</span>
                 <span style={{ fontSize: "0.76rem" }}>재능 3슬롯 장착 칩, 이면 카드, 침식도 HUD가 이곳에 연결됩니다.</span>
               </div>
             )}
@@ -1408,7 +1413,7 @@ export default function GamePlatform() {
                 backgroundColor: isLoading ? theme.panelAlt : theme.accent, 
                 color: isLoading ? theme.textMuted : (isDarkMode ? "#1a1817" : "#ffffff"), 
                 border: isLoading ? `1px solid ${theme.border}` : "none",
-                fontWeight: "900", fontSize: "1.05rem", cursor: isLoading ? "default" : "pointer",
+                fontWeight: "700", fontSize: "1.05rem", cursor: isLoading ? "default" : "pointer",
                 boxShadow: isLoading ? "none" : `0 4px 20px rgba(0,0,0,0.2)`, 
                 transition: "all 0.2s", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" 
               }}
@@ -1629,7 +1634,7 @@ export default function GamePlatform() {
               >
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: `1px solid ${theme.border}`, paddingBottom: "10px" }}>
                   <div>
-                    <h3 style={{ margin: 0, fontSize: "1rem", fontWeight: "900", color: theme.accent }}>
+                    <h3 style={{ margin: 0, fontSize: "1rem", fontWeight: "700", color: theme.accent }}>
                       {targetCg.title || "이름 없는 CG"}
                     </h3>
                   </div>
@@ -1718,7 +1723,7 @@ export default function GamePlatform() {
               >
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: `1px solid ${theme.border}`, paddingBottom: "10px" }}>
                   <div>
-                    <h3 style={{ margin: 0, fontSize: "1rem", fontWeight: "900", color: theme.accent }}>
+                    <h3 style={{ margin: 0, fontSize: "1rem", fontWeight: "700", color: theme.accent }}>
                       {target.name || "신원 미상"}
                     </h3>
                     <div style={{ fontSize: "0.74rem", color: theme.textMuted, marginTop: "2px" }}>
@@ -1786,7 +1791,7 @@ export default function GamePlatform() {
           <div onClick={() => setShowPasteModal(false)} style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 200, padding: "20px" }}>
             <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: "520px", backgroundColor: theme.panel, border: `1px solid ${theme.border}`, borderRadius: "16px", padding: "20px", display: "flex", flexDirection: "column", gap: "12px", boxShadow: "0 20px 40px rgba(0,0,0,0.5)" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <span style={{ fontWeight: "800", fontSize: "0.95rem", display: "flex", alignItems: "center", gap: "6px" }}>
+                <span style={{ fontWeight: "600", fontSize: "0.95rem", display: "flex", alignItems: "center", gap: "6px" }}>
                   <ClipboardPaste size={20} strokeWidth={2.5} color={theme.accent} /> 시나리오 텍스트 붙여넣기
                 </span>
                 <button onClick={() => setShowPasteModal(false)} style={{ background: "none", border: "none", color: theme.text, fontSize: "1.2rem", cursor: "pointer" }}><X size={20}/></button>
@@ -1794,7 +1799,7 @@ export default function GamePlatform() {
               <textarea rows={8} value={pastedText} onChange={e => setPastedText(e.target.value)} placeholder="스튜디오에서 작성된 시나리오 전체 글을 여기에 붙여넣으세요..." style={{ width: "100%", boxSizing: "border-box", padding: "12px", backgroundColor: theme.inputBg, border: `1px solid ${theme.border}`, borderRadius: "8px", color: theme.text, fontSize: "0.82rem", outline: "none", resize: "none" }} />
               <div style={{ display: "flex", gap: "8px" }}>
                 <button onClick={() => setShowPasteModal(false)} style={{ flex: 1, padding: "10px", backgroundColor: theme.panelAlt, border: `1px solid ${theme.border}`, borderRadius: "8px", color: theme.text, fontSize: "0.8rem", cursor: "pointer" }}>취소</button>
-                <button onClick={handleApplyPastedScenario} style={{ flex: 2, padding: "10px", backgroundColor: theme.accent, color: isDarkMode ? "#1a1817" : "#fff", border: "none", borderRadius: "8px", fontSize: "0.8rem", fontWeight: "800", cursor: "pointer" }}>서류철에 자동 배치 ➔</button>
+                <button onClick={handleApplyPastedScenario} style={{ flex: 2, padding: "10px", backgroundColor: theme.accent, color: isDarkMode ? "#1a1817" : "#fff", border: "none", borderRadius: "8px", fontSize: "0.8rem", fontWeight: "600", cursor: "pointer" }}>서류철에 자동 배치 ➔</button>
               </div>
             </div>
           </div>
@@ -1807,7 +1812,7 @@ export default function GamePlatform() {
                 <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                   <span style={{ fontSize: "1.2rem", color: theme.accent }}>{ruleHelpModal.icon}</span>
                   <div>
-                    <h3 style={{ margin: 0, fontSize: "0.95rem", fontWeight: "800" }}>{ruleHelpModal.title}</h3>
+                    <h3 style={{ margin: 0, fontSize: "0.95rem", fontWeight: "600" }}>{ruleHelpModal.title}</h3>
                     <div style={{ fontSize: "0.72rem", color: theme.textMuted }}>{ruleHelpModal.desc}</div>
                   </div>
                 </div>
@@ -1816,7 +1821,7 @@ export default function GamePlatform() {
 
               <div style={{ display: "flex", flexDirection: "column", gap: "8px", overflowY: "auto", paddingRight: "4px" }}>
                 <div style={{ backgroundColor: theme.panelAlt, padding: "12px", borderRadius: "10px", border: `1px solid ${theme.border}` }}>
-                  <div style={{ fontWeight: "800", fontSize: "0.82rem", color: theme.accent, marginBottom: "4px" }}>• 게임 진행 방식</div>
+                  <div style={{ fontWeight: "600", fontSize: "0.82rem", color: theme.accent, marginBottom: "4px" }}>• 게임 진행 방식</div>
                   <div style={{ fontSize: "0.76rem", color: theme.text, lineHeight: "1.6" }}>
                     {ruleHelpModal.key === "추리" ? "단서를 모으고 인물들을 심문하여 사건의 진상을 밝혀냅니다." :
                      ruleHelpModal.key === "연애" ? "상대방의 호감도를 관리하며 다양한 엔딩을 향해 나아갑니다." :
@@ -1825,7 +1830,7 @@ export default function GamePlatform() {
                 </div>
               </div>
 
-              <button type="button" onClick={() => setRuleHelpModal(null)} style={{ width: "100%", padding: "10px", backgroundColor: theme.accent, color: isDarkMode ? "#1a1817" : "#fff", border: "none", borderRadius: "10px", fontWeight: "800", fontSize: "0.82rem", cursor: "pointer", marginTop: "4px" }}>
+              <button type="button" onClick={() => setRuleHelpModal(null)} style={{ width: "100%", padding: "10px", backgroundColor: theme.accent, color: isDarkMode ? "#1a1817" : "#fff", border: "none", borderRadius: "10px", fontWeight: "600", fontSize: "0.82rem", cursor: "pointer", marginTop: "4px" }}>
                 확인
               </button>
             </div>
