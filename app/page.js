@@ -3560,16 +3560,14 @@ color: "#fff", border: "none", cursor: "pointer",
             <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", position: "relative" }}>
               <div 
                 className={fontChoice === "ridi" ? "font-ridi" : "font-gothic"}
-                ref={chatContainerRef}
+                ref={chatContainerRef} 
+                style={{
                   flex: 1, overflowY: "auto", 
                   padding: isMobile ? "24px 20px 140px 20px" : "50px 60px 160px 60px", 
                   display: "flex", flexDirection: "column", gap: "28px", 
                   maxWidth: "760px", margin: "0 auto", width: "100%", boxSizing: "border-box", 
-                  color: theme.text, letterSpacing: "-0.02em",
-                  fontFamily: (fontChoice === "ridi" || fontChoice === "maru") ? "'RIDIBatang', serif" : "'Pretendard', sans-serif",
-                  fontSize: `${1.12 * (chatFontSize || 1)}rem`, 
-                  lineHeight: 2.1,
-                  fontWeight: 400
+                  color: theme.text,
+                  fontSize: `${1.12 * (chatFontSize || 1)}rem`
                 }}
               >
                 {(activeSession.messages || []).map((m, idx) => {
