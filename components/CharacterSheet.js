@@ -38,7 +38,7 @@ export default function CharacterSheet({ activeSession, isDarkMode, isMobile, is
 
         <div style={{ flex: 1, overflowY: "auto", padding: "20px", display: "flex", flexDirection: "column", gap: "20px" }}>
           
-          {/* 주인공 프로필 카드 (🌟 사진 클릭 시에만 팝업 호출되도록 분리 완료!) */}
+          {/* 도파미너 프로필 카드 (🌟 사진 클릭 시에만 팝업 호출되도록 분리 완료!) */}
           <div style={{ backgroundColor: theme.panel, borderRadius: "16px", padding: "18px", border: `1px solid ${theme.border}`, boxShadow: "0 8px 20px rgba(0,0,0,0.05)", display: "flex", alignItems: "center", gap: "16px" }}>
             <div 
               onClick={(e) => { 
@@ -47,7 +47,7 @@ export default function CharacterSheet({ activeSession, isDarkMode, isMobile, is
               }} 
               style={{ width: "72px", height: "72px", borderRadius: "50%", overflow: "hidden", border: `2px solid ${theme.borderHighlight}`, backgroundColor: theme.inputBg, flexShrink: 0, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
             >
-              {sheet.portraitUrl || sheet.portrait ? <img src={sheet.portraitUrl || sheet.portrait} alt="주인공" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <UserRound size={32} color={theme.textMuted} />}
+              {sheet.portraitUrl || sheet.portrait ? <img src={sheet.portraitUrl || sheet.portrait} alt="도파미너" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <UserRound size={32} color={theme.textMuted} />}
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: "4px", flex: 1 }}>
               <span style={{ fontSize: "1.3rem", fontWeight: "900", color: theme.text }}>{sheet.name || "이름 미상"}</span>
