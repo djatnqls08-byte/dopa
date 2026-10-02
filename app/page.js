@@ -22,12 +22,8 @@ import {
   Fingerprint, Flower2, Tentacle, Compass, Globe, Key, Phone, Download, Upload, FileText, CheckSquare, Square, DownloadCloud
 } from "lucide-react";
 
-const THEME_PALETTES = {
-  cloud: {
-    light: { bg: "#f5f0eb", sidebar: "#ebe5de", panel: "#ffffff", panelAlt: "#f0ece4", border: "#ded7cb", borderHighlight: "#c8bca7", text: "#292524", textMuted: "#78716c", accent: "#a39274", accentGlow: "rgba(163, 146, 116, 0.4)", inputBg: "#f9f6f3", danger: "#dc2626", warning: "#d97706", success: "#16a34a", polaroidBg: "#f5f5f4", polaroidText: "#1c1917" },
-    dark: { bg: "#1a1817", sidebar: "#242120", panel: "#2b2826", panelAlt: "#332f2c", border: "#3d3834", borderHighlight: "#4f4944", text: "#e8e3dc", textMuted: "#a8a29e", accent: "#c2b4a3", accentGlow: "rgba(194, 180, 163, 0.3)", inputBg: "#1f1d1b", danger: "#ef4444", warning: "#f59e0b", success: "#22c55e", polaroidBg: "#292524", polaroidText: "#e7e5e4" }
-  }
-};
+// ✅ 지운 자리에 이것을 붙여넣으세요!
+import { THEME_PALETTES } from "@/lib/themes";
 const GLASS_STYLE = { backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)" };
 
 // ==========================================
@@ -4869,7 +4865,7 @@ color: "#fff", border: "none", cursor: "pointer",
                 <label style={{ fontSize: "0.85rem", fontWeight: "800", color: theme.text }}>채팅 폰트 크기</label>
                 <span style={{ fontSize: "0.8rem", fontWeight: "700", color: theme.accent }}>{chatFontSize || 1}rem</span>
               </div>
-              <input type="range" min="0.8" max="1.5" step="0.05" value={chatFontSize || 1} onChange={e => handleSaveFontSize(Number(e.target.value))} style={{ width: "100%", accentColor: theme.accent, marginTop: "4px" }} />
+              <input type="range" min="0.8" max="1.5" step="0.05" value={chatFontSize || 1} onChange={e => setChatFontSize(Number(e.target.value))} style={{ width: "100%", accentColor: theme.accent, marginTop: "4px" }} />
             </div>
 
             {/* 주사위 볼륨 슬라이더 */}
@@ -4879,7 +4875,7 @@ color: "#fff", border: "none", cursor: "pointer",
                 <span style={{ fontSize: "0.8rem", fontWeight: "700", color: theme.accent }}>{Math.round((soundVolume || 0.6) * 100)}%</span>
               </div>
               <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
-                <input type="range" min="0" max="1" step="0.05" value={soundVolume || 0.6} onChange={e => handleSaveVolume(Number(e.target.value))} style={{ flex: 1, accentColor: theme.accent }} />
+                <input type="range" min="0" max="1" step="0.05" value={soundVolume || 0.6} onChange={e => setSoundVolume(Number(e.target.value))} style={{ flex: 1, accentColor: theme.accent }} />
                 <button onClick={playDiceSound} style={{ padding: "6px 12px", backgroundColor: theme.panelAlt, border: `1px solid ${theme.borderHighlight}`, color: theme.text, borderRadius: "8px", fontSize: "0.75rem", fontWeight: "700", cursor: "pointer", display: "flex", alignItems: "center", gap: "4px" }}>
                   🔊 테스트
                 </button>
