@@ -907,7 +907,11 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
       if (data.publicSynopsis) setPublicSynopsis(data.publicSynopsis);
       if (data.openingScene) setOpeningScene(data.openingScene);
       if (data.hiddenTruth) setHiddenTruth(data.hiddenTruth);
-
+      
+      // 🌟 추가: AI가 찾아낸 진범과 트릭을 전용 칸에 쏙쏙 꽂아줍니다!
+      if (data.culpritName) setCulpritName(data.culpritName);
+      if (data.trickDetail) setTrickDetail(data.trickDetail);
+      
       // 2. 용의자/공략대상(NPC) 리스트 자동 생성
       let generatedSuspects = [];
       if (data.npcs && data.npcs.length > 0) {
@@ -2142,22 +2146,22 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
               return (
                 <div style={{ display: "flex", flexDirection: "column", gap: "24px", animation: "fadeIn 0.2s ease-out", padding: "4px 4px 20px 4px" }}>
                   
-                  {/* 1. 상단 검색바 및 잉크 잔액 */}
-                  <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                    <div style={{ flex: 1, display: "flex", alignItems: "center", backgroundColor: theme.panel, border: `1px solid ${theme.border}`, borderRadius: "16px", padding: "0 14px", height: "48px", boxShadow: "0 4px 12px rgba(0,0,0,0.03)" }}>
-                      <Search size={18} color={theme.textMuted} />
+                 {/* 1. 상단 검색바 및 잉크 잔액 */}
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px", width: "100%", boxSizing: "border-box" }}>
+                    <div style={{ flex: 1, minWidth: 0, display: "flex", alignItems: "center", backgroundColor: theme.panel, border: `1px solid ${theme.border}`, borderRadius: "16px", padding: "0 12px", height: "48px", boxShadow: "0 4px 12px rgba(0,0,0,0.03)", boxSizing: "border-box" }}>
+                      <Search size={18} color={theme.textMuted} style={{ flexShrink: 0 }} />
                       <input 
                         type="text" 
                         value={exploreSearchQuery}
                         onChange={(e) => setExploreSearchQuery(e.target.value)}
                         placeholder="어떤 사건을 찾으시나요?" 
-                        style={{ flex: 1, height: "100%", border: "none", backgroundColor: "transparent", color: theme.text, fontSize: "0.9rem", outline: "none", paddingLeft: "10px" }} 
+                        style={{ flex: 1, minWidth: 0, height: "100%", border: "none", backgroundColor: "transparent", color: theme.text, fontSize: "0.9rem", outline: "none", paddingLeft: "8px", boxSizing: "border-box" }} 
                       />
                     </div>
-                    <div onClick={() => setShowInkModal(true)} style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: "6px", backgroundColor: theme.panelAlt, padding: "0 14px", height: "48px", borderRadius: "16px", fontWeight: "800", fontSize: "0.9rem", color: theme.text, flexShrink: 0 }}>
-            <Droplet size={18} strokeWidth={2.5} color={theme.accent} /> 
-            {userInk >= 10000 ? `${Math.floor(userInk / 10000)}만` : userInk.toLocaleString()}
-          </div>
+                    <div onClick={() => setShowInkModal(true)} style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: "6px", backgroundColor: theme.panelAlt, padding: "0 14px", height: "48px", borderRadius: "16px", fontWeight: "800", fontSize: "0.9rem", color: theme.text, flexShrink: 0, boxSizing: "border-box" }}>
+                      <Droplet size={18} strokeWidth={2.5} color={theme.accent} style={{ flexShrink: 0 }} /> 
+                      {userInk >= 10000 ? `${Math.floor(userInk / 10000)}만` : userInk.toLocaleString()}
+                    </div>
                   </div>
 
                   {/* 2. 카테고리 필터 탭 (전체 추가!) */}
