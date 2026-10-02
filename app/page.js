@@ -222,8 +222,10 @@ export default function GamePlatform() {
   const [isGuestPlay, setIsGuestPlay] = useState(false); 
 
   // ── [1. 테마 & 반응형 엔진] ──
-  const [themeKey, setThemeKey] = useState("cloud"); // 🌟 사라졌던 스위치(setThemeKey) 복구!
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  // 🚨 setThemeKey를 추가해 환경 설정에서 테마 변경 시 앱이 튕기던 에러를 고쳤습니다!
+  const [themeKey, setThemeKey] = useState("dopa"); 
+  // 🌟 네온 감성이 100% 발휘되도록 처음 앱을 켰을 때 '다크 모드'로 시작하게 만듭니다.
+  const [isDarkMode, setIsDarkMode] = useState(true);
   
   // 🌟 (신규) 새로고침해도 내가 고른 테마와 다크모드를 기억하도록 설정!
   useEffect(() => {
