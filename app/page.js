@@ -1001,7 +1001,143 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
   };
 
 // ── [10. 코어 엔진: 세션 시작 및 통신] ──
-// ... (startNewSession 함수는 건드리지 마세요!) ...
+  
+  // 🌟 (복구) 싹 날아가버렸던 세션 시작 함수 완벽 부활!
+  const startNewSession = async () => {
+    const sessionTitle = scenarioTitle || (pcName ? `${pcName}의 이야기` : "새로운 사건");
+    const pName = pcName.trim() || "주인공";
+    
+    // 1. 등장인물 데이터 통일
+    const npcs = (suspects || []).map((k, idx) => ({
+      id: k.id || Date.now() + idx,
+      name: k.name || `인물${idx + 1}`,
+      job: k.job || k.title || "등장인물",
+      title: k.job || k.title || "등장인물",
+      ageGender: k.ageGender || k.gender || "미상",
+      detail: k.behavior || k.detail || "",
+      desc: k.behavior || k.detail || "",
+      secret: k.secret || "",
+      statusMessage: k.statusMessage || "",
+      portraitUrl: k.portraitUrl || k.portrait || "",
+      portrait: k.portraitUrl || k.portrait || "",
+      affection: 0,
+      secretRevealed: false
+    }));
+
+    // 2. 단서 및 증거품 데이터 통일
+    const initialHandouts = (evidenceList || []).filter(e => e.name).map((ev, idx) => ({
+      id: ev.id || Date.now() + idx,
+      title: ev.name,
+      overview: ev.overview || "발견된 단서입니다.",
+      secret: ev.contradiction ? `[모순점] ${ev.contradiction}\n[비밀] ${ev.secret}` : ev.secret,
+      revealed: ev.showSecret || false
+    }));
+
+    // 주인공 기본 사명/비밀 추가
+    initialHandouts.unshift({
+      id: "pc_base",
+      title: `${pName}의 사명과 비밀`,
+      overview: "사건의 진상을 파헤치거나, 원하는 결말에 도달한다.",
+      secret: pcSecret || "숨겨진 진실",
+      revealed: false
+    });
+
+    const fullScenarioContext = `[시나리오 제목: ${sessionTitle}]\n[공개 시놉시스]\n${publicSynopsis}\n\n[초기 배경/서막]\n${openingScene}\n\n[키퍼 전용 기밀/진상]\n${hiddenTruth}`;
+
+    // 3. 현재 룰 모드 영문 파싱
+    let ruleModeStr = "freeform";
+    if (selectedMode === "연애") ruleModeStr = "dating";
+    if (selectedMode === "괴담") ruleModeStr = "horror";
+
+    // 4. 캐릭터 시트 완벽 조립
+    let sessionSheet = {
+      day: 1,
+      currentPhase: "낮",
+      name: pName,
+      job: pcJob || "주인공",
+      ageGender: pcAgeGender || "미상",
+      background: pcBackground || "",
+      secret: pcSecret || "",
+      portrait: pcPortraitUrl || "",
+      hp: 100, maxHp: 100, fatigue: 0,
+      npcs: npcs,
+      items: [],
+      clues: [],
+      handouts: initialHandouts,
+      scenarioCgs: cgList || [],
+      unlockedCgs: [],
+      phoneChats: {},
+      activeContactId: npcs[0]?.id || null
+    };
+
+    const newId = Date.now();
+    const newSession = {
+      id: newId,
+      title: sessionTitle,
+      thumbnail: scenarioImageUrl || "",
+      ruleMode: ruleModeStr,
+      preference: playPreference || "",
+      scenarioText: fullScenarioContext,
+      sheet: sessionSheet,
+      messages: [],
+      suggestedActions: []
+    };
+
+    setSessions([newSession, ...sessions]);
+    setActiveSessionId(newId);
+    setIsLoading(true);
+
+    const controller = new AbortController();
+    setAbortController(controller);
+
+    // 5. 게임 시작 오프닝 프롬프트
+    let openingPrompt = `[세션 시작: 서막 지문 요청]\n시나리오의 [초기 배경/서막]을 플레이어가 몰입할 수 있도록 4~5문장으로 서술하십시오.\n지문 끝에 주인공이 취할 다음 행동 선택지 3개를 <!-- SUGGESTIONS: ["선택지 1", "선택지 2", "선택지 3"] --> 태그로 출력하십시오.`;
+
+    if (ruleModeStr === "dating") {
+      openingPrompt = `[세션 시작: 비주얼 노벨 서막 요청]\n시나리오의 [초기 배경/서막]을 바탕으로, 주인공 '${sessionSheet.name}'의 시점에서 아름답고 감각적으로 4~5문장 서막을 묘사하십시오.\n지문 끝에 주인공이 취할 다음 행동 선택지 3개를 <!-- SUGGESTIONS: ["대사 1", "대사 2", "대사 3"] --> 태그로 출력하십시오.`;
+    } else if (ruleModeStr === "freeform") {
+      openingPrompt = `[세션 시작: 추리/수사 서막 요청]\n시나리오의 [초기 배경/서막]을 바탕으로, 사건 현장의 음산하고 미스터리한 분위기를 4~5문장으로 묘사하십시오.\n지문 끝에 주인공이 취할 수사 액션 선택지 3개를 <!-- SUGGESTIONS: ["단서를 찾는다", "주변 인물을 살핀다", "시체를 조사한다"] --> 태그로 출력하십시오.`;
+    }
+
+    try {
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        signal: controller.signal,
+        body: JSON.stringify({
+          messages: [{ role: "user", text: openingPrompt }],
+          scenarioText: fullScenarioContext,
+          playerSheet: sessionSheet,
+          ruleMode: ruleModeStr,
+          playPreference: playPreference
+        })
+      });
+
+      if (!res.ok) throw new Error("서버 응답 오류");
+      const data = await res.json();
+      let rawText = data.text || "";
+
+      let suggActions = [];
+      const suggMatch = rawText.match(/<!--\s*SUGGESTIONS:\s*(\[[\s\S]*?\])\s*-{1,3}>/i);
+      if (suggMatch) { try { suggActions = JSON.parse(suggMatch[1]); } catch(e) {} }
+
+      let cleanText = rawText.replace(/<!--[\s\S]*?-{1,3}>/g, "").replace(/\[SUGGESTIONS\][\s\S]*$/i, "").trim();
+
+      setSessions(prev => prev.map(s => s.id === newId ? {
+        ...s,
+        messages: [{ role: "model", text: cleanText }],
+        suggestedActions: suggActions
+      } : s));
+
+    } catch (err) {
+      if (err.name === "AbortError") return;
+      setSessions(prev => prev.map(s => s.id === newId ? { ...s, messages: [{ role: "model", text: "서막을 불러오는 중 오류가 발생했습니다." }] } : s));
+    } finally {
+      setIsLoading(false);
+      setAbortController(null);
+    }
+  };
+
 
   // 🌟 (복구) 여기에 사라졌던 executeMessage 함수를 넣습니다!
   const executeMessage = async (textToSend) => {
