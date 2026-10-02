@@ -3801,8 +3801,11 @@ color: "#fff", border: "none", cursor: "pointer",
                       </div>
                     </div>
                   )}
+                </>
+              )}
+            </div>
 
-            {/* 🔹 3단 하단 탭 네비게이션 바 */}
+            {/* 🔹 3단 하단 탭 네비게이션 바 (메인 화면에서만 노출) */}
             {activePhoneContactId === null && !selectedProfileNpc && !isMyProfileOpen && !incomingCall && (
               <div style={{ height: "64px", backgroundColor: activePhoneSkin.headerBg, display: "flex", borderTop: `1px solid ${activePhoneSkin.border}` }}>
                 {[
