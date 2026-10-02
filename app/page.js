@@ -1577,10 +1577,11 @@ if (damageMatch) {
     }));
     triggerToast("신뢰도 실추!", `무리한 추궁이나 엉뚱한 반증으로 신뢰도가 ${damageMatch[1]} 삭감되었습니다.`, "💔");
   } catch(e) {}
-  rawText = rawText.replace(damageMatch[0]
-      
-      // 🌟 [핵심] 스마트폰 톡 & 사진 완벽 낚아채기 파서
-      let newPhoneMsg = null;
+  rawText = rawText.replace(damageMatch[0], "");
+}
+
+// 🌟 [핵심] 스마트폰 톡 & 사진 완벽 낚아채기 파서
+let newPhoneMsg = null;
       const phoneMsgMatch = rawText.match(/<!--\s*PHONE_MSG:\s*(\{[\s\S]*?\})\s*-->/i);
       if (phoneMsgMatch) { try { newPhoneMsg = JSON.parse(phoneMsgMatch[1]); } catch(e){} rawText = rawText.replace(phoneMsgMatch[0], ""); }
       
