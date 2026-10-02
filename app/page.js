@@ -1304,6 +1304,7 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
     const isDating = activeSession.ruleMode?.startsWith("dating");
     const isFreeform = activeSession.ruleMode === "freeform";
     const pcTone = activeSession.sheet?.background || "자연스러운 성격";
+    const isR19 = activeSession.preference?.includes("R19"); // 🌟 추가됨: 이 한 줄이 빠져서 앱이 멈췄던 겁니다!
 
     // 🌟 동적 프롬프트 조립
     let dynamicRules = `\n\n[키퍼 마스터링 절대 수칙]
