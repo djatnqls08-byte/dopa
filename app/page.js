@@ -4434,7 +4434,7 @@ color: "#fff", border: "none", cursor: "pointer",
     onClose={() => setIsPhoneDrawerOpen(false)}
     theme={theme}
     inGameTime={inGameTime}
-    genre="modern"
+    genre={activeSession?.preference || activeSession?.data?.playPreference || "modern"} // 🌟 장르 태그 주입
     isHorror={true}
     characterSheet={activeSession.sheet}
     contacts={activeSession.sheet?.npcs || []}
@@ -4442,9 +4442,13 @@ color: "#fff", border: "none", cursor: "pointer",
     onSelectContact={(id) => setActivePhoneContactId(id)}
     messages={((activeSession.sheet?.phoneChats || {})[activePhoneContactId || activeSession.sheet?.npcs?.[0]?.id || 1]) || []}
     onSendMessage={(text, targetContact) => {
-      const cId = targetContact?.id || activeSession.sheet?.npcs?.[0]?.id || 1;
       const cName = targetContact?.name || "상대방";
       executeMessage(`[메신저 전송 - ${cName}] ${text}`);
+    }}
+    onStartVoiceCall={(targetContact) => {
+      setVoiceCallNpc(targetContact);
+      setIsVoiceCallActive(true);
+      setIsCallModalOpen(true);
     }}
   />
 ) : null}
