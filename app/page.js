@@ -220,35 +220,6 @@ export default function GamePlatform() {
   const [agreeTerms, setAgreeTerms] = useState(false); 
   const [showTermsModal, setShowTermsModal] = useState(false); 
   const [isGuestPlay, setIsGuestPlay] = useState(false); 
-  
-
- // ── [0. 폰트 강제 로드] ──
-  useEffect(() => {
-    const style = document.createElement("style");
-    style.innerHTML = `
-      @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
-      @font-face {
-        font-family: 'RIDIBatang';
-        src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_twelve@1.0/RIDIBatang.woff') format('woff');
-        font-weight: 400;
-        font-style: normal;
-      }
-      * { 
-        font-family: 'Pretendard', sans-serif; 
-        /* 🌟 다크 모드에서 폰트가 뚱뚱해지는 것을 막고 선명하게 다듬어주는 코드 */
-        -webkit-font-smoothing: antialiased;
-        -moz-osx-font-smoothing: grayscale;
-      }
-      .serif-text { font-family: 'RIDIBatang', serif !important; }
-      ::-webkit-scrollbar { width: 5px; height: 5px; }
-      ::-webkit-scrollbar-track { background: transparent; }
-      ::-webkit-scrollbar-thumb { background: rgba(120, 120, 120, 0.4); border-radius: 10px; }
-      textarea::-webkit-scrollbar { width: 4px; }
-      textarea::-webkit-scrollbar-thumb { background: rgba(150, 150, 150, 0.4); border-radius: 4px; }
-    `;
-    document.head.appendChild(style);
-    return () => document.head.removeChild(style);
-  }, []);
 
   // ── [1. 테마 & 반응형 엔진] ──
   const [themeKey] = useState("cloud");
@@ -1805,19 +1776,35 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
     );
   }
   
-  return (
+return (
     <div style={{ display: "flex", height: "100dvh", width: "100vw", backgroundColor: theme.bg, color: theme.text, overflow: "hidden", position: "relative" }}>
       
-      {toast && (
-        <div onClick={() => setToast(null)} style={{ ...GLASS_STYLE, position: "fixed", top: "20px", left: "50%", transform: "translateX(-50%)", zIndex: 99999, backgroundColor: isDarkMode ? "rgba(35, 30, 28, 0.96)" : "rgba(255, 255, 255, 0.96)", border: `1.5px solid ${theme.accent}`, color: theme.text, padding: "12px 20px", borderRadius: "24px", display: "flex", alignItems: "center", gap: "10px", boxShadow: "0 10px 30px rgba(0,0,0,0.15)", cursor: "pointer", animation: "fadeIn 0.2s ease-out", width: "max-content", maxWidth: "90vw" }}>
-          <span style={{ display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontSize: "1.15rem" }}>{toast.icon}</span>
-          <span style={{ fontSize: "0.85rem", fontWeight: "700", color: theme.accent, whiteSpace: "nowrap", flexShrink: 0 }}>{toast.title}</span>
-          {toast.message && <span style={{ fontSize: "0.8rem", opacity: 0.85, wordBreak: "keep-all" }}>{toast.message}</span>}
-        </div>
-      )}
+      {/* 👇 여기에 스타일 태그를 통째로 붙여넣습니다 👇 */}
+      <style>{`
+        @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+        @font-face { font-family: 'RIDIBatang'; src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_twelve@1.0/RIDIBatang.woff') format('woff'); font-weight: 400; font-style: normal; }
+        
+        *, *::before, *::after { box-sizing: border-box; font-family: 'Pretendard', sans-serif; }
+        
+        .serif-text, .serif-text * { 
+          font-family: ${(fontChoice === "ridi" || fontChoice === "maru" || fontChoice === "serif") ? "'RIDIBatang', serif" : "'Pretendard', sans-serif"} !important; 
+          line-height: 1.95; 
+          word-break: keep-all; 
+          letter-spacing: -0.01em; 
+        }
+        
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
+        ::-webkit-scrollbar-thumb { background: rgba(140, 160, 210, 0.2); border-radius: 4px; }
+        .glass-card { background: ${theme.panel}; backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border: 1px solid ${theme.border}; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05); border-radius: 18px; }
+        .glass-alt { background: ${theme.panelAlt}; backdrop-filter: blur(10px); border: 1px solid ${theme.border}; }
+        @keyframes diceTumble { 0% { transform: rotate(0deg) scale(0.85); } 50% { transform: rotate(180deg) scale(1.15); } 100% { transform: rotate(360deg) scale(1); } }
+        .anim-dice-rolling { animation: diceTumble 0.35s infinite linear; }
+        @keyframes typingBounce { 0%, 60%, 100% { transform: translateY(0); opacity: 0.3; } 30% { transform: translateY(-5px); opacity: 1; } }
+        .typing-dot { animation: typingBounce 1.3s infinite ease-in-out; }
+      `}</style>
+      {/* 👆 여기까지 👆 */}
 
-{/* 🚨 제자리로 찾아온 커스텀 삭제 확인 팝업! */}
-      {itemToDelete && (
+      {toast && (
         <div onClick={() => setItemToDelete(null)} style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 99999, padding: "20px", animation: "fadeIn 0.2s ease-out" }}>
           <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: "340px", backgroundColor: theme.panel, border: `1px solid ${theme.border}`, borderRadius: "24px", padding: "28px 24px", display: "flex", flexDirection: "column", gap: "24px", boxShadow: "0 20px 50px rgba(0,0,0,0.5)" }}>
             
