@@ -153,7 +153,7 @@ export default function SecretBoard({ activeSession, theme, isMobile, onClose, o
                 }}>
                   {/* 🌟 [수정] npc.portraitUrl 이 있으면 사진을 띄워줍니다! */}
                   {suspect.portraitUrl || suspect.portrait ? (
-                    <img src={suspect.portraitUrl || suspect.portrait} alt="용의자" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                    <img src={npc.portraitUrl || npc.portrait} alt="용의자" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                   ) : (
                     <UserRound size={32} color="#4c1d95" />
                   )}
