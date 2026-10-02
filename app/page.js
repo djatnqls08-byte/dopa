@@ -27,7 +27,7 @@ import { THEME_PALETTES } from "@/lib/themes";
 const GLASS_STYLE = { backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)" };
 
 // ==========================================
-// 📑 도파 공식 시나리오 파이프라인 (구글 시트 연동)
+// 📑 시크릿 노벨 공식 시나리오 파이프라인 (구글 시트 연동)
 // ==========================================
 const GOOGLE_SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQQEA39XlsqHKGn0GPzmVH42jhimki3yJUIbKHkXjgzmLA5bD66WQvXw3-nHy9PJSxwg727wfSGznYa/pub?gid=0&single=true&output=csv";
 
@@ -102,12 +102,12 @@ function convertRowToPreset(row, index, headers = []) {
 
   const sessionCardImg = getVal(/세션카드|표지|썸네일/i);
 
-  const pcName = getVal(/(pc|주인공|도파미너|수사관)(이름|명칭)|^(이름|명칭)$/i);
-  const pcAgeGender = getVal(/(pc|주인공|도파미너|수사관)?(나이|성별)/i);
-  const pcJob = getVal(/(pc|주인공|도파미너|수사관)?(직업|역할)/i);
-  const pcBackground = getVal(/(pc|주인공|도파미너|수사관)?(성격|배경|설정)/i);
-  const pcSecret = getVal(/(pc|주인공|도파미너|수사관)?(비밀|약점)/i);
-  const pcPortraitUrl = getVal(/(pc|주인공|도파미너|수사관)?(초상화|사진|이미지)/i);
+  const pcName = getVal(/(pc|주인공|탐색자|수사관)(이름|명칭)|^(이름|명칭)$/i);
+  const pcAgeGender = getVal(/(pc|주인공|탐색자|수사관)?(나이|성별)/i);
+  const pcJob = getVal(/(pc|주인공|탐색자|수사관)?(직업|역할)/i);
+  const pcBackground = getVal(/(pc|주인공|탐색자|수사관)?(성격|배경|설정)/i);
+  const pcSecret = getVal(/(pc|주인공|탐색자|수사관)?(비밀|약점)/i);
+  const pcPortraitUrl = getVal(/(pc|주인공|탐색자|수사관)?(초상화|사진|이미지)/i);
 
   const abyssTriggers = {
     30: getVal(/이상충동30/i),
@@ -132,12 +132,12 @@ function convertRowToPreset(row, index, headers = []) {
     return list;
   };
 
-  const mainPartners = extractList(5, "파트너|메인파트너", ["이름", "나침식도별|성별나이|나이|성별", "직업|역할", "특징|성격", "비밀|이면", "초상화|사진"], (d, i) => ({
-    id: `partner_${Date.now()}_${i}`, name: d.이름, ageGender: d.나침식도별, job: d.직업, behavior: d.특징, secret: d.비밀, portraitUrl: d.초상화, showSecret: false
+  const mainPartners = extractList(5, "파트너|메인파트너", ["이름", "나이성별|성별나이|나이|성별", "직업|역할", "특징|성격", "비밀|이면", "초상화|사진"], (d, i) => ({
+    id: `partner_${Date.now()}_${i}`, name: d.이름, ageGender: d.나이성별, job: d.직업, behavior: d.특징, secret: d.비밀, portraitUrl: d.초상화, showSecret: false
   }));
 
-  const suspects = extractList(15, "인물|등장인물|공략대상|npc|용의자", ["이름", "나침식도별|성별나이|나이|성별", "직업|역할", "특징|성격|행적", "비밀|진심|약점", "초상화|사진"], (d, i) => ({
-    id: `suspect_${Date.now()}_${i}`, name: d.이름, ageGender: d.나침식도별, job: d.직업, behavior: d.특징, secret: d.비밀, portraitUrl: d.초상화, showSecret: false
+  const suspects = extractList(15, "인물|등장인물|공략대상|npc|용의자", ["이름", "나이성별|성별나이|나이|성별", "직업|역할", "특징|성격|행적", "비밀|진심|약점", "초상화|사진"], (d, i) => ({
+    id: `suspect_${Date.now()}_${i}`, name: d.이름, ageGender: d.나이성별, job: d.직업, behavior: d.특징, secret: d.비밀, portraitUrl: d.초상화, showSecret: false
   }));
 
   const evidenceList = extractList(15, "단서|증거|물증|핸드아웃", ["이름|명칭", "개요|설명", "비밀|진상|모순"], (d, i) => ({
@@ -796,7 +796,7 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
     const k = isUploadModal ? uploadingScenario.data?.playPreference : playPreference;
     const o = isUploadModal ? uploadingScenario.data?.openingScene : openingScene;
 
-    const prompt = `너는 텍스트 RPG '도파'의 전속 작가야. 다음 정보를 바탕으로 독자들의 흥미를 끄는 시놉시스(소개글)를 3~4문장으로 작성해줘.
+    const prompt = `너는 텍스트 RPG '시크릿 노벨'의 전속 작가야. 다음 정보를 바탕으로 독자들의 흥미를 끄는 시놉시스(소개글)를 3~4문장으로 작성해줘.
     [🚨 절대 규칙]: 이 플랫폼은 GL, BL, HL, 논로맨스 등 모든 커플링과 장르를 지원해. 입력된 키워드와 장르에 맞춰서 편견 없이 가장 어울리는 분위기(로맨스, 스릴러, 호러 등)로 섬세하게 작성해줘.
     제목: ${t || "미정"}
     장르: ${m || "미정"}
@@ -892,7 +892,7 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
           rawText: pastedText,
           ruleMode: selectedMode,
           pcName: pcName || "주인공",
-          AI 디렉터cName: "파트너"
+          kpcName: "파트너"
         })
       });
 
@@ -1097,7 +1097,7 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
       revealed: false
     }));
 
-    const fullScenarioContext = `[시나리오 제목: ${sessionTitle}]\n[공개 시놉시스]\n${publicSynopsis}\n\n[초기 배경/서막]\n${openingScene}\n\n[AI 디렉터 전용 기밀/진상]\n${hiddenTruth}`;
+    const fullScenarioContext = `[시나리오 제목: ${sessionTitle}]\n[공개 시놉시스]\n${publicSynopsis}\n\n[초기 배경/서막]\n${openingScene}\n\n[키퍼 전용 기밀/진상]\n${hiddenTruth}`;
 
     const sessionSheet = {
       day: 1, currentPhase: "낮",
@@ -1304,10 +1304,9 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
     const isDating = activeSession.ruleMode?.startsWith("dating");
     const isFreeform = activeSession.ruleMode === "freeform";
     const pcTone = activeSession.sheet?.background || "자연스러운 성격";
-    const isR19 = activeSession.preference?.includes("R19"); // 🌟 추가됨: 이 한 줄이 빠져서 앱이 멈췄던 겁니다!
 
     // 🌟 동적 프롬프트 조립
-    let dynamicRules = `\n\n[AI 디렉터 AI 디렉터링 절대 수칙]
+    let dynamicRules = `\n\n[키퍼 마스터링 절대 수칙]
 1. 진상 스포일러 금지: 플레이어가 판정에 성공하거나 명확한 증거를 찾기 전엔 진상을 해설하지 마십시오.
 2. 시스템 태그 연동: 새로운 물건 획득 시 <!-- ITEM: {"name": "명칭", "desc": "설명"} --> / 인물 취향 발견 시 <!-- CLUE: {"name": "취향명", "desc": "설명", "type": "like"} -->
 3. 호감도 변동 시 <!-- AFFECTION: {"name": "인물명", "delta": 1} -->
@@ -1354,9 +1353,9 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
 - 행위 도중이나 직후에는 이 관계가 지닌 배덕감, 직업적 선을 넘었다는 미묘한 자괴감, 어른 특유의 서늘한 긴장감을 유지하십시오. 호감도(AFFECTION) 태그는 1~2점 이상 남발하지 마십시오.`;
     }
 
-// 🌟 [수정] 다중 AI 디렉터C 인식, 원본 기절, 그리고 ✨안내자(흑막) 즉각 퇴장 완벽 제어 규칙
-    dynamicRules += `\n\n[🚨 다중 AI 디렉터C/분신 인식 및 도입부 특수 상황 제어 규칙]
-1. 분신/환영 연기: 시나리오 등장인물 중 이름에 'AI 디렉터C'나 괄호(...)가 포함된 분신들이 존재할 경우, 이들은 기본적으로 [${partnerName}]의 외형을 유지하되 시트에 명시된 극단적 성향에 맞춰 1인 다역처럼 연기하십시오.
+// 🌟 [수정] 다중 KPC 인식, 원본 기절, 그리고 ✨안내자(흑막) 즉각 퇴장 완벽 제어 규칙
+    dynamicRules += `\n\n[🚨 다중 KPC/분신 인식 및 도입부 특수 상황 제어 규칙]
+1. 분신/환영 연기: 시나리오 등장인물 중 이름에 'KPC'나 괄호(...)가 포함된 분신들이 존재할 경우, 이들은 기본적으로 [${partnerName}]의 외형을 유지하되 시트에 명시된 극단적 성향에 맞춰 1인 다역처럼 연기하십시오.
 2. 원본 파트너 봉인: 서막에서 원본 파트너인 [${partnerName}]가 의식을 잃었거나 적의 품에 안겨있다면, 이후 어떤 상황에서도 스스로 눈을 뜨고 대화하거나 움직이게 서술하지 마십시오. 깊은 의식불명 상태를 유지해야 합니다.
 3. 🌟 [안내자의 즉각 퇴장 (가장 중요)]: 서막에 등장하는 의문의 존재(예: 기묘한 청년, 낯선 목소리 등)가 플레이어를 기묘한 공간으로 안내하거나 게임의 조건(기믹)을 제시하는 역할을 마쳤다면, 절대로 곁에 머물며 대화를 이어가게 하지 마십시오.
 4. 해당 엑스트라/흑막은 목적을 달성한 즉시 연기처럼 사라지거나 어둠 속으로 퇴장시켜야 합니다. 플레이어가 홀로 남겨진 채 본격적인 탐색(예: 닫힌 두 개의 문 중 선택)을 시작하도록 공간을 엄격하게 통제하십시오.`;
@@ -2218,7 +2217,7 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
                         ))}
                       </div>
 
-                      {/* B. 오직 도파에서만! 오리지널 시리즈 (가로 스크롤) */}
+                      {/* B. 오직 시크릿 노벨에서만! 오리지널 시리즈 (가로 스크롤) */}
                       {originalScenarios.length > 0 && (
                         <div>
                           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px", padding: "0 4px" }}>
@@ -3265,17 +3264,17 @@ color: "#fff", border: "none", cursor: "pointer",
                   <textarea rows={2} value={openingScene} onChange={e => setOpeningScene(e.target.value)} placeholder="첫 오프닝 지문..." style={{ width: "100%", boxSizing: "border-box", padding: "10px 12px", borderRadius: "8px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.83rem", resize: "none", outline: "none" }} />
                 </section>
 
-                {/* 2. 도파미너 프로필 및 스탯 */}
+                {/* 2. 탐색자 프로필 및 스탯 */}
                 <section style={{ ...GLASS_STYLE, padding: isMobile ? "16px" : "20px", backgroundColor: theme.panel, borderRadius: "18px", border: `1px solid ${theme.border}`, display: "flex", flexDirection: "column", gap: "16px" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                     <Skull size={22} strokeWidth={2} color={theme.accent} />
-                    <span style={{ fontWeight: "700", fontSize: "0.95rem", color: theme.text }}>도파미너 프로필 및 스탯</span>
+                    <span style={{ fontWeight: "700", fontSize: "0.95rem", color: theme.text }}>탐색자 프로필 및 스탯</span>
                   </div>
 
                   {/* 🌟 튀어나옴 방지를 위해 alignItems를 flex-start로 조정하고, 초상화 width를 줄임 */}
                   <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", gap: "16px", width: "100%", alignItems: "flex-start" }}>
                     
-                    {/* 도파미너 초상화 */}
+                    {/* 탐색자 초상화 */}
                     <div
                       onClick={(e) => { e.stopPropagation(); setActivePortraitSuspectId("pc"); setShowPortraitModal(true); }}
                       style={{
@@ -3285,7 +3284,7 @@ color: "#fff", border: "none", cursor: "pointer",
                       }}
                     >
                       <div style={{ width: "100%", aspectRatio: "1/1", backgroundColor: isDarkMode ? "#332d2a" : "#eae4db", borderRadius: "3px", overflow: "hidden", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
-                        {pcPortraitUrl ? <img src={pcPortraitUrl} alt="도파미너" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <ImageIcon size={24} strokeWidth={1} color={theme.textMuted} />}
+                        {pcPortraitUrl ? <img src={pcPortraitUrl} alt="탐색자" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <ImageIcon size={24} strokeWidth={1} color={theme.textMuted} />}
                       </div>
                       <div style={{ marginTop: "6px", textAlign: "center", width: "100%" }}>
                         <div style={{ fontWeight: "700", fontSize: "0.82rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{pcName || "이름 미상"}</div>
@@ -3303,7 +3302,7 @@ color: "#fff", border: "none", cursor: "pointer",
 
                       {/* ✅ 여기에 백스토리가 들어가야 안 찌그러집니다! */}
               <div>
-                <label style={{ fontSize: "0.7rem", color: theme.textMuted, fontWeight: "700", display: "block", marginBottom: "3px" }}>도파미너의 배경 및 특징 (성격, 약점 등)</label>
+                <label style={{ fontSize: "0.7rem", color: theme.textMuted, fontWeight: "700", display: "block", marginBottom: "3px" }}>탐색자의 배경 및 특징 (성격, 약점 등)</label>
                 <textarea rows={2} value={pcBackground} onChange={e => setPcBackground(e.target.value)} placeholder="사건에 휘말리게 된 계기나 평소 성격..." style={{ width: "100%", boxSizing: "border-box", padding: "8px 10px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.82rem", outline: "none", resize: "vertical" }} />
               </div>
                       <button type="button" onClick={() => setShowTraitModal(true)} style={{ width: "100%", padding: "10px", backgroundColor: theme.panelAlt, border: `1.5px dashed ${theme.borderHighlight}`, borderRadius: "8px", color: theme.accent, fontSize: "0.82rem", fontWeight: "700", cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -3313,7 +3312,7 @@ color: "#fff", border: "none", cursor: "pointer",
 
                       <div style={{ backgroundColor: theme.panelAlt, borderRadius: "10px", padding: "12px", border: `1px solid ${theme.borderHighlight || theme.border}` }}>
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
-                          <span style={{ fontSize: "0.82rem", fontWeight: "700", color: theme.text }}>도파미너 스탯 분배</span>
+                          <span style={{ fontSize: "0.82rem", fontWeight: "700", color: theme.text }}>탐색자 스탯 분배</span>
                           <span style={{ fontSize: "0.75rem", fontWeight: "700", color: availableStatPoints === 0 ? theme.success : theme.danger }}>잔여: {availableStatPoints} pt</span>
                         </div>
                         <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr 1fr" : "repeat(6, 1fr)", gap: "6px" }}>
@@ -3425,7 +3424,7 @@ color: "#fff", border: "none", cursor: "pointer",
                               <input type="text" autoComplete="off" autoComplete="off" value={partner.ageGender} onChange={e => setMainPartners(mainPartners.map(p => p.id === partner.id ? {...p, ageGender: e.target.value} : p))} placeholder="나이/성별" style={{ padding: "8px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.82rem", outline: "none", width: "100%", boxSizing: "border-box" }} />
                               <input type="text" autoComplete="off" autoComplete="off" value={partner.job} onChange={e => setMainPartners(mainPartners.map(p => p.id === partner.id ? {...p, job: e.target.value} : p))} placeholder="직업/역할" style={{ padding: "8px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.82rem", outline: "none", width: "100%", boxSizing: "border-box" }} />
                             </div>
-                            <textarea rows={2} value={partner.behavior} onChange={e => setMainPartners(mainPartners.map(p => p.id === partner.id ? {...p, behavior: e.target.value} : p))} placeholder="파트너의 성격 및 도파미너와의 관계성..." style={{ width: "100%", padding: "8px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.82rem", outline: "none", resize: "vertical", boxSizing: "border-box" }} />
+                            <textarea rows={2} value={partner.behavior} onChange={e => setMainPartners(mainPartners.map(p => p.id === partner.id ? {...p, behavior: e.target.value} : p))} placeholder="파트너의 성격 및 탐색자와의 관계성..." style={{ width: "100%", padding: "8px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.82rem", outline: "none", resize: "vertical", boxSizing: "border-box" }} />
                             
                             <div style={{ backgroundColor: isDarkMode ? "rgba(0,0,0,0.2)" : "rgba(255,255,255,0.6)", borderRadius: "8px", border: `1px solid ${theme.danger}`, padding: "8px 10px" }}>
                               <button type="button" onClick={() => setMainPartners(mainPartners.map(p => p.id === partner.id ? {...p, showSecret: !p.showSecret} : p))} style={{ width: "100%", textAlign: "left", background: "none", border: "none", fontSize: "0.76rem", color: theme.danger, cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center", padding: 0 }}>
@@ -3559,10 +3558,10 @@ color: "#fff", border: "none", cursor: "pointer",
                     <div style={{ display: "flex", flexDirection: "column", gap: "6px", flex: 1 }}>
                       <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                         <span style={{ fontSize: "1.3rem", fontWeight: "800", color: theme.text, letterSpacing: "-0.5px" }}>
-                          {currentUser?.name || "도파미너"}
+                          {currentUser?.name || "탐색자"}
                         </span>
                         <span style={{ fontSize: "0.7rem", color: isAdmin ? theme.danger : theme.accent, fontWeight: "800", backgroundColor: isDarkMode ? "rgba(163, 146, 116, 0.15)" : "#f5f0eb", padding: "4px 8px", borderRadius: "8px" }}>
-                          {isAdmin ? "👑 관리자" : "LV. 1 도파미너"}
+                          {isAdmin ? "👑 관리자" : "LV. 1 탐색자"}
                         </span>
                       </div>
                       <span style={{ fontSize: "0.85rem", color: theme.textMuted }}>
