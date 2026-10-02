@@ -112,14 +112,14 @@ function convertRowToPreset(row, index, headers = []) {
   const sessionCardImg = getVal(/세션카드|표지|썸네일/i);
 
   // 🌟 (업데이트) 도파미너 파싱: 상태메시지를 따로 받아서 자동 결합!
-  const pcName = getVal(/도파미너이름|탐색자이름|수사관이름|이름/i);
-  const pcAgeGender = getVal(/도파미너나이|도파미너나이성별|탐색자나이|나이/i);
-  const pcJob = getVal(/도파미너직업|탐색자직업|직업/i);
-  const pcBackgroundRaw = cleanDescription(getVal(/(pc|도파미너|탐색자|수사관)?(성격|배경|설정)/i));
-  const pcStatusMsg = getVal(/(pc|도파미너|탐색자|수사관)?(상태메시지|상메)/i);
+  const pcName = getVal(/도파미너이름|도파미너이름|수사관이름|이름/i);
+  const pcAgeGender = getVal(/도파미너나이|도파미너나이성별|도파미너나이|나이/i);
+  const pcJob = getVal(/도파미너직업|도파미너직업|직업/i);
+  const pcBackgroundRaw = cleanDescription(getVal(/(pc|도파미너|도파미너|수사관)?(성격|배경|설정)/i));
+  const pcStatusMsg = getVal(/(pc|도파미너|도파미너|수사관)?(상태메시지|상메)/i);
   const pcBackground = pcStatusMsg ? `${pcBackgroundRaw}\n상태메시지 : "${pcStatusMsg}"` : pcBackgroundRaw;
-  const pcSecret = getVal(/(pc|도파미너|탐색자|수사관)?(비밀|약점)/i);
-  const pcPortraitUrl = getVal(/(pc|도파미너|탐색자|수사관)?(초상화|사진|이미지)/i);
+  const pcSecret = getVal(/(pc|도파미너|도파미너|수사관)?(비밀|약점)/i);
+  const pcPortraitUrl = getVal(/(pc|도파미너|도파미너|수사관)?(초상화|사진|이미지)/i);
 
   const abyssTriggers = {
     30: getVal(/이상충동30/i),
@@ -1104,17 +1104,49 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
     const pName = pcName.trim() || "도파미너";
     const modeStr = selectedMode === "연애" ? "dating" : selectedMode === "괴담" ? "horror" : "freeform";
 
-    const npcs = (suspects || []).map((k, idx) => ({
+   // 🌟 1. 괴담 모드 파트너를 인물 목록 맨 앞에 최우선 결합!
+    const partnerNpcs = (modeStr === "horror" && usePartner && mainPartners?.length > 0)
+      ? mainPartners.filter(p => p.name?.trim()).map((p, idx) => ({
+          id: p.id || Date.now() + idx + 500,
+          name: p.name,
+          job: p.job || "동행 파트너",
+          ageGender: p.ageGender || "미상",
+          detail: p.behavior || "",
+          behavior: p.behavior || "",
+          secret: p.secret || "",
+          portraitUrl: p.portraitUrl || "",
+          isPartner: true,
+          affection: 30
+        }))
+      : [];
+
+    const normalNpcs = (suspects || []).filter(k => k.name?.trim()).map((k, idx) => ({
       id: k.id || Date.now() + idx,
-      name: k.name || `인물${idx + 1}`,
+      name: k.name,
       job: k.job || "등장인물",
       ageGender: k.ageGender || "미상",
       detail: k.behavior || "",
       behavior: k.behavior || "",
       secret: k.secret || "",
       portraitUrl: k.portraitUrl || "",
+      isPartner: false,
       affection: 0
     }));
+
+    // 파트너와 일반 등장인물 통합 (비어있을 때만 기본값)
+    const npcs = [...partnerNpcs, ...normalNpcs].length > 0 
+      ? [...partnerNpcs, ...normalNpcs] 
+      : [{ id: 1, name: "인물1", job: "등장인물", affection: 0 }];
+
+    // 🌟 2. 괴담 모드 시작 소지품 3종 세션 슬롯에 자동 장착!
+    const initialItems = (modeStr === "horror" && horrorInventory?.length > 0)
+      ? horrorInventory.filter(i => i.name?.trim()).map(i => ({
+          name: i.name,
+          type: i.type,
+          desc: i.desc || (i.type === "멘탈 회복" ? "침식도 -20% 정화" : i.type === "재굴림" ? "주사위 실패 시 1회 재굴림" : "특수 기믹 패스"),
+          used: false
+        }))
+      : [];
 
     const initialHandouts = (evidenceList || []).map((ev, idx) => ({
       id: ev.id || Date.now() + idx,
@@ -1132,7 +1164,7 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
       name: pName, job: pcJob || "직업 미상", ageGender: pcAgeGender || "미상",
       background: pcBackground || "", secret: pcSecret || "",
       portrait: pcPortraitUrl || "", hp: 100, maxHp: 100, fatigue: 0,
-      npcs, items: [], clues: [], handouts: initialHandouts,
+      npcs, items: initialItems, clues: [], handouts: initialHandouts,
       phoneChats: {}, activeContactId: npcs[0]?.id || null, scenarioCgs: cgList || []
     };
 
@@ -3337,17 +3369,17 @@ color: "#fff", border: "none", cursor: "pointer",
                   <textarea rows={2} value={openingScene} onChange={e => setOpeningScene(e.target.value)} placeholder="첫 오프닝 지문..." style={{ width: "100%", boxSizing: "border-box", padding: "10px 12px", borderRadius: "8px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.83rem", resize: "none", outline: "none" }} />
                 </section>
 
-                {/* 2. 탐색자 프로필 및 스탯 */}
+                {/* 2. 도파미너 프로필 및 스탯 */}
                 <section style={{ ...GLASS_STYLE, padding: isMobile ? "16px" : "20px", backgroundColor: theme.panel, borderRadius: "18px", border: `1px solid ${theme.border}`, display: "flex", flexDirection: "column", gap: "16px" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                     <Skull size={22} strokeWidth={2} color={theme.accent} />
-                    <span style={{ fontWeight: "700", fontSize: "0.95rem", color: theme.text }}>탐색자 프로필 및 스탯</span>
+                    <span style={{ fontWeight: "700", fontSize: "0.95rem", color: theme.text }}>도파미너 프로필 및 스탯</span>
                   </div>
 
                   {/* 🌟 튀어나옴 방지를 위해 alignItems를 flex-start로 조정하고, 초상화 width를 줄임 */}
                   <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", gap: "16px", width: "100%", alignItems: "flex-start" }}>
                     
-                    {/* 탐색자 초상화 */}
+                    {/* 도파미너 초상화 */}
                     <div
                       onClick={(e) => { e.stopPropagation(); setActivePortraitSuspectId("pc"); setShowPortraitModal(true); }}
                       style={{
@@ -3357,7 +3389,7 @@ color: "#fff", border: "none", cursor: "pointer",
                       }}
                     >
                       <div style={{ width: "100%", aspectRatio: "1/1", backgroundColor: isDarkMode ? "#332d2a" : "#eae4db", borderRadius: "3px", overflow: "hidden", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
-                        {pcPortraitUrl ? <img src={pcPortraitUrl} alt="탐색자" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <ImageIcon size={24} strokeWidth={1} color={theme.textMuted} />}
+                        {pcPortraitUrl ? <img src={pcPortraitUrl} alt="도파미너" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <ImageIcon size={24} strokeWidth={1} color={theme.textMuted} />}
                       </div>
                       <div style={{ marginTop: "6px", textAlign: "center", width: "100%" }}>
                         <div style={{ fontWeight: "700", fontSize: "0.82rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{pcName || "이름 미상"}</div>
@@ -3375,7 +3407,7 @@ color: "#fff", border: "none", cursor: "pointer",
 
                       {/* ✅ 여기에 백스토리가 들어가야 안 찌그러집니다! */}
               <div>
-                <label style={{ fontSize: "0.7rem", color: theme.textMuted, fontWeight: "700", display: "block", marginBottom: "3px" }}>탐색자의 배경 및 특징 (성격, 약점 등)</label>
+                <label style={{ fontSize: "0.7rem", color: theme.textMuted, fontWeight: "700", display: "block", marginBottom: "3px" }}>도파미너의 배경 및 특징 (성격, 약점 등)</label>
                 <textarea rows={2} value={pcBackground} onChange={e => setPcBackground(e.target.value)} placeholder="사건에 휘말리게 된 계기나 평소 성격..." style={{ width: "100%", boxSizing: "border-box", padding: "8px 10px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.82rem", outline: "none", resize: "vertical" }} />
               </div>
                       <button type="button" onClick={() => setShowTraitModal(true)} style={{ width: "100%", padding: "10px", backgroundColor: theme.panelAlt, border: `1.5px dashed ${theme.borderHighlight}`, borderRadius: "8px", color: theme.accent, fontSize: "0.82rem", fontWeight: "700", cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -3385,7 +3417,7 @@ color: "#fff", border: "none", cursor: "pointer",
 
                       <div style={{ backgroundColor: theme.panelAlt, borderRadius: "10px", padding: "12px", border: `1px solid ${theme.borderHighlight || theme.border}` }}>
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
-                          <span style={{ fontSize: "0.82rem", fontWeight: "700", color: theme.text }}>탐색자 스탯 분배</span>
+                          <span style={{ fontSize: "0.82rem", fontWeight: "700", color: theme.text }}>도파미너 스탯 분배</span>
                           <span style={{ fontSize: "0.75rem", fontWeight: "700", color: availableStatPoints === 0 ? theme.success : theme.danger }}>잔여: {availableStatPoints} pt</span>
                         </div>
                         <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr 1fr" : "repeat(6, 1fr)", gap: "6px" }}>
@@ -3497,7 +3529,7 @@ color: "#fff", border: "none", cursor: "pointer",
                               <input type="text" autoComplete="off" autoComplete="off" value={partner.ageGender} onChange={e => setMainPartners(mainPartners.map(p => p.id === partner.id ? {...p, ageGender: e.target.value} : p))} placeholder="나이/성별" style={{ padding: "8px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.82rem", outline: "none", width: "100%", boxSizing: "border-box" }} />
                               <input type="text" autoComplete="off" autoComplete="off" value={partner.job} onChange={e => setMainPartners(mainPartners.map(p => p.id === partner.id ? {...p, job: e.target.value} : p))} placeholder="직업/역할" style={{ padding: "8px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.82rem", outline: "none", width: "100%", boxSizing: "border-box" }} />
                             </div>
-                            <textarea rows={2} value={partner.behavior} onChange={e => setMainPartners(mainPartners.map(p => p.id === partner.id ? {...p, behavior: e.target.value} : p))} placeholder="파트너의 성격 및 탐색자와의 관계성..." style={{ width: "100%", padding: "8px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.82rem", outline: "none", resize: "vertical", boxSizing: "border-box" }} />
+                            <textarea rows={2} value={partner.behavior} onChange={e => setMainPartners(mainPartners.map(p => p.id === partner.id ? {...p, behavior: e.target.value} : p))} placeholder="파트너의 성격 및 도파미너와의 관계성..." style={{ width: "100%", padding: "8px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.82rem", outline: "none", resize: "vertical", boxSizing: "border-box" }} />
                             
                             <div style={{ backgroundColor: isDarkMode ? "rgba(0,0,0,0.2)" : "rgba(255,255,255,0.6)", borderRadius: "8px", border: `1px solid ${theme.danger}`, padding: "8px 10px" }}>
                               <button type="button" onClick={() => setMainPartners(mainPartners.map(p => p.id === partner.id ? {...p, showSecret: !p.showSecret} : p))} style={{ width: "100%", textAlign: "left", background: "none", border: "none", fontSize: "0.76rem", color: theme.danger, cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center", padding: 0 }}>
@@ -3631,10 +3663,10 @@ color: "#fff", border: "none", cursor: "pointer",
                     <div style={{ display: "flex", flexDirection: "column", gap: "6px", flex: 1 }}>
                       <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                         <span style={{ fontSize: "1.3rem", fontWeight: "800", color: theme.text, letterSpacing: "-0.5px" }}>
-                          {currentUser?.name || "탐색자"}
+                          {currentUser?.name || "도파미너"}
                         </span>
                         <span style={{ fontSize: "0.7rem", color: isAdmin ? theme.danger : theme.accent, fontWeight: "800", backgroundColor: isDarkMode ? "rgba(163, 146, 116, 0.15)" : "#f5f0eb", padding: "4px 8px", borderRadius: "8px" }}>
-                          {isAdmin ? "👑 관리자" : "LV. 1 탐색자"}
+                          {isAdmin ? "👑 관리자" : "LV. 1 도파미너"}
                         </span>
                       </div>
                       <span style={{ fontSize: "0.85rem", color: theme.textMuted }}>
@@ -4002,6 +4034,24 @@ color: "#fff", border: "none", cursor: "pointer",
               theme={theme}
               setActivePortraitTarget={setActivePortraitSuspectId}
               setShowPortraitEditModal={setShowPortraitModal}
+              onUseItem={(item) => {
+                // 🌟 회복제 클릭 시 즉시 침식도 20% 정화 + 3중 감각 발동
+                if (item.type === "멘탈 회복") {
+                  setSessions(prev => prev.map(s => {
+                    if (s.id !== activeSessionId) return s;
+                    const curFatigue = Number(s.sheet?.fatigue || 0);
+                    const nextFatigue = Math.max(0, curFatigue - 20);
+                    const updatedItems = (s.sheet?.items || []).filter(i => i.name !== item.name);
+                    return { ...s, sheet: { ...s.sheet, fatigue: nextFatigue, items: updatedItems } };
+                  }));
+                  triggerToast("침식 완화", `[${item.name}]을(를) 사용하여 침식도가 20% 안정되었습니다.`, "✨");
+                  executeMessage(`[소지품 사용] 떨리는 손으로 품속의 [${item.name}]을(를) 꺼내 삼켰다. 차가운 기운이 퍼지며 턱 끝까지 차오르던 침식의 충동이 가라앉는다.`);
+                } else {
+                  // 기믹 패스나 재굴림은 입력창에 행동 선언으로 복사
+                  setInputMsg(`[소지품 사용: ${item.name}] ${item.desc || "상황을 타개하기 위해 사용한다."} `);
+                  triggerToast("소지품 준비", "입력창에 사용 선언이 준비되었습니다.", "🎒");
+                }
+              }}
             />
           </div>
         )}
@@ -5722,26 +5772,34 @@ color: "#fff", border: "none", cursor: "pointer",
                 </div>
                 <div style={{ display: "grid", gridTemplateColumns: isMobile ? "repeat(4, 1fr)" : "repeat(5, 1fr)", gap: "8px" }}>
                   {TRAUMA_LIST.map(trauma => {
-                    const isSelected = horrorTraumas.includes(trauma);
+                    // 🌟 공백을 제거하고 정규화 비교하여 시트 데이터와 100% 매칭!
+                    const clean = (s) => (s || "").replace(/\s+/g, "");
+                    const isSelected = horrorTraumas.some(t => clean(t) === clean(trauma));
                     return (
                       <button
                         key={trauma}
+                        type="button"
                         onClick={() => {
                           if (isSelected) {
-                            if (horrorTraits.length > (2 + horrorTraumas.length - 1)) {
-                              triggerToast("해제 불가", "먼저 긍정 특성을 취소하여 한도를 비워주세요.", "⚠️");
-                            } else {
-                              setHorrorTraumas(horrorTraumas.filter(t => t !== trauma));
+                            // 해제 시: 트라우마를 빼고, 특성 한도가 줄어들면 초과된 특성만 맨 뒤에서 자동 1개 삭감
+                            const newTraumas = horrorTraumas.filter(t => clean(t) !== clean(trauma));
+                            setHorrorTraumas(newTraumas);
+                            const allowedTraits = 2 + newTraumas.length;
+                            if (horrorTraits.length > allowedTraits) {
+                              setHorrorTraits(horrorTraits.slice(0, allowedTraits));
+                              triggerToast("특성 한도 조정", "트라우마가 해제되어 특성 1개가 함께 정리되었습니다.", "💡");
                             }
                           } else if (horrorTraumas.length < 3) {
                             setHorrorTraumas([...horrorTraumas, trauma]);
+                          } else {
+                            triggerToast("선택 한도", "트라우마는 최대 3개까지만 가질 수 있습니다.", "⚠️");
                           }
                         }}
-                        style={{ width: "100%", padding: "10px 4px", borderRadius: "10px", fontSize: "0.78rem", fontWeight: isSelected ? "700" : "500", backgroundColor: isSelected ? theme.danger : theme.inputBg, color: isSelected ? "#fff" : theme.text, border: `1px solid ${isSelected ? theme.danger : theme.border}`, cursor: "pointer", transition: "all 0.15s", textAlign: "center", display: "flex", alignItems: "center", justifyContent: "center" }}
+                        style={{ width: "100%", padding: "10px 4px", borderRadius: "10px", fontSize: "0.78rem", fontWeight: isSelected ? "800" : "500", backgroundColor: isSelected ? theme.danger : theme.inputBg, color: isSelected ? "#fff" : theme.text, border: `1.5px solid ${isSelected ? theme.danger : theme.border}`, cursor: "pointer", transition: "all 0.15s", textAlign: "center", display: "flex", alignItems: "center", justifyContent: "center" }}
                       >
                         {trauma}
                       </button>
-                    )
+                    );
                   })}
                 </div>
               </div>
