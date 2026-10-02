@@ -1671,11 +1671,11 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
 
   // 2. 게임 중 데이터가 변하면 2초 뒤 클라우드에 조용히 자동 백업! (서버 과부하 방지)
   useEffect(() => {
-    if (!currentUser?.uid) return;
+    // 🌟 핵심 방어막: 로그인 직후 내 데이터를 클라우드에서 안전하게 다 내려받기 전에는 절대 자동 저장을 켜지 않음! (PC 데이터 날아감 완벽 방지)
+    if (!currentUser?.uid || !isCloudLoaded) return; 
     if (savedLibrary.length === 0 && sessions.length === 0 && likedScenarios.length === 0) return;
 
     const syncTimer = setTimeout(async () => {
-      // 🌟 기존 코드에 const { error } = 부분을 추가합니다.
       const { error } = await supabase.from('user_saves').upsert({
         user_id: currentUser.uid,
         library_data: savedLibrary,
@@ -1688,14 +1688,13 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
       localStorage.setItem("secret_novel_sessions", JSON.stringify(sessions));
       localStorage.setItem("secret_novel_liked", JSON.stringify(likedScenarios));
 
-      // 🚨 방어막: 에러가 나면 화면에 빨간 토스트 알림으로 이유를 보여줍니다!
       if (error) {
         triggerToast("동기화 실패", error.message, "🚨");
       }
     }, 2000); 
 
     return () => clearTimeout(syncTimer);
-  }, [savedLibrary, sessions, likedScenarios, currentUser]);
+  }, [savedLibrary, sessions, likedScenarios, currentUser, isCloudLoaded]);
 
 // 🌟 서버-클라이언트 렌더링 충돌(에러 423) 완벽 방지
   if (!isMounted) {
@@ -2426,11 +2425,6 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
                               <div style={{ display: "flex", alignItems: "center", gap: "6px", color: theme.textMuted, fontSize: "0.75rem", fontWeight: "500" }}>
                                 <Clock size={14} strokeWidth={2} /> {scen.date}
                               </div>
-                              <div style={{ display: "flex", gap: "8px", width: "100%" }}>
-                   <input type="text" value={editingBanner.tag} onChange={e => setEditingBanner({...editingBanner, tag: e.target.value})} placeholder="태그 (예: 추천 사건)" style={{ flex: 1, minWidth: 0, boxSizing: "border-box", padding: "12px", borderRadius: "8px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.85rem", outline: "none", fontWeight: "700" }} />
-                   {/* 🌟 튀어나옴 완벽 방지: minWidth: 0과 boxSizing 추가 */}
-                   <input type="text" value={editingBanner.linkId || ""} onChange={e => setEditingBanner({...editingBanner, linkId: e.target.value})} placeholder="이동할 시나리오명" style={{ flex: 1.5, minWidth: 0, boxSizing: "border-box", padding: "12px", borderRadius: "8px", border: `1px solid ${theme.accent}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.85rem", outline: "none", fontWeight: "600" }} />
-                 </div>
                                 
                                 {/* 유저 창작 시나리오 라운지 공개/비공개 토글 */}
                                 {!scen.isDownloaded && (
@@ -4783,7 +4777,6 @@ color: "#fff", border: "none", cursor: "pointer",
                    {/* 🌟 튀어나옴 완벽 방지: minWidth: 0과 boxSizing 추가 */}
                    <input type="text" value={editingBanner.linkId || ""} onChange={e => setEditingBanner({...editingBanner, linkId: e.target.value})} placeholder="이동할 시나리오 이름 (예: 사각지대의 유죄인간)" style={{ flex: 1.5, minWidth: 0, boxSizing: "border-box", padding: "12px", borderRadius: "8px", border: `1px solid ${theme.accent}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.85rem", outline: "none", fontWeight: "600" }} />
                  </div>
-                 {/* 🚨 실수로 날아갔던 아래쪽 제목/설명 입력칸과 닫는 태그를 100% 복구했습니다! */}
                  <input type="text" value={editingBanner.title} onChange={e => setEditingBanner({...editingBanner, title: e.target.value})} placeholder="배너 제목" style={{ padding: "12px", borderRadius: "8px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "1rem", outline: "none", fontWeight: "800" }} />
                  <textarea rows={2} value={editingBanner.desc} onChange={e => setEditingBanner({...editingBanner, desc: e.target.value})} placeholder="배너 설명" style={{ padding: "12px", borderRadius: "8px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.85rem", outline: "none", resize: "none" }} />
               </div>
