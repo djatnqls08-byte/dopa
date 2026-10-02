@@ -434,17 +434,6 @@ ${modeSpecificSchema}`;
           }
         `}</style>
           
-      <div 
-        onClick={e => e.stopPropagation()}
-        style={{
-          width: "100%", maxWidth: "660px", height: isMobile ? "94vh" : "90vh",
-          backgroundColor: isDarkMode ? "#141211" : "#faf8f5",
-          border: `1.5px solid ${isDarkMode ? "rgba(255, 255, 255, 0.1)" : "#e6e0d6"}`,
-          borderRadius: "20px", display: "flex", flexDirection: "column",
-          boxShadow: isDarkMode ? "0 25px 60px rgba(0,0,0,0.8)" : "0 20px 40px rgba(0,0,0,0.12)",
-          overflow: "hidden", color: isDarkMode ? "#f5f5f4" : "#292524"
-        }}
-      >
         {/* 상단 헤더 */}
         <div style={{
           padding: "14px 18px",
