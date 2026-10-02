@@ -223,6 +223,189 @@ function convertRowToPreset(row, index, headers = []) {
   };
 }
 
+export default function GamePlatform() {
+  // ── [3. 상태 관리] ──
+  const [isMounted, setIsMounted] = useState(false); // 🌟 에러 #423 방어막
+  const chatContainerRef = useRef(null); 
+  const [currentUser, setCurrentUser] = useState(null);
+
+  // 🌟 내 계정 전용 프로필 사진 상자 독립!! 
+  const [userAvatar, setUserAvatar] = useState(""); 
+  useEffect(() => {
+    const avatar = localStorage.getItem("secret_novel_avatar");
+    if (avatar) setUserAvatar(avatar);
+  }, []);
+  
+  const [isLoginLoading, setIsLoginLoading] = useState(false);
+  const [loginEmail, setLoginEmail] = useState(""); 
+  const [loginPassword, setLoginPassword] = useState(""); 
+  const [agreeTerms, setAgreeTerms] = useState(false); 
+  const [showTermsModal, setShowTermsModal] = useState(false); 
+  const [isGuestPlay, setIsGuestPlay] = useState(false); 
+
+  // ── [1. 테마 & 반응형 엔진] ──
+  const [themeKey, setThemeKey] = useState("dopa"); 
+  const [isDarkMode, setIsDarkMode] = useState(true);
+  
+  useEffect(() => {
+    const savedTheme = localStorage.getItem("secret_novel_theme");
+    const savedMode = localStorage.getItem("secret_novel_darkmode");
+    if (savedTheme) setThemeKey(savedTheme);
+    if (savedMode !== null) setIsDarkMode(savedMode === "true");
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem("secret_novel_theme", themeKey);
+    localStorage.setItem("secret_novel_darkmode", isDarkMode);
+  }, [themeKey, isDarkMode]);
+
+  const currentPalette = THEME_PALETTES[themeKey] || THEME_PALETTES.cloud;
+  const theme = isDarkMode ? currentPalette.dark : currentPalette.light;
+
+  const [deviceType, setDeviceType] = useState("pc");
+  const isMobile = deviceType === "mobile";
+
+  useEffect(() => {
+    const handleResize = () => {
+      const w = window.innerWidth;
+      if (w < 768) setDeviceType("mobile");
+      else if (w <= 1024) setDeviceType("tablet");
+      else setDeviceType("pc");
+    };
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  // ── [2. 시스템 토스트 알림] ──
+  const [toast, setToast] = useState(null);
+  const toastTimerRef = useRef(null);
+
+  const triggerToast = (title, message = "", icon = null) => {
+    let finalIcon = icon;
+    if (typeof icon === "string") {
+      if (icon.includes("✨") || icon.includes("🎉") || icon.includes("🎊")) finalIcon = <CheckCircle2 size={18} color={theme.success} />;
+      else if (icon.includes("⚠️") || icon.includes("🚨") || icon.includes("⚠")) finalIcon = <AlertTriangle size={18} color={theme.warning} />;
+      else if (icon.includes("🚫") || icon.includes("💔") || icon.includes("🗑️")) finalIcon = <ShieldAlert size={18} color={theme.danger} />;
+      else if (icon.includes("⏳")) finalIcon = <Clock size={18} color={theme.textMuted} />;
+      else if (icon.includes("💡") || icon.includes("📢")) finalIcon = <Lightbulb size={18} color={theme.accent} />;
+      else if (icon.includes("📂") || icon.includes("📋") || icon.includes("💾")) finalIcon = <FolderOpen size={18} color={theme.accent} />;
+      else finalIcon = <CheckCircle2 size={18} color={theme.accent} />;
+    }
+    
+    setToast({ title, message, icon: finalIcon });
+    
+    if (toastTimerRef.current) {
+      clearTimeout(toastTimerRef.current);
+    }
+    toastTimerRef.current = setTimeout(() => setToast(null), 2500);
+  };
+
+  // ── [3. 상태 관리] ──
+  const [activeTab, setActiveTab] = useState("explore");
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [showPasteModal, setShowPasteModal] = useState(false);
+  const [pastedText, setPastedText] = useState("");
+  const [ruleHelpModal, setRuleHelpModal] = useState(null);
+
+  // ── [4. 룰 모드 & 태그] ──
+  const [selectedMode, setSelectedMode] = useState("추리");
+  const [playPreference, setPlayPreference] = useState("");
+
+  const ALL_TAGS = [
+    "#GL", "#BL", "#HL", "#논로맨스", "#집착", "#혐관", "#쌍방구원", "#우정", "#R19", "#피폐", 
+    "#애증", "#신분차", "#배틀", "#계약", "#착각", "#구원", "#짝사랑", "#달달", "#일상", "#오컬트", 
+    "#이능력", "#현대판타지", "#SF", "#사이버펑크", "#아포칼립스", "#역키잡", "#후회", "#회귀", "#빙의", "#환생"
+  ];
+
+  // ── [6. 추리 모드 로비 데이터] ──
+  const [pcName, setPcName] = useState("");
+  const [pcAgeGender, setPcAgeGender] = useState("");
+  const [pcJob, setPcJob] = useState("");
+  const [pcBackground, setPcBackground] = useState("");
+  const [pcPortraitUrl, setPcPortraitUrl] = useState(""); 
+  const [pcSecret, setPcSecret] = useState(""); 
+  const [originalPcName, setOriginalPcName] = useState(""); 
+  const [showPcSecret, setShowPcSecret] = useState(false); 
+
+  const [scenarioTitle, setScenarioTitle] = useState("");
+  const [scenarioImageUrl, setScenarioImageUrl] = useState(""); 
+
+  const [victimName, setVictimName] = useState("");
+  const [publicSynopsis, setPublicSynopsis] = useState("");
+  const [openingScene, setOpeningScene] = useState("");
+
+  const [suspects, setSuspects] = useState([
+    { id: 1, name: "", ageGender: "", job: "", behavior: "", secret: "", portraitUrl: "", showSecret: false }
+  ]);
+  const [selectedSuspectId, setSelectedSuspectId] = useState(1);
+  
+  const [showPortraitModal, setShowPortraitModal] = useState(false);
+  const [activePortraitSuspectId, setActivePortraitSuspectId] = useState(null);
+
+  const [showSessionCardModal, setShowSessionCardModal] = useState(false);
+  const [activeCardSessionId, setActiveCardSessionId] = useState(null);
+
+  const [evidenceList, setEvidenceList] = useState([
+    { id: 1, name: "", overview: "", contradiction: "", secret: "", showSecret: false }
+  ]);
+  const [showEvidence, setShowEvidence] = useState(false);
+  const [culpritName, setCulpritName] = useState("");
+  const [trickDetail, setTrickDetail] = useState("");
+  const [hiddenTruth, setHiddenTruth] = useState("");
+  const [showHiddenTruth, setShowHiddenTruth] = useState(false);
+
+  // ── [괴담 모드 전용 상태] ──
+  const [horrorStats, setHorrorStats] = useState({ 체력: 5, 순발: 5, 관찰: 5, 추론: 5, 정신: 5, 사교: 5 });
+  const availableStatPoints = 35 - Object.values(horrorStats).reduce((a, b) => a + b, 0);
+
+  const [horrorTraits, setHorrorTraits] = useState([]);
+  const [horrorTraumas, setHorrorTraumas] = useState([]);
+  const [horrorInventory, setHorrorInventory] = useState([
+    { id: 1, type: "멘탈 회복", name: "", desc: "" },
+    { id: 2, type: "특수 기믹 패스", name: "", desc: "" },
+    { id: 3, type: "재굴림", name: "", desc: "" }
+  ]);
+
+  const [abyssTriggers, setAbyssTriggers] = useState({ 30: "", 60: "", 90: "" });
+  const [showAbyss, setShowAbyss] = useState(false);
+
+  const [usePartner, setUsePartner] = useState(false);
+  const [mainPartners, setMainPartners] = useState([
+    { id: 1, name: "", ageGender: "", job: "", behavior: "", secret: "", showSecret: false, portraitUrl: "" }
+  ]);
+
+  const [showTraitModal, setShowTraitModal] = useState(false);
+
+  const TRAIT_LIST = [
+    "위화감지", "이면간파", "사물투영", "절대침착", "감정동화",
+    "가면쓰기", "기척숨김", "시선유도", "맥락추론", "공간기억",
+    "잔상포착", "소문수집", "약점공략", "행동예측", "방어기제",
+    "돌발대응", "사각지대", "흔적추적", "무통각증", "경계태세"
+  ];
+
+  const TRAUMA_LIST = [
+    "시선강박", "거울기피", "접촉혐오", "고립불안", "신뢰결핍",
+    "과잉동정", "자기혐오", "기억공백", "이명현상", "환각시야",
+    "침묵공포", "수면거부", "감정마비", "잔혹충동", "폐허집착",
+    "호흡발작", "빛민감증", "망각강박", "망상장애", "사물집착"
+  ];
+    
+  // ── [서재 및 로컬 스토리지 상태] ──
+  const [savedLibrary, setSavedLibrary] = useState([]);
+  const [libSearchQuery, setLibSearchQuery] = useState("");
+  const [libFilter, setLibFilter] = useState("전체"); 
+  const [showLibEditModal, setShowLibEditModal] = useState(false);
+  const [editingLibItem, setEditingLibItem] = useState(null);
+  const [itemToDelete, setItemToDelete] = useState(null); 
+
+  useEffect(() => {
+    const stored = localStorage.getItem("secret_novel_library");
+    if (stored) {
+      try { setSavedLibrary(JSON.parse(stored)); } catch(e) {}
+    }
+  }, []);
+
 // 💾 로비에서 서재로 저장하는 함수
 const handleSaveToLibrary = () => {
   // 🌟 방어막 작동! 체험하기 모드로 들어온 경우 원천 차단!
@@ -485,8 +668,6 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [showEvidenceBoard, setShowEvidenceBoard] = useState(false);
   const [isTabletopOpen, setIsTabletopOpen] = useState(false);
-
-
 
 // ── [스마트폰 메신저 & 통화 전용 상태 관리] ──
   const [isPhoneDrawerOpen, setIsPhoneDrawerOpen] = useState(false);
