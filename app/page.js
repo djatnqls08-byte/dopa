@@ -222,8 +222,22 @@ export default function GamePlatform() {
   const [isGuestPlay, setIsGuestPlay] = useState(false); 
 
   // ── [1. 테마 & 반응형 엔진] ──
-  const [themeKey] = useState("cloud");
+  const [themeKey, setThemeKey] = useState("cloud"); // 🌟 사라졌던 스위치(setThemeKey) 복구!
   const [isDarkMode, setIsDarkMode] = useState(false);
+  
+  // 🌟 (신규) 새로고침해도 내가 고른 테마와 다크모드를 기억하도록 설정!
+  useEffect(() => {
+    const savedTheme = localStorage.getItem("secret_novel_theme");
+    const savedMode = localStorage.getItem("secret_novel_darkmode");
+    if (savedTheme) setThemeKey(savedTheme);
+    if (savedMode !== null) setIsDarkMode(savedMode === "true");
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem("secret_novel_theme", themeKey);
+    localStorage.setItem("secret_novel_darkmode", isDarkMode);
+  }, [themeKey, isDarkMode]);
+
   const currentPalette = THEME_PALETTES[themeKey] || THEME_PALETTES.cloud;
   const theme = isDarkMode ? currentPalette.dark : currentPalette.light;
 
