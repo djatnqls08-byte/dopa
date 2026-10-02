@@ -742,13 +742,49 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
 
   // 폰 테마 및 진동 상태
   const [phoneTheme, setPhoneTheme] = useState("parchment");
-  const [vibrationLevel, setVibrationLevel] = useState("medium");
+  useState(() => (typeof window !== "undefined" ? localStorage.getItem("secret_novel_vibration") || "medium" : "medium"))
 
 // ── [환경 설정 및 폰트 상태 관리] ──
   const [showSettingsModal, setShowSettingsModal] = useState(false);
-  const [fontChoice, setFontChoice] = useState("ridi"); // ridi, gothic
-  const [chatFontSize, setChatFontSize] = useState(1);
-  const [soundVolume, setSoundVolume] = useState(0.6);
+  
+  // 🌟 새로고침해도 기억하도록 localStorage 연동 초기화
+  const [fontChoice, setFontChoice] = useState(() => {
+    if (typeof window !== "undefined") return localStorage.getItem("secret_novel_font") || "ridi";
+    return "ridi";
+  });
+  
+  const [chatFontSize, setChatFontSize] = useState(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("secret_novel_font_size");
+      return saved ? Number(saved) : 1;
+    }
+    return 1;
+  });
+  
+  const [soundVolume, setSoundVolume] = useState(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("secret_novel_volume");
+      return saved !== null ? Number(saved) : 0.6;
+    }
+    return 0.6;
+  });
+
+  // 변경될 때마다 브라우저에 실시간 영구 보관
+  useEffect(() => {
+    localStorage.setItem("secret_novel_font", fontChoice);
+  }, [fontChoice]);
+
+  useEffect(() => {
+    localStorage.setItem("secret_novel_font_size", chatFontSize);
+  }, [chatFontSize]);
+
+  useEffect(() => {
+    localStorage.setItem("secret_novel_volume", soundVolume);
+  }, [soundVolume]);
+
+  useEffect(() => {
+    localStorage.setItem("secret_novel_vibration", vibrationLevel);
+  }, [vibrationLevel]);
 
   // 🌟 (복구) 설정창 튕김의 원인이었던 주사위 사운드 함수 부활!
   const playDiceSound = () => {
