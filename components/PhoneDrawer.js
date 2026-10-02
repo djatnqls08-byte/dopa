@@ -4,31 +4,63 @@
 import React, { useState } from "react";
 import { 
   X, ChevronLeft, Send, BatteryCharging, WifiOff, MessageSquare, 
-  UserRound, Heart, Phone, ShieldAlert, Flame, Droplet, Activity, Radio, Sparkles
+  UserRound, Heart, Phone, ShieldAlert, Flame, Droplet, Activity, Radio, Wifi
 } from "lucide-react";
 
-// 🌟 상태메시지만 쏙 뽑아내는 정밀 추출 함수
-function extractStatusMsg(text) {
-  if (!text) return "상태 메시지 없음";
-  const match = text.match(/상태\s*메시지\s*[:：]\s*["'“]?([^"'\n]+)/i) || text.match(/상태메시지\s*[:：]\s*["'“]?([^"'\n]+)/i);
-  return match ? match[1].replace(/["'”]$/, '').trim() : "상태 메시지 없음";
+// 🌟 상태메시지 정밀 추출기 (빈 따옴표 및 객체 필드 안전 처리)
+function extractStatusMsg(npcOrText) {
+  if (!npcOrText) return "상태 메시지 없음";
+  
+  if (typeof npcOrText === "object") {
+    if (npcOrText.statusMessage?.trim()) return npcOrText.statusMessage.trim();
+    if (npcOrText.statusMsg?.trim()) return npcOrText.statusMsg.trim();
+    npcOrText = npcOrText.behavior || npcOrText.background || "";
+  }
+
+  const str = String(npcOrText);
+  const match = str.match(/상태\s*메시지\s*[:：]\s*["'“]?([^"'\n]+)/i) || str.match(/상태메시지\s*[:：]\s*["'“]?([^"'\n]+)/i);
+  
+  if (match) {
+    const cleaned = match[1].replace(/["'”]/g, '').trim();
+    if (cleaned.length > 0) return cleaned;
+  }
+  
+  return "상태 메시지 없음";
 }
 
-// 🌐 시나리오 배경/태그에 따라 디바이스 형태와 3대 인디케이터를 자동 변환하는 엔진
+// 🌐 시나리오 배경/태그 자동 변환 엔진 (현대 우선순위 보장)
 function detectGenreConfig(genreInput = "") {
   const g = String(genreInput).toLowerCase();
   
-  // 1. 우주 / SF / 사이버펑크 호러
+  // 🌟 1. 현대 / 도시 / 오피스 / 현대판타지 ➔ 스마트폰 최우선 확정!
+  if (/현대|도시|오피스|직장|학교|스타트업|모던|modern|괴담/i.test(g) && !/정통판타지|중세|무협/i.test(g)) {
+    return {
+      type: "modern",
+      deviceLabel: "스마트폰",
+      defaultSignalIcon: WifiOff,
+      restoredSignalIcon: Wifi,
+      defaultSignal: "신호 끊김",
+      defaultResourceIcon: BatteryCharging,
+      defaultResource: "배터리 14%",
+      themeBorder: "rgba(234, 88, 12, 0.45)",
+      glowColor: "rgba(234, 88, 12, 0.2)",
+      accentColor: "#ea580c",
+      alertDefaultTitle: "긴급 재난 문자",
+      sendLabel: "문자 전송",
+      callLabel: "무전 / 통화 연결"
+    };
+  }
+
+  // 2. 우주 / SF / 사이버펑크 호러
   if (/sf|사이버|우주|스페이스|안드로이드|cyberpunk/i.test(g)) {
     return {
       type: "scifi",
       deviceLabel: "양자 통신 단말 (COM-LINK)",
-      signalIcon: WifiOff,
-      signalLabel: "양자 링크 두절",
-      signalColor: "#38bdf8",
-      resourceIcon: Activity,
-      resourceLabel: "산소 14%",
-      resourceColor: "#38bdf8",
+      defaultSignalIcon: WifiOff,
+      restoredSignalIcon: Wifi,
+      defaultSignal: "양자 링크 두절",
+      defaultResourceIcon: Activity,
+      defaultResource: "산소 14%",
       themeBorder: "rgba(56, 189, 248, 0.45)",
       glowColor: "rgba(56, 189, 248, 0.2)",
       accentColor: "#38bdf8",
@@ -38,37 +70,16 @@ function detectGenreConfig(genreInput = "") {
     };
   }
   
-  // 2. 다크 판타지 / 동양풍 / 오컬트 마법
-  if (/판타지|무협|동양|마법|중세|시대극|환생|빙의/i.test(g)) {
-    return {
-      type: "fantasy",
-      deviceLabel: "전음 수정구 (마법 서신)",
-      signalIcon: Flame,
-      signalLabel: "마력 공명 불안",
-      signalColor: "#c084fc",
-      resourceIcon: Droplet,
-      resourceLabel: "마나 18%",
-      resourceColor: "#c084fc",
-      themeBorder: "rgba(192, 132, 252, 0.45)",
-      glowColor: "rgba(192, 132, 252, 0.2)",
-      accentColor: "#c084fc",
-      alertDefaultTitle: "결계 붕괴 / 침식 경보",
-      sendLabel: "전음 송신",
-      callLabel: "정신 감응 연결"
-    };
-  }
-  
   // 3. 아포칼립스 / 재난 / 폐허 생존
   if (/아포칼립스|재난|방사능|좀비|쉘터|폐허/i.test(g)) {
     return {
       type: "apocalypse",
       deviceLabel: "휴대용 군용 트랜시버",
-      signalIcon: Radio,
-      signalLabel: "주파수 재밍",
-      signalColor: "#facc15",
-      resourceIcon: BatteryCharging,
-      resourceLabel: "필터 16%",
-      resourceColor: "#facc15",
+      defaultSignalIcon: Radio,
+      restoredSignalIcon: Radio,
+      defaultSignal: "주파수 재밍",
+      defaultResourceIcon: BatteryCharging,
+      defaultResource: "필터 16%",
       themeBorder: "rgba(234, 179, 8, 0.45)",
       glowColor: "rgba(234, 179, 8, 0.2)",
       accentColor: "#facc15",
@@ -78,16 +89,34 @@ function detectGenreConfig(genreInput = "") {
     };
   }
 
-  // 4. 기본: 현대 도시괴담 (Modern Horror)
+  // 4. 순수 다크 판타지 / 동양풍 / 무협
+  if (/판타지|무협|동양|마법|중세|시대극/i.test(g)) {
+    return {
+      type: "fantasy",
+      deviceLabel: "전음 수정구 (마법 서신)",
+      defaultSignalIcon: Flame,
+      restoredSignalIcon: Flame,
+      defaultSignal: "마력 공명 불안",
+      defaultResourceIcon: Droplet,
+      defaultResource: "마나 18%",
+      themeBorder: "rgba(192, 132, 252, 0.45)",
+      glowColor: "rgba(192, 132, 252, 0.2)",
+      accentColor: "#c084fc",
+      alertDefaultTitle: "결계 붕괴 / 침식 경보",
+      sendLabel: "전음 송신",
+      callLabel: "정신 감응 연결"
+    };
+  }
+
+  // 기본값: 현대 스마트폰
   return {
     type: "modern",
     deviceLabel: "스마트폰",
-    signalIcon: WifiOff,
-    signalLabel: "신호 끊김",
-    signalColor: "#ef4444",
-    resourceIcon: BatteryCharging,
-    resourceLabel: "배터리 14%",
-    resourceColor: "#fb923c",
+    defaultSignalIcon: WifiOff,
+    restoredSignalIcon: Wifi,
+    defaultSignal: "신호 끊김",
+    defaultResourceIcon: BatteryCharging,
+    defaultResource: "배터리 14%",
     themeBorder: "rgba(234, 88, 12, 0.45)",
     glowColor: "rgba(234, 88, 12, 0.2)",
     accentColor: "#ea580c",
@@ -102,13 +131,15 @@ export default function PhoneDrawer({
   onClose,
   theme,
   inGameTime = "1일차 새벽 · 03:44 AM",
-  genre = "modern", // 🌟 시나리오 장르/태그가 주입됨
+  genre = "modern",
   characterSheet = {},
   contacts = [],
   activeContactId = null,
   onSelectContact = null,
   messages = [],
-  emergencyAlert = null, // 긴급 재난 경보 데이터 { title, text }
+  emergencyAlert = null,
+  dynamicSignal = null,     // 🌟 서사 중 변동된 통신 상태
+  dynamicResource = null,   // 🌟 서사 중 변동된 자원(배터리/산소/마나)
   onSendMessage,
   onStartVoiceCall = null
 }) {
@@ -119,8 +150,14 @@ export default function PhoneDrawer({
 
   if (!isOpen) return null;
 
-  // 장르 어댑터 설정 도출
   const cfg = detectGenreConfig(genre);
+
+  // 🌟 동적 상태값 계산
+  const currentSignal = dynamicSignal || cfg.defaultSignal;
+  const currentResource = dynamicResource || cfg.defaultResource;
+  const isSignalRestored = dynamicSignal && !/끊김|두절|불안|재밍|차단|오류/i.test(dynamicSignal);
+  const SignalIcon = isSignalRestored ? cfg.restoredSignalIcon : cfg.defaultSignalIcon;
+  const ResourceIcon = cfg.defaultResourceIcon;
 
   const currentContact = contacts.find(c => c.id === selectedId) || contacts[0] || {
     id: 1, name: "미확인 발신자", job: "발신번호표시제한", affection: 0, behavior: ""
@@ -128,7 +165,7 @@ export default function PhoneDrawer({
 
   const myName = characterSheet?.name || "도파미너";
   const myJob = characterSheet?.job || "조난자";
-  const myStatusMsg = extractStatusMsg(characterSheet?.background);
+  const myStatusMsg = extractStatusMsg(characterSheet);
 
   const handleSend = () => {
     if (!inputText.trim()) return;
@@ -137,9 +174,6 @@ export default function PhoneDrawer({
     }
     setInputText("");
   };
-
-  const SignalIcon = cfg.signalIcon;
-  const ResourceIcon = cfg.resourceIcon;
 
   return (
     <div 
@@ -189,11 +223,11 @@ export default function PhoneDrawer({
         }}>
           <span>⏱️ {inGameTime}</span>
           <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-            <span style={{ display: "flex", alignItems: "center", gap: "3px", color: cfg.signalColor }}>
-              <SignalIcon size={13} /> {cfg.signalLabel}
+            <span style={{ display: "flex", alignItems: "center", gap: "3px", color: isSignalRestored ? "#10b981" : "#ef4444" }}>
+              <SignalIcon size={13} /> {currentSignal}
             </span>
-            <span style={{ display: "flex", alignItems: "center", gap: "3px", color: cfg.resourceColor }}>
-              <ResourceIcon size={13} /> {cfg.resourceLabel}
+            <span style={{ display: "flex", alignItems: "center", gap: "3px", color: "#fb923c" }}>
+              <ResourceIcon size={13} /> {currentResource}
             </span>
           </div>
         </div>
@@ -291,7 +325,7 @@ export default function PhoneDrawer({
                           )}
                         </div>
                         <span style={{ fontSize: "0.72rem", color: "#a8a29e" }}>
-                          "{extractStatusMsg(npc.behavior)}"
+                          "{extractStatusMsg(npc)}"
                         </span>
                       </div>
                       <div style={{ display: "flex", alignItems: "center", gap: "4px", color: cfg.accentColor, fontSize: "0.82rem", fontWeight: "800" }}>
@@ -317,11 +351,11 @@ export default function PhoneDrawer({
               <div style={{ textAlign: "center" }}>
                 <h2 style={{ margin: 0, fontSize: "1.35rem", fontWeight: "900", color: "#fff" }}>{currentContact.name}</h2>
                 <span style={{ fontSize: "0.82rem", color: cfg.accentColor, fontWeight: "700", marginTop: "4px", display: "block" }}>
-                  "{extractStatusMsg(currentContact.behavior)}"
+                  "{extractStatusMsg(currentContact)}"
                 </span>
               </div>
 
-              {/* 🌟 2대 액션 버튼: [1:1 메시지] + [무전/통화] */}
+              {/* 액션 버튼: [1:1 메시지] + [무전/통화] */}
               <div style={{ display: "flex", gap: "10px", width: "100%" }}>
                 <button 
                   type="button"
