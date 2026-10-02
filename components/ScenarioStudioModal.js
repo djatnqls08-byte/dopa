@@ -361,18 +361,18 @@ ${modeSpecificSchema}`;
     setTimeout(() => setIsCopied(false), 2000);
   };
 
-  // 공통 텍스트에어리어 스타일
+  // 공통 텍스트에어리어 스타일 (시원시원한 크기로 확장)
   const textareaStyle = {
     width: "100%",
-    minHeight: "42px",
-    maxHeight: "160px",
-    padding: "9px 12px",
+    minHeight: isMobile ? "44px" : "48px",
+    maxHeight: "180px",
+    padding: isMobile ? "10px 12px" : "12px 14px",
     borderRadius: "10px",
     backgroundColor: isDarkMode ? "#1f1b19" : "#f4f1ea",
     border: `1px solid ${isDarkMode ? "rgba(255, 255, 255, 0.08)" : "#e2dcd2"}`,
     color: isDarkMode ? "#f5f5f4" : "#292524",
-    fontSize: "0.84rem",
-    lineHeight: "1.5",
+    fontSize: isMobile ? "0.85rem" : "0.93rem",
+    lineHeight: "1.6",
     outline: "none",
     resize: "none",
     overflowY: "auto",
@@ -381,12 +381,12 @@ ${modeSpecificSchema}`;
   };
 
   const labelStyle = {
-    fontSize: "0.75rem",
+    fontSize: isMobile ? "0.78rem" : "0.86rem",
     fontWeight: "700",
-    color: isDarkMode ? "#a8a29e" : "#78716c",
+    color: isDarkMode ? "#b8b2aa" : "#6e665d",
     display: "flex",
     alignItems: "center",
-    gap: "4px"
+    gap: "5px"
   };
 
   return (
@@ -396,9 +396,44 @@ ${modeSpecificSchema}`;
         position: "fixed", inset: 0, zIndex: 99999,
         backgroundColor: "rgba(0, 0, 0, 0.75)", backdropFilter: "blur(6px)",
         display: "flex", alignItems: "center", justifyContent: "center",
-        padding: isMobile ? "8px" : "16px", animation: "fadeIn 0.2s ease-out"
+        padding: isMobile ? "8px" : "20px", animation: "fadeIn 0.2s ease-out"
       }}
     >
+      <div 
+        className="dopa-studio-scaleup"
+        onClick={e => e.stopPropagation()}
+        style={{
+          width: "100%", maxWidth: isMobile ? "100%" : "760px", height: isMobile ? "94vh" : "88vh",
+          backgroundColor: isDarkMode ? "#141211" : "#faf8f5",
+          border: `1.5px solid ${isDarkMode ? "rgba(255, 255, 255, 0.12)" : "#e6e0d6"}`,
+          borderRadius: "22px", display: "flex", flexDirection: "column",
+          boxShadow: isDarkMode ? "0 25px 60px rgba(0,0,0,0.85)" : "0 20px 45px rgba(0,0,0,0.12)",
+          overflow: "hidden", color: isDarkMode ? "#f5f5f4" : "#292524"
+        }}
+      >
+        {/* 🌟 [PC 폰트 스케일업] 모달 내부의 작았던 칩, 제목, 인풋 글자를 일괄 확대 */}
+        <style>{`
+          /* 모든 인풋/텍스트에어리어 폰트 15px로 확대 */
+          .dopa-studio-scaleup input, 
+          .dopa-studio-scaleup textarea { 
+            font-size: ${isMobile ? "0.85rem" : "0.93rem"} !important; 
+          }
+          /* 서사 칩 알약 크기 및 글자 넉넉하게 확대 */
+          .dopa-studio-scaleup div[style*="flex-wrap"] button {
+            padding: ${isMobile ? "5px 10px" : "7px 13px"} !important;
+            font-size: ${isMobile ? "0.75rem" : "0.84rem"} !important;
+            border-radius: 14px !important;
+          }
+          /* 1, 2, 3, 4 섹션 제목 큼직하게 (16px) */
+          .dopa-studio-scaleup span[style*="800"] {
+            font-size: ${isMobile ? "0.88rem" : "0.98rem"} !important;
+          }
+          /* 라벨 글자 가독성 개선 */
+          .dopa-studio-scaleup span[style*="700"] {
+            font-size: ${isMobile ? "0.78rem" : "0.86rem"} !important;
+          }
+        `}</style>
+          
       <div 
         onClick={e => e.stopPropagation()}
         style={{
@@ -430,10 +465,10 @@ ${modeSpecificSchema}`;
             </div>
             <div>
               <div style={{ fontWeight: "800", fontSize: "1.05rem" }}>
-                나만의 시나리오 만들기 (프롬프트 스튜디오)
+                나만의 시나리오 만들기
               </div>
               <div style={{ fontSize: "0.72rem", color: isDarkMode ? "#a8a29e" : "#78716c", marginTop: "1px" }}>
-                DOPA 엔진 풀스펙(인물15명 · CG15개 · 루트20개)에 맞춰 지시문을 조립합니다.
+                DOPA 엔진에 맞춰 지시문을 조립합니다.
               </div>
             </div>
           </div>
@@ -756,10 +791,10 @@ ${modeSpecificSchema}`;
               onChange={e => handleAutoResize(e, setDesiredCgAndRoutes)} 
               placeholder={
                 selectedRule === "괴담"
-                  ? "예: CG는 거울 속 귀신과 눈 마주치는 씬 / 루트는 파트너 구출 트루엔딩과 나홀로 탈출 새드엔딩"
+                  ? "예: 파트너 구출 트루엔딩과 나홀로 탈출 새드엔딩"
                   : selectedRule === "추리"
-                  ? "예: CG는 모순을 찔러 당황하는 용의자 씬 / 루트는 진범 체포와 누명 은폐 분기"
-                  : "예: CG는 비 내리는 옥상 고백 씬 / 루트는 집착 엔딩과 쌍방 구원 엔딩"
+                  ? "예: 루트는 진범 체포와 누명 은폐 분기"
+                  : "예: 루트는 집착 엔딩과 쌍방 구원 엔딩"
               } 
               style={textareaStyle}
             />
