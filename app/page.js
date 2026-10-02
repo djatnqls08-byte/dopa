@@ -59,7 +59,8 @@ function parseCSV(text) {
 function convertRowToPreset(row, index, headers = []) {
   if (!row || row.length === 0) return null;
 
-  const cleanHeaders = (headers || []).map(h => (h || "").toString().replace(/[\s_]/g, "").toLowerCase());
+  // 공백, 언더바, 특수문자(/, [, ]) 등을 모두 제거하여 매칭 확률을 극한으로 끌어올림!
+  const cleanHeaders = (headers || []).map(h => (h || "").toString().replace(/[\s_/[\]]/g, "").toLowerCase());
   const findIdx = (regex) => cleanHeaders.findIndex(h => regex.test(h));
 
   const getVal = (regex) => {
@@ -68,7 +69,7 @@ function convertRowToPreset(row, index, headers = []) {
   };
 
   // 1. 상태 및 기본 정보
-  const pubIdx = findIdx(/^(공개여부|공개|상태)$/i);
+  const pubIdx = findIdx(/공개여부|공개|상태/i);
   let isHidden = false;
   const firstColVal = (row[0] || "").toString().trim().toUpperCase();
   if (pubIdx !== -1) {
@@ -78,41 +79,40 @@ function convertRowToPreset(row, index, headers = []) {
     isHidden = firstColVal === "FALSE";
   }
 
-  let titleIdx = findIdx(/^(제목|사건명|시나리오제목|title)$/i);
+  let titleIdx = findIdx(/제목|사건명|시나리오/i);
   if (titleIdx === -1) titleIdx = pubIdx !== -1 ? pubIdx + 1 : 2; 
   const title = (row[titleIdx] || "").toString().trim();
 
   if (isHidden || !title || title.startsWith("//")) return null;
 
-  const modeRaw = getVal(/^(룰|모드|장르|룰모드)$/i);
+  const modeRaw = getVal(/룰|모드|장르/i);
   let mode = "추리";
   if (/연애|로맨스/i.test(modeRaw)) mode = "연애";
   if (/괴담|호러/i.test(modeRaw)) mode = "괴담";
 
-  const tags = getVal(/^(태그|키워드)$/i);
-  const synopsis = getVal(/^(개요|시놉시스)$/i);
-const opening = getVal(/^(도입부|서막|오프닝)$/i);
-  const truth = getVal(/^(진상|비밀|진실|사건내막)$/i);
+  const tags = getVal(/태그|키워드/i);
+  const synopsis = getVal(/개요|시놉시스|소개/i);
+  const opening = getVal(/도입부|서막|오프닝/i);
+  const truth = getVal(/진상|비밀|진실|사건내막/i);
   
-  const culprit = getVal(/^(진범|흑막|범인)(이름)?$/i);
-  const trick = getVal(/^(트릭|사용된트릭|범행수법)$/i);
-  
-  // 🌟 (추가됨!) 주요 공략 대상 / 사건 목표를 쏙 뽑아옵니다!
-  const victim = getVal(/^(사건대상|의뢰인|주요공략대상|서사목표|공략대상|목표)$/i);
+  // 🌟 [핵심 변경] 깐깐한 제한(^, $)을 풀어서 슬래시(/)나 다른 단어가 섞여도 완벽하게 추출!
+  const culprit = getVal(/진범|흑막|범인/i);
+  const trick = getVal(/트릭|수법/i);
+  const victim = getVal(/공략대상|사건목표|서사목표|의뢰인|사건대상|목표/i);
 
-  const sessionCardImg = getVal(/^(세션카드|표지|이미지|썸네일)$/i);
+  const sessionCardImg = getVal(/세션카드|표지|썸네일/i);
 
-  const pcName = getVal(/^(pc|주인공|탐색자|수사관)(이름|명칭)?$/i);
-  const pcAgeGender = getVal(/^(pc|주인공|탐색자|수사관)(나이성별|성별나이|나이|성별)$/i);
-  const pcJob = getVal(/^(pc|주인공|탐색자|수사관)(직업|역할)$/i);
-  const pcBackground = getVal(/^(pc|주인공|탐색자|수사관)(성격|배경|설정)$/i);
-  const pcSecret = getVal(/^(pc|주인공|탐색자|수사관)(비밀|약점)$/i);
-  const pcPortraitUrl = getVal(/^(pc|주인공|탐색자|수사관)(초상화|사진|이미지)$/i);
+  const pcName = getVal(/(pc|주인공|탐색자|수사관)(이름|명칭)|^(이름|명칭)$/i);
+  const pcAgeGender = getVal(/(pc|주인공|탐색자|수사관)?(나이|성별)/i);
+  const pcJob = getVal(/(pc|주인공|탐색자|수사관)?(직업|역할)/i);
+  const pcBackground = getVal(/(pc|주인공|탐색자|수사관)?(성격|배경|설정)/i);
+  const pcSecret = getVal(/(pc|주인공|탐색자|수사관)?(비밀|약점)/i);
+  const pcPortraitUrl = getVal(/(pc|주인공|탐색자|수사관)?(초상화|사진|이미지)/i);
 
   const abyssTriggers = {
-    30: getVal(/^이상충동30$/i),
-    60: getVal(/^이상충동60$/i),
-    90: getVal(/^이상충동90$/i)
+    30: getVal(/이상충동30/i),
+    60: getVal(/이상충동60/i),
+    90: getVal(/이상충동90/i)
   };
 
   const extractList = (maxCount, prefixRegex, fields, transformFn) => {
@@ -121,7 +121,7 @@ const opening = getVal(/^(도입부|서막|오프닝)$/i);
       const extracted = {};
       let hasData = false;
       fields.forEach(fieldGrp => {
-        const regexStr = `^(?:${prefixRegex})${i}(?:${fieldGrp})$|^(?:${prefixRegex})(?:${fieldGrp})${i}$`;
+        const regexStr = `(?:${prefixRegex})${i}(?:${fieldGrp})|(?:${prefixRegex})(?:${fieldGrp})${i}`;
         const val = getVal(new RegExp(regexStr, 'i'));
         const mainKey = fieldGrp.split('|')[0]; 
         extracted[mainKey] = val;
@@ -132,11 +132,11 @@ const opening = getVal(/^(도입부|서막|오프닝)$/i);
     return list;
   };
 
-  const mainPartners = extractList(5, "파트너|메인파트너", ["이름", "나이성별|성별나이", "직업|역할", "특징|성격", "비밀|이면", "초상화|사진"], (d, i) => ({
+  const mainPartners = extractList(5, "파트너|메인파트너", ["이름", "나이성별|성별나이|나이|성별", "직업|역할", "특징|성격", "비밀|이면", "초상화|사진"], (d, i) => ({
     id: `partner_${Date.now()}_${i}`, name: d.이름, ageGender: d.나이성별, job: d.직업, behavior: d.특징, secret: d.비밀, portraitUrl: d.초상화, showSecret: false
   }));
 
-  const suspects = extractList(15, "인물|등장인물|공략대상|npc|용의자", ["이름", "나이성별|성별나이", "직업|역할", "특징|성격|행적", "비밀|진심|약점", "초상화|사진"], (d, i) => ({
+  const suspects = extractList(15, "인물|등장인물|공략대상|npc|용의자", ["이름", "나이성별|성별나이|나이|성별", "직업|역할", "특징|성격|행적", "비밀|진심|약점", "초상화|사진"], (d, i) => ({
     id: `suspect_${Date.now()}_${i}`, name: d.이름, ageGender: d.나이성별, job: d.직업, behavior: d.특징, secret: d.비밀, portraitUrl: d.초상화, showSecret: false
   }));
 
@@ -148,26 +148,54 @@ const opening = getVal(/^(도입부|서막|오프닝)$/i);
     id: `cg_${Date.now()}_${i}`, title: d.이름, condition: d.조건, dialogue: d.대사, imageUrl: d.사진, showDetails: false
   }));
 
-  // 🌟 (핵심 변경!) 억지로 1명만 매칭하던 로직 삭제! 시트에 적힌 텍스트 그대로를 살립니다.
   const routeList = extractList(20, "분기|루트|선택지", ["이름|설명", "대상|인물", "호감도|변화"], (d, i) => ({
     id: `route_${Date.now()}_${i}`, routeName: d.이름, targetId: d.대상 || "", affectionChange: d.호감도 || "+10", requiredCG: ""
   }));
+
+  // 👻 괴담 모드 전용 파싱 엔진
+  const hpStat = parseInt(getVal(/체력/i)) || 5;
+  const agiStat = parseInt(getVal(/순발|순발력/i)) || 5;
+  const obsStat = parseInt(getVal(/관찰|관찰력/i)) || 5;
+  const infStat = parseInt(getVal(/추론|추리력/i)) || 5;
+  const menStat = parseInt(getVal(/정신|정신력/i)) || 5;
+  const socStat = parseInt(getVal(/사교|사교력/i)) || 5;
+  const horrorStats = { 체력: hpStat, 순발: agiStat, 관찰: obsStat, 추론: infStat, 정신: menStat, 사교: socStat };
+
+  const traitStr = getVal(/특성|긍정특성/i);
+  const horrorTraits = traitStr ? traitStr.split(/[,/]/).map(t => t.trim()).filter(Boolean) : [];
+
+  const traumaStr = getVal(/트라우마|패널티/i);
+  const horrorTraumas = traumaStr ? traumaStr.split(/[,/]/).map(t => t.trim()).filter(Boolean) : [];
+
+  const invStr = getVal(/소지품|인벤토리/i);
+  let horrorInventory = [
+    { id: 1, type: "멘탈 회복", name: "", desc: "" },
+    { id: 2, type: "특수 기믹 패스", name: "", desc: "" },
+    { id: 3, type: "재굴림", name: "", desc: "" }
+  ];
+  if (invStr) {
+    const parsedInv = invStr.split(/[,/]/).map((item, idx) => ({
+       id: idx + 1, type: "일반", name: item.trim(), desc: ""
+    })).filter(i => i.name);
+    if (parsedInv.length > 0) horrorInventory = parsedInv;
+  }
 
   return {
     id: 9000000000000 + index,
     title: title,
     mode: mode,
     author: "공식 에디터",
-    likes: 0, // 🌟 가짜 데이터 삭제! 정직하게 0부터 시작!
-    plays: 0, // 🌟 여기도 0부터 시작!
+    likes: 0,
+    plays: 0,
     isOriginal: true,
     imageUrl: sessionCardImg,
     isDownloaded: false,
     data: {
       playPreference: tags, publicSynopsis: synopsis, openingScene: opening, hiddenTruth: truth,
-      culpritName: culprit, trickDetail: trick, victimName: victim, // 🌟 뽑아온 목표 대상 데이터를 전송!
+      culpritName: culprit, trickDetail: trick, victimName: victim,
       pcName, pcAgeGender, pcJob, pcBackground, pcSecret, pcPortraitUrl, showPcSecret: false,
-      abyssTriggers, mainPartners, usePartner: mainPartners.length > 0, suspects, evidenceList, cgList, routeList
+      abyssTriggers, mainPartners, usePartner: mainPartners.length > 0, suspects, evidenceList, cgList, routeList,
+      horrorStats, horrorTraits, horrorTraumas, horrorInventory
     }
   };
 }
@@ -3152,7 +3180,7 @@ color: "#fff", border: "none", cursor: "pointer",
                     <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: "12px", width: "100%" }}>
                       
                       <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1.2fr 1fr 1fr", gap: "8px" }}>
-                        <input type="text" autoComplete="off" autoComplete="off" onChange={e => setPcName(e.target.value)} placeholder="이름" style={{ padding: "8px 10px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.82rem", outline: "none", width: "100%", boxSizing: "border-box" }} />
+                        <input type="text" autoComplete="off" value={pcName} onChange={e => setPcName(e.target.value)} placeholder="이름" style={{ width: "100%", boxSizing: "border-box", padding: "8px 10px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.82rem", outline: "none" }} />
                         <input type="text" autoComplete="off" value={pcAgeGender} onChange={e => setPcAgeGender(e.target.value)} placeholder="나이/성별" style={{ padding: "8px 10px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.82rem", outline: "none", width: "100%", boxSizing: "border-box" }} />
                         <input type="text" autoComplete="off" value={pcJob} onChange={e => setPcJob(e.target.value)} placeholder="직업/역할" style={{ padding: "8px 10px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.82rem", outline: "none", width: "100%", boxSizing: "border-box" }} />
                       </div>
