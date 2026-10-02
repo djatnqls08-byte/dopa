@@ -1375,7 +1375,7 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
       const endCallMatch = rawText.match(/<!--\s*END_CALL:\s*(\{[\s\S]*?\})\s*-->/);
       if (endCallMatch) { setIsVoiceCallActive(false); setIsCallModalOpen(false); setVoiceCallNpc(null); rawText = rawText.replace(endCallMatch[0], "").trim(); }
 
-      // 🌟 [핵심] 스마트폰 톡 & 사진 완벽 낚아채기 파서
+     // 🌟 [핵심] 스마트폰 톡 & 사진 완벽 낚아채기 파서
       let newPhoneMsg = null;
       const phoneMsgMatch = rawText.match(/<!--\s*PHONE_MSG:\s*(\{[\s\S]*?\})\s*-->/i);
       if (phoneMsgMatch) { try { newPhoneMsg = JSON.parse(phoneMsgMatch[1]); } catch(e){} rawText = rawText.replace(phoneMsgMatch[0], ""); }
@@ -1383,6 +1383,26 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
       if (!newPhoneMsg) {
         const inlineMsgMatch = rawText.match(/\[([^\]]+)\]\s*[:：]\s*["'“]?([^"'”\n\r]+?)["'”]?\s*(?=\n|$)/);
         if (inlineMsgMatch) { newPhoneMsg = { from: inlineMsgMatch[1].trim(), text: inlineMsgMatch[2].trim() }; }
+      }
+
+      // 📱 유저가 메신저 앱 안에서 문자를 보냈을 때 (내 말풍선 강제 박제 로직)
+      const isSendingMessage = textToSend.startsWith("[메신저 전송]");
+      if (isSendingMessage && activePhoneContactId !== null) {
+        const userMsgText = textToSend.replace("[메신저 전송]", "").trim();
+        const currentTime = new Date().toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" });
+        const userBubble = { id: Date.now() + Math.random(), sender: "user", text: userMsgText, time: currentTime, unread: false };
+        
+        setSessions(prev => prev.map(s => {
+          if (s.id !== activeSessionId) return s;
+          const prevChats = s.sheet?.phoneChats || {};
+          return {
+            ...s,
+            sheet: {
+              ...s.sheet,
+              phoneChats: { ...prevChats, [activePhoneContactId]: [...(prevChats[activePhoneContactId] || []), userBubble] }
+            }
+          };
+        }));
       }
 
       let autoSnapPhotoUrl = null;
@@ -1541,8 +1561,12 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
     const restoreSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
-        const userObj = { uid: session.user.id, email: session.user.email, name: session.user.email.split('@')[0] };
+        const name = session.user.user_metadata?.name || session.user.email.split('@')[0];
+        const avatar = session.user.user_metadata?.avatar || "";
+        
+        const userObj = { uid: session.user.id, email: session.user.email, name };
         setCurrentUser(userObj);
+        if (avatar) setUserAvatar(avatar);
       } else {
         const localUser = localStorage.getItem("secret_novel_user");
         if (localUser) {
@@ -1605,7 +1629,9 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
   }, [currentUser]); // 로그인 완료 시 한 번 싹 맞춰줍니다.
 
 
-// ☁️ [클라우드 서재 & 세션 자동 동기화 엔진]
+// 🌟 (핵심) 클라우드 데이터를 무사히 가져왔는지 체크하는 방어막
+  const isCloudFetched = useRef(false);
+
   // 1. 로그인 성공 시, 클라우드에서 내 데이터 싹 불러오기!
   useEffect(() => {
     if (currentUser?.uid) {
@@ -1617,14 +1643,16 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
           if (data.liked_data && data.liked_data.length > 0) setLikedScenarios(data.liked_data);
           triggerToast("동기화 완료", "클라우드에서 서재와 진행 상황을 불러왔습니다.", "☁️");
         }
+        isCloudFetched.current = true; // 🌟 방어막 해제! 이제 덮어써도 됨
       };
       fetchCloudData();
     }
   }, [currentUser]);
 
-  // 2. 게임 중 데이터가 변하면 2초 뒤 클라우드에 조용히 자동 백업! (서버 과부하 방지)
+  // 2. 게임 중 데이터가 변하면 2초 뒤 클라우드에 조용히 자동 백업!
   useEffect(() => {
     if (!currentUser?.uid) return;
+    if (!isCloudFetched.current) return; // 🌟 방어막: 클라우드에서 다운로드하기 전엔 절대 덮어씌우지 않음!
     if (savedLibrary.length === 0 && sessions.length === 0 && likedScenarios.length === 0) return;
 
     const syncTimer = setTimeout(async () => {
@@ -1636,7 +1664,6 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
         updated_at: new Date().toISOString()
       });
       
-      // 로컬(브라우저)에도 이중으로 안전하게 저장해 둡니다.
       localStorage.setItem("secret_novel_library", JSON.stringify(savedLibrary));
       localStorage.setItem("secret_novel_sessions", JSON.stringify(sessions));
       localStorage.setItem("secret_novel_liked", JSON.stringify(likedScenarios));
@@ -3218,11 +3245,20 @@ color: "#fff", border: "none", cursor: "pointer",
                       </div>
 
                       {/* ✅ 여기에 백스토리가 들어가야 안 찌그러집니다! */}
-              <div>
-                <label style={{ fontSize: "0.7rem", color: theme.textMuted, fontWeight: "700", display: "block", marginBottom: "3px" }}>탐색자의 배경 및 특징 (성격, 약점 등)</label>
-                <textarea rows={2} value={pcBackground} onChange={e => setPcBackground(e.target.value)} placeholder="사건에 휘말리게 된 계기나 평소 성격..." style={{ width: "100%", boxSizing: "border-box", padding: "8px 10px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.82rem", outline: "none", resize: "vertical" }} />
+             {/* 🌟 괴담 모드 주인공 비밀 추가 */}
+              <div style={{ backgroundColor: isDarkMode ? "rgba(0,0,0,0.2)" : "rgba(255,255,255,0.6)", borderRadius: "8px", border: `1px solid ${theme.danger}`, padding: "10px 12px", marginTop: "4px", marginBottom: "8px" }}>
+                <button type="button" onClick={() => setShowPcSecret(!showPcSecret)} style={{ width: "100%", textAlign: "left", background: "none", border: "none", fontSize: "0.76rem", color: theme.danger, cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center", padding: 0 }}>
+                  <span style={{ fontWeight: "600", display: "flex", alignItems: "center", gap: "6px" }}>
+                    <Lock size={15} strokeWidth={2.5} /> 탐색자의 숨겨진 비밀 / 약점
+                  </span>
+                  <span style={{ display: "flex", alignItems: "center" }}>
+                    {showPcSecret ? <ChevronUp size={18} strokeWidth={2} /> : <ChevronDown size={18} strokeWidth={2} />}
+                  </span>
+                </button>
+                {showPcSecret && (
+                  <input type="text" autoComplete="off" value={pcSecret} onChange={e => setPcSecret(e.target.value)} placeholder="예: 사실 과거의 사건과 깊은 연관이 있다..." style={{ width: "100%", boxSizing: "border-box", padding: "8px 10px", marginTop: "8px", borderRadius: "6px", border: `1px solid ${theme.danger}`, backgroundColor: theme.inputBg, color: theme.danger, fontSize: "0.82rem", outline: "none" }} />
+                )}
               </div>
-                      <button type="button" onClick={() => setShowTraitModal(true)} style={{ width: "100%", padding: "10px", backgroundColor: theme.panelAlt, border: `1.5px dashed ${theme.borderHighlight}`, borderRadius: "8px", color: theme.accent, fontSize: "0.82rem", fontWeight: "700", cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                         <span style={{ display: "flex", alignItems: "center", gap: "6px" }}><Tag size={16} strokeWidth={2.5}/> 특성 및 트라우마</span>
                         <span style={{ fontSize: "0.75rem", color: theme.textMuted }}>선택 완료: 특성 {horrorTraits.length} | 트라우마 {horrorTraumas.length}</span>
                       </button>
@@ -3611,7 +3647,12 @@ color: "#fff", border: "none", cursor: "pointer",
                               </div>
                             )}
                             
-                            <div style={{ whiteSpace: "pre-wrap", lineHeight: "1.85", wordBreak: "keep-all", color: isUser ? "rgba(255,255,255,0.85)" : "inherit", marginTop: "4px" }}>
+                           <div style={{ 
+  whiteSpace: "pre-wrap", lineHeight: "1.85", wordBreak: "keep-all", 
+  color: isUser ? theme.accent : theme.text, 
+  marginTop: "4px",
+  fontFamily: (fontChoice === "ridi" || fontChoice === "maru") ? "'RIDIBatang', serif" : "'Pretendard', sans-serif"
+}}>
   {m.text}
 </div>
                           </div>
@@ -4769,7 +4810,22 @@ color: "#fff", border: "none", cursor: "pointer",
                 }} placeholder="새 닉네임을 입력하세요" style={{ width: "100%", boxSizing: "border-box", padding: "12px 14px", borderRadius: "12px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.95rem", outline: "none", fontWeight: "600" }} />
               </div>
 
-              <button onClick={() => { setShowProfileEdit(false); triggerToast("변경 완료", "내 계정 정보가 업데이트되었습니다.", <CheckCircle2 color={theme.success} size={18}/>); }} style={{ width: "100%", padding: "14px", backgroundColor: theme.accent, color: isDarkMode ? "#1a1817" : "#fff", border: "none", borderRadius: "14px", fontSize: "0.95rem", fontWeight: "800", cursor: "pointer", marginTop: "8px", boxShadow: `0 4px 12px ${theme.accentGlow}` }}>
+              <button onClick={async () => { 
+                triggerToast("저장 중...", "클라우드에 계정 정보를 갱신합니다.", "⏳");
+                // 🌟 Supabase Auth 메타데이터에 이름과 프사를 영구 박제!
+                const { error } = await supabase.auth.updateUser({
+                  data: { name: currentUser.name, avatar: userAvatar }
+                });
+                
+                if (!error) {
+                  localStorage.setItem("secret_novel_user", JSON.stringify(currentUser));
+                  localStorage.setItem("secret_novel_avatar", userAvatar);
+                  setShowProfileEdit(false); 
+                  triggerToast("변경 완료", "내 계정 정보가 클라우드에 귀속되었습니다.", <CheckCircle2 color={theme.success} size={18}/>); 
+                } else {
+                  triggerToast("오류", "프로필 저장 중 문제가 발생했습니다.", "⚠️");
+                }
+              }} style={{ width: "100%", padding: "14px", backgroundColor: theme.accent, color: isDarkMode ? "#1a1817" : "#fff", border: "none", borderRadius: "14px", fontSize: "0.95rem", fontWeight: "800", cursor: "pointer", marginTop: "8px", boxShadow: `0 4px 12px ${theme.accentGlow}` }}>
                 저장하기
               </button>
               
