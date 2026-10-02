@@ -223,32 +223,30 @@ export default function GamePlatform() {
   
 
  // ── [0. 폰트 강제 로드] ──
-  useEffect(() => {
-    const style = document.createElement("style");
-    style.innerHTML = `
-      @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
-      @font-face {
-        font-family: 'RIDIBatang';
-        src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_twelve@1.0/RIDIBatang.woff') format('woff');
-        font-weight: 400;
-        font-style: normal;
-      }
-      * { 
-        font-family: 'Pretendard', sans-serif; 
-        /* 🌟 다크 모드에서 폰트가 뚱뚱해지는 것을 막고 선명하게 다듬어주는 코드 */
-        -webkit-font-smoothing: antialiased;
-        -moz-osx-font-smoothing: grayscale;
-      }
-      .serif-text { font-family: 'RIDIBatang', serif !important; }
-      ::-webkit-scrollbar { width: 5px; height: 5px; }
-      ::-webkit-scrollbar-track { background: transparent; }
-      ::-webkit-scrollbar-thumb { background: rgba(120, 120, 120, 0.4); border-radius: 10px; }
-      textarea::-webkit-scrollbar { width: 4px; }
-      textarea::-webkit-scrollbar-thumb { background: rgba(150, 150, 150, 0.4); border-radius: 4px; }
-    `;
-    document.head.appendChild(style);
-    return () => document.head.removeChild(style);
-  }, []);
+  return (
+    <div style={{ display: "flex", height: "100dvh", width: "100vw", backgroundColor: theme.bg, color: theme.text, overflow: "hidden", position: "relative" }}>
+      <style>{`
+        @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+        @font-face { font-family: 'RIDIBatang'; src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_twelve@1.0/RIDIBatang.woff') format('woff'); font-weight: 400; font-style: normal; }
+        
+        *, *::before, *::after { box-sizing: border-box; font-family: 'Pretendard', sans-serif; }
+        
+        .serif-text, .serif-text * { 
+          font-family: ${(fontChoice === "ridi" || fontChoice === "maru" || fontChoice === "serif") ? "'RIDIBatang', serif" : "'Pretendard', sans-serif"} !important; 
+          line-height: 1.95; 
+          word-break: keep-all; 
+          letter-spacing: -0.01em; 
+        }
+        
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
+        ::-webkit-scrollbar-thumb { background: rgba(140, 160, 210, 0.2); border-radius: 4px; }
+        .glass-card { background: ${theme.panel}; backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border: 1px solid ${theme.border}; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05); border-radius: 18px; }
+        .glass-alt { background: ${theme.panelAlt}; backdrop-filter: blur(10px); border: 1px solid ${theme.border}; }
+        @keyframes diceTumble { 0% { transform: rotate(0deg) scale(0.85); } 50% { transform: rotate(180deg) scale(1.15); } 100% { transform: rotate(360deg) scale(1); } }
+        .anim-dice-rolling { animation: diceTumble 0.35s infinite linear; }
+        @keyframes typingBounce { 0%, 60%, 100% { transform: translateY(0); opacity: 0.3; } 30% { transform: translateY(-5px); opacity: 1; } }
+        .typing-dot { animation: typingBounce 1.3s infinite ease-in-out; }
+      `}</style>
 
   // ── [1. 테마 & 반응형 엔진] ──
   const [themeKey] = useState("cloud");
@@ -3227,7 +3225,7 @@ color: "#fff", border: "none", cursor: "pointer",
                         boxShadow: "0 3px 10px rgba(0,0,0,0.18)", display: "flex", flexDirection: "column", alignItems: "center", cursor: "pointer", flexShrink: 0
                       }}
                     >
-                      <div style={{ width: "100%", aspectRatio: "1/1", backgroundColor: isDarkMode ? "#332d2a" : "#eae4db", borderRadius: "3px", overflow: "hidden", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+                      <div style={{ width: "100%", aspectRatio: "1/1", backgroundColor: isDarkMode ? "#332d2a" : "#eae4db", borderRadius: "3px", overflow: "hidden", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", position: "relative" }}>
                         {pcPortraitUrl ? <img src={pcPortraitUrl} alt="탐색자" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <ImageIcon size={24} strokeWidth={1} color={theme.textMuted} />}
                       </div>
                       <div style={{ marginTop: "6px", textAlign: "center", width: "100%" }}>
@@ -3294,23 +3292,6 @@ color: "#fff", border: "none", cursor: "pointer",
                         <span style={{ fontSize: "0.75rem", fontWeight: "700", color: theme.textMuted }}>시작 소지품 세팅</span>
                         {horrorInventory.map((item, idx) => (
                           <div key={item.id} style={{ display: "flex", gap: "8px" }}>
-                            <select value={item.type} onChange={e => setHorrorInventory(horrorInventory.map((inv, i) => i === idx ? { ...inv, type: e.target.value } : inv))} style={{ flex: 1, padding: "8px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.78rem", outline: "none", cursor: "pointer", minWidth: 0 }}>
-                              <option value="멘탈 회복">멘탈 회복</option>
-                              <option value="특수 기믹 패스">특수 기믹 패스</option>
-                              <option value="재굴림">재굴림</option>
-                            </select>
-                            <input type="text" autoComplete="off" value={item.name} onChange={e => setHorrorInventory(horrorInventory.map((inv, i) => i === idx ? { ...inv, name: e.target.value } : inv))} placeholder="아이템명" style={{ flex: 2, padding: "8px 10px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.78rem", outline: "none", minWidth: 0 }} />
-                          </div>
-                        ))}
-                      </div>
-
-                    </div>
-
-                      <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                        <span style={{ fontSize: "0.75rem", fontWeight: "700", color: theme.textMuted }}>시작 소지품 세팅</span>
-                        {horrorInventory.map((item, idx) => (
-                          <div key={item.id} style={{ display: "flex", gap: "8px" }}>
-                            {/* 명확한 명칭으로 변경된 드롭다운 */}
                             <select value={item.type} onChange={e => setHorrorInventory(horrorInventory.map((inv, i) => i === idx ? { ...inv, type: e.target.value } : inv))} style={{ flex: 1, padding: "8px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.78rem", outline: "none", cursor: "pointer", minWidth: 0 }}>
                               <option value="멘탈 회복">멘탈 회복</option>
                               <option value="특수 기믹 패스">특수 기믹 패스</option>
@@ -3618,17 +3599,15 @@ color: "#fff", border: "none", cursor: "pointer",
             
             <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", position: "relative" }}>
               <div 
+                className="serif-text"
                 ref={chatContainerRef} 
                 style={{
                   flex: 1, overflowY: "auto", 
                   padding: isMobile ? "24px 20px 140px 20px" : "50px 60px 160px 60px", 
                   display: "flex", flexDirection: "column", gap: "28px", 
                   maxWidth: "760px", margin: "0 auto", width: "100%", boxSizing: "border-box", 
-                  color: theme.text, letterSpacing: "-0.02em",
-                  fontFamily: (fontChoice === "ridi" || fontChoice === "maru") ? "'RIDIBatang', serif" : "'Pretendard', sans-serif",
-                  fontSize: `${1.12 * (chatFontSize || 1)}rem`, 
-                  lineHeight: 2.1,
-                  fontWeight: 400
+                  color: theme.text,
+                  fontSize: `${1.12 * (chatFontSize || 1)}rem`
                 }}
               >
                 {(activeSession.messages || []).map((m, idx) => {
