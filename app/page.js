@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import SecretBoard from "@/components/SecretBoard";
 import CharacterSheet from "@/components/CharacterSheet";
+import PromiseCalendarModal from "@/components/PromiseCalendarModal";
 import { createClient } from '@supabase/supabase-js'; 
 
 // 🌟 이제 금고(Vercel 환경 변수)에서 안전하게 꺼내옵니다! (NEXT_PUBLIC_이 붙어야 화면에서 쓸 수 있어요!)
@@ -14,7 +15,7 @@ const supabase = createClient(supabaseUrl, supabaseAnonKey);
 import { 
   Search, Heart, Flame, LayoutGrid, LibraryBig, PenTool, UserRound, 
   Menu, Moon, Sun, Save, FileUp, HelpCircle, X, ChevronDown, ChevronUp, Image as ImageIcon,
-  ClipboardList, Pin, FileSearch, Mailbox, Play,
+  ClipboardList, Pin, FileSearch, Mailbox, Play, Calendar,
   FolderOpen, Lock, Settings, Database, ClipboardPaste, LogOut,
   ArrowUp, Smartphone, BookOpen, Dices, ChevronLeft, ChevronRight, UploadCloud, AlertTriangle, CheckCircle2,
   Brain, Skull, Eye, Activity, ShieldAlert, ToggleLeft, ToggleRight, Plus, Minus, Ghost, Gift, Video, CreditCard, Headphones,
@@ -337,6 +338,7 @@ export default function GamePlatform() {
   const [trickDetail, setTrickDetail] = useState("");
   const [hiddenTruth, setHiddenTruth] = useState("");
   const [showHiddenTruth, setShowHiddenTruth] = useState(false);
+
 // ── [괴담 모드 전용 상태] ──
 const [horrorStats, setHorrorStats] = useState({ 체력: 5, 순발: 5, 관찰: 5, 추론: 5, 정신: 5, 사교: 5 });
 const availableStatPoints = 35 - Object.values(horrorStats).reduce((a, b) => a + b, 0);
@@ -667,9 +669,10 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
   const [isPhoneSending, setIsPhoneSending] = useState(false);
   const [zoomedPortrait, setZoomedPortrait] = useState(null); // 🌟 사진 확대 상태 추가
 
-  // 연애 모드 전용 팝업 스위치
+ // 연애 모드 전용 팝업 스위치
   const [giftModalNpc, setGiftModalNpc] = useState(null);
   const [clueModalNpc, setClueModalNpc] = useState(null);
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false); // 👈 [추가!]
 
   // 실시간 전화(음성 통화) 관련 상태
   const [incomingCall, setIncomingCall] = useState(null);
@@ -2053,14 +2056,19 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
                 {/* 🌸 연애 모드 상단 버튼 */}
                 {activeSession.ruleMode?.startsWith("dating") && (
                   <>
+                    {/* 1. 스마트폰 메신저 */}
                     <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setIsPhoneDrawerOpen(true); setIsSheetOpen(false); }} title="메신저" style={{ background: "none", border: "none", cursor: "pointer", color: theme.text, display: "flex", alignItems: "center" }}>
                       <Smartphone size={22} strokeWidth={2} />
                     </button>
+
+                    {/* 2. 📅 기약 캘린더 (선물상자 대체 신설) */}
+                    <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setIsCalendarOpen(true); }} title="기약 캘린더" style={{ background: "none", border: "none", cursor: "pointer", color: isCalendarOpen ? theme.accent : theme.text, display: "flex", alignItems: "center" }}>
+                      <Calendar size={22} strokeWidth={2} />
+                    </button>
+
+                    {/* 3. 📖 취향 수첩 */}
                     <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); const currentNpc = (activeSession?.sheet?.npcs || []).find(n => n.id === activeSession?.activeContactId) || activeSession?.sheet?.npcs?.[0]; if (currentNpc) setClueModalNpc(currentNpc); }} title="취향 수첩" style={{ background: "none", border: "none", cursor: "pointer", color: theme.text, display: "flex", alignItems: "center" }}>
                       <BookOpen size={22} strokeWidth={2} />
-                    </button>
-                    <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); const partner = activeSession.sheet?.npcs?.[0]; if (partner) setGiftModalNpc(partner); }} title="선물하기" style={{ background: "none", border: "none", cursor: "pointer", color: theme.text, display: "flex", alignItems: "center" }}>
-                      <Gift size={22} strokeWidth={2} />
                     </button>
                   </>
                 )}
@@ -4100,6 +4108,21 @@ color: "#fff", border: "none", cursor: "pointer",
         );
       })()}
 
+      {/* 👈 바로 여기에 아래 코드를 넣어주세요! */}
+      {/* 📅 기약 수첩 캘린더 모달 마운트 */}
+      <PromiseCalendarModal
+        isOpen={isCalendarOpen}
+        onClose={() => setIsCalendarOpen(false)}
+        activeSession={activeSession}
+        theme={theme}
+        isDarkMode={isDarkMode}
+        isMobile={isMobile}
+        onSelectPromise={(p) => {
+          // 달력에서 오늘 약속 카드를 누르면 대화 입력창에 자동 지문 입력
+          setInputMsg(`${p.targetNpc}와의 약속대로 ${p.location || "약속 장소"}(으)로 향했다.`);
+        }}
+      />
+          
       {/* 📱 스마트폰 통합 시스템 (메신저 서랍 + 통화 다이내믹 아일랜드 + 풀스크린 통화) */}
       
      {/* 📞 1. 음성 통화 축소 시 미니 바 (다이내믹 아일랜드) */}
