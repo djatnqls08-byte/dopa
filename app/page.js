@@ -636,6 +636,8 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
   const [showEvidenceBoard, setShowEvidenceBoard] = useState(false);
   const [isTabletopOpen, setIsTabletopOpen] = useState(false);
 
+
+
 // ── [스마트폰 메신저 & 통화 전용 상태 관리] ──
   const [isPhoneDrawerOpen, setIsPhoneDrawerOpen] = useState(false);
   const [activePhoneContactId, setActivePhoneContactId] = useState(null);
@@ -662,16 +664,15 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
 
 // ── [환경 설정 및 폰트 상태 관리] ──
   const [showSettingsModal, setShowSettingsModal] = useState(false);
-  const [appTheme, setAppTheme] = useState("oatMilk"); // oatMilk, strawberry, blueberry, soda
-  const [appFont, setAppFont] = useState("ridi"); // ridi, pretendard
-  const [fontSize, setFontSize] = useState(1); // 1rem 기준 배율
-  const [volume, setVolume] = useState(60);
+  const [fontChoice, setFontChoice] = useState("ridi"); // ridi, gothic
+  const [chatFontSize, setChatFontSize] = useState(1);
+  const [soundVolume, setSoundVolume] = useState(0.6);
 
-  // ── [데이터 관리 (백업/복원) 상태 관리] ──
-  const [showDataModal, setShowDataModal] = useState(false);
-  const [selectedExportSessions, setSelectedExportSessions] = useState([]);
-  const [exportRange, setExportRange] = useState("all"); // "all" (전체 기록), "story" (순수 서사)
-  const [exportFormat, setExportFormat] = useState("txt"); // txt, md, pdf, json
+  // ── [데이터 관리 (내보내기/백업) 상태 관리] ──
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [selectedExportSessionIds, setSelectedExportSessionIds] = useState([]);
+  const [exportScope, setExportScope] = useState("all");
+  const [exportFormat, setExportFormat] = useState("txt");
 
   // 🌟 다이나믹 폰 스킨 엔진 (스킨 변경 즉시 적용!)
   const PHONE_SKINS = {
