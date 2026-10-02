@@ -3578,7 +3578,7 @@ color: "#fff", border: "none", cursor: "pointer",
                     <div key={idx} style={{ alignSelf: "stretch", display: "flex", flexDirection: "column" }}>
                       
                       <div style={{ 
-                        color: isUser ? theme.accent : theme.text, fontWeight: "400", opacity: 0.95,
+                        color: isUser ? (isDarkMode ? "#60a5fa" : "#2563eb") : theme.text, fontWeight: "400", opacity: 0.95,
                         textAlign: isUser ? "center" : "left", fontStyle: isUser ? "italic" : "normal", wordBreak: "keep-all",
                         padding: isUser ? "16px 0" : "0", borderTop: isUser ? `1px dashed ${theme.border}` : "none",
                         borderBottom: isUser ? `1px dashed ${theme.border}` : "none", margin: isUser ? "10px 0" : "0"
@@ -3587,7 +3587,7 @@ color: "#fff", border: "none", cursor: "pointer",
                           
                           <div style={{ 
                             backgroundColor: m.text.includes("[🎲") || m.text.includes("[⚠️") ? "rgba(229, 169, 60, 0.12)" : "transparent", 
-                            color: isUser ? (isDarkMode ? "#60a5fa" : "#2563eb") : theme.text,
+                            color: isUser ? (isDarkMode ? "#60a5fa" : "#2563eb") : theme.text, 
                             border: m.text.includes("[⚠️") ? `1px solid ${theme.danger}` : m.text.includes("[🎲") ? `1px solid ${theme.warning}` : "none", 
                             padding: m.role === "user" ? "20px 0" : "4px 0", 
                             margin: m.role === "user" ? "16px 0" : "0",
@@ -3610,8 +3610,9 @@ color: "#fff", border: "none", cursor: "pointer",
                               </div>
                             )}
                             
-                           <div style={{ whiteSpace: "pre-wrap", lineHeight: "1.85", wordBreak: "keep-all", color: "inherit", marginTop: "4px" }}>
-                            {m.text}
+                            <div style={{ whiteSpace: "pre-wrap", lineHeight: "1.85", wordBreak: "keep-all", color: "inherit", marginTop: "4px" }}>
+                              {m.text}
+                            </div>
                           </div>
                         </div>
                       </div>
