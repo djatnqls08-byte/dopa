@@ -7,9 +7,8 @@ import {
   Check, AlertCircle, ChevronRight 
 } from "lucide-react";
 
-// 🌟 [스마트 톤 어댑터] 캐릭터 성격과 배경을 읽어 찰떡같은 대사를 추천하는 엔진
+// 🌟 [스마트 톤 어댑터] 캐릭터 성격과 배경을 읽어 찰떡같은 대사를 추천하는 엔진 (기능 100% 보존)
 function generateRefuteDialogue(characterSheet = {}, evidenceName = "증거품", targetStatement = "") {
-  // 캐릭터의 성격, 말투, 백스토리 텍스트 종합 분석
   const traits = (
     (characterSheet?.personality || "") + " " + 
     (characterSheet?.background || "") + " " + 
@@ -47,10 +46,10 @@ function generateRefuteDialogue(characterSheet = {}, evidenceName = "증거품",
 export default function EvidenceSelectModal({
   isOpen,
   onClose,
-  clues = [],                // 수집된 증거/단서 목록 (sheet.items + sheet.clues)
-  characterSheet = {},       // 🌟 캐릭터 시트 (성격/직업/말투 감지용)
-  targetStatement = "",      // 반박 대상이 되는 용의자의 특정 진술
-  onPresentEvidence,         // 반증 제시 콜백: (formattedText, selectedEvidence) => void
+  clues = [],                // 수집된 증거/단서 목록
+  characterSheet = {},       // 캐릭터 시트
+  targetStatement = "",      // 반박 대상 진술
+  onPresentEvidence,         // 반증 제시 콜백
   isMobile = false
 }) {
   const [selectedIdx, setSelectedIdx] = useState(0);
@@ -76,10 +75,7 @@ export default function EvidenceSelectModal({
       ? selectedClue 
       : (selectedClue.name || selectedClue.title || "증거품");
 
-    // 🌟 스마트 톤 어댑터로 캐릭터 맞춤형 대사 자동 생성
     const dialogue = generateRefuteDialogue(characterSheet, evidenceName, targetStatement);
-
-    // AI 엔진 인식용 헤더 태그 + 자연스러운 대사 결합
     const formattedText = `[💥 모순 포착 : 반증 제시 | 증거: ${evidenceName}]\n${dialogue}`;
 
     if (onPresentEvidence) {
@@ -98,78 +94,81 @@ export default function EvidenceSelectModal({
         padding: isMobile ? "0" : "20px", animation: "fadeIn 0.2s ease-out"
       }}
     >
+      {/* 🌟 PC 가로폭을 520px ➔ 680px로 시원하게 확장 */}
       <div 
         onClick={e => e.stopPropagation()}
         style={{
-          width: "100%", maxWidth: isMobile ? "100%" : "520px",
-          height: isMobile ? "82vh" : "700px", maxHeight: "85vh",
+          width: "100%", maxWidth: isMobile ? "100%" : "680px",
+          height: isMobile ? "84vh" : "720px", maxHeight: "88vh",
           backgroundColor: "#0d131f",
           border: "1.5px solid rgba(56, 189, 248, 0.4)",
           borderRadius: isMobile ? "24px 24px 0 0" : "24px",
           overflow: "hidden", display: "flex", flexDirection: "column",
-          boxShadow: "0 -10px 40px rgba(0,0,0,0.8), 0 0 25px rgba(56, 189, 248, 0.15)",
+          boxShadow: "0 -10px 40px rgba(0,0,0,0.8), 0 0 30px rgba(56, 189, 248, 0.2)",
           color: "#f1f5f9", animation: isMobile ? "slideUp 0.25s cubic-bezier(0.2, 0.8, 0.2, 1)" : "none"
         }}
       >
-        {/* 1. 상단 타이틀 바 */}
+        {/* 1. 상단 타이틀 바 (아이콘 및 폰트 크기 확대) */}
         <div style={{
-          padding: "16px 20px 12px",
+          padding: isMobile ? "16px 20px" : "18px 24px",
           backgroundColor: "rgba(15, 23, 42, 0.95)",
           borderBottom: "1px solid rgba(255,255,255,0.08)",
           display: "flex", alignItems: "center", justifyContent: "space-between",
           flexShrink: 0
         }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
             <div style={{
-              width: "32px", height: "32px", borderRadius: "8px",
-              backgroundColor: "rgba(56, 189, 248, 0.15)", border: "1px solid rgba(56, 189, 248, 0.4)",
-              display: "flex", alignItems: "center", justifyContent: "center", color: "#38bdf8"
+              width: isMobile ? "34px" : "40px", height: isMobile ? "34px" : "40px", borderRadius: "10px",
+              backgroundColor: "rgba(56, 189, 248, 0.15)", border: "1.5px solid rgba(56, 189, 248, 0.4)",
+              display: "flex", alignItems: "center", justifyContent: "center", color: "#38bdf8", flexShrink: 0
             }}>
-              <Fingerprint size={18} />
+              <Fingerprint size={isMobile ? 20 : 24} />
             </div>
             <div>
-              <div style={{ fontSize: "1rem", fontWeight: "900", color: "#fff", display: "flex", alignItems: "center", gap: "6px" }}>
+              <div style={{ fontSize: isMobile ? "1.05rem" : "1.2rem", fontWeight: "900", color: "#fff", display: "flex", alignItems: "center", gap: "8px" }}>
                 증거품 서랍
-                <span style={{ fontSize: "0.65rem", padding: "1px 6px", borderRadius: "4px", backgroundColor: "#0284c7", color: "#fff", fontWeight: "800" }}>
+                <span style={{ fontSize: "0.72rem", padding: "2px 8px", borderRadius: "6px", backgroundColor: "#0284c7", color: "#fff", fontWeight: "800" }}>
                   반증 선택
                 </span>
               </div>
-              <span style={{ fontSize: "0.7rem", color: "#94a3b8" }}>상대방의 모순을 격파할 물증이나 단서를 선택하십시오.</span>
+              <span style={{ fontSize: isMobile ? "0.74rem" : "0.82rem", color: "#94a3b8", display: "block", marginTop: "2px" }}>
+                상대방의 모순을 격파할 물증이나 단서를 선택하십시오.
+              </span>
             </div>
           </div>
           <button 
             type="button" 
             onClick={onClose}
-            style={{ width: "32px", height: "32px", borderRadius: "50%", backgroundColor: "rgba(255,255,255,0.08)", border: "none", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}
+            style={{ width: "36px", height: "36px", borderRadius: "50%", backgroundColor: "rgba(255,255,255,0.08)", border: "none", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}
           >
-            <X size={18} />
+            <X size={20} />
           </button>
         </div>
 
-        {/* 2. 반박 대상 진술 요약 박스 (있을 경우 표시) */}
+        {/* 2. 반박 대상 진술 요약 박스 */}
         {targetStatement && (
           <div style={{
-            padding: "10px 16px",
-            backgroundColor: "rgba(2, 132, 199, 0.12)",
+            padding: isMobile ? "10px 16px" : "12px 24px",
+            backgroundColor: "rgba(2, 132, 199, 0.15)",
             borderBottom: "1px dashed rgba(56, 189, 248, 0.3)",
-            display: "flex", alignItems: "flex-start", gap: "8px", flexShrink: 0
+            display: "flex", alignItems: "flex-start", gap: "10px", flexShrink: 0
           }}>
-            <AlertCircle size={15} color="#38bdf8" style={{ marginTop: "2px", flexShrink: 0 }} />
-            <div style={{ fontSize: "0.75rem", color: "#cbd5e1", lineHeight: "1.4" }}>
+            <AlertCircle size={17} color="#38bdf8" style={{ marginTop: "2px", flexShrink: 0 }} />
+            <div style={{ fontSize: isMobile ? "0.8rem" : "0.88rem", color: "#cbd5e1", lineHeight: "1.5" }}>
               <span style={{ fontWeight: "800", color: "#38bdf8" }}>반박할 의혹 진술: </span>
               "{targetStatement}"
             </div>
           </div>
         )}
 
-        {/* 3. 검색 바 */}
-        <div style={{ padding: "10px 16px", borderBottom: "1px solid rgba(255,255,255,0.06)", flexShrink: 0 }}>
+        {/* 3. 검색 바 (시원시원한 패딩과 인풋 글자) */}
+        <div style={{ padding: isMobile ? "10px 16px" : "14px 24px", borderBottom: "1px solid rgba(255,255,255,0.06)", flexShrink: 0 }}>
           <div style={{
-            display: "flex", alignItems: "center", gap: "8px",
-            backgroundColor: "rgba(0,0,0,0.4)", borderRadius: "10px",
-            padding: "6px 12px", border: "1px solid rgba(255,255,255,0.1)"
+            display: "flex", alignItems: "center", gap: "10px",
+            backgroundColor: "rgba(0,0,0,0.45)", borderRadius: "12px",
+            padding: isMobile ? "8px 14px" : "11px 16px", border: "1px solid rgba(56, 189, 248, 0.25)"
           }}>
-            <Search size={14} color="#64748b" />
+            <Search size={16} color="#38bdf8" />
             <input 
               type="text" 
               value={searchQuery}
@@ -177,7 +176,7 @@ export default function EvidenceSelectModal({
               placeholder="증거품 또는 감식 메모 검색..."
               style={{
                 flex: 1, background: "none", border: "none", color: "#fff",
-                fontSize: "0.78rem", outline: "none"
+                fontSize: isMobile ? "0.84rem" : "0.92rem", outline: "none"
               }}
             />
           </div>
@@ -186,15 +185,15 @@ export default function EvidenceSelectModal({
         {/* 4. 증거 목록 & 상세 내용 듀얼 분할 영역 */}
         <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
           
-          {/* A. 상단 가로 롤링 목록 */}
+          {/* A. 상단 가로 롤링 목록 (카드 너비와 폰트 확대) */}
           <div style={{
-            padding: "12px 16px",
-            overflowX: "auto", display: "flex", gap: "8px",
+            padding: isMobile ? "12px 16px" : "14px 24px",
+            overflowX: "auto", display: "flex", gap: "10px",
             borderBottom: "1px solid rgba(255,255,255,0.08)",
-            backgroundColor: "rgba(0,0,0,0.2)", flexShrink: 0
+            backgroundColor: "rgba(0,0,0,0.25)", flexShrink: 0
           }}>
             {filteredClues.length === 0 ? (
-              <div style={{ padding: "16px 0", color: "#64748b", fontSize: "0.78rem" }}>
+              <div style={{ padding: "20px 0", color: "#64748b", fontSize: "0.88rem" }}>
                 {clues.length === 0 ? "아직 현장에서 수집된 물증이나 단서가 없습니다." : "검색 조건에 맞는 증거가 없습니다."}
               </div>
             ) : (
@@ -206,21 +205,23 @@ export default function EvidenceSelectModal({
                     key={idx}
                     onClick={() => setSelectedIdx(idx)}
                     style={{
-                      minWidth: "130px", maxWidth: "150px", padding: "10px", borderRadius: "12px",
-                      backgroundColor: isSelected ? "rgba(2, 132, 199, 0.3)" : "rgba(30, 41, 59, 0.6)",
+                      minWidth: isMobile ? "135px" : "165px", maxWidth: isMobile ? "155px" : "190px", 
+                      padding: isMobile ? "10px 12px" : "12px 14px", borderRadius: "14px",
+                      backgroundColor: isSelected ? "rgba(2, 132, 199, 0.35)" : "rgba(30, 41, 59, 0.6)",
                       border: `1.5px solid ${isSelected ? "#38bdf8" : "rgba(255,255,255,0.08)"}`,
                       cursor: "pointer", display: "flex", flexDirection: "column", gap: "6px",
+                      boxShadow: isSelected ? "0 0 16px rgba(56, 189, 248, 0.3)" : "none",
                       transition: "all 0.15s ease", flexShrink: 0
                     }}
                   >
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                      <Fingerprint size={14} color={isSelected ? "#38bdf8" : "#64748b"} />
-                      {isSelected && <Check size={14} color="#38bdf8" />}
+                      <Fingerprint size={16} color={isSelected ? "#38bdf8" : "#64748b"} />
+                      {isSelected && <Check size={16} color="#38bdf8" strokeWidth={3} />}
                     </div>
-                    <span style={{ fontSize: "0.82rem", fontWeight: "900", color: "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                    <span style={{ fontSize: isMobile ? "0.86rem" : "0.95rem", fontWeight: "900", color: "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                       {name}
                     </span>
-                    <span style={{ fontSize: "0.65rem", color: isSelected ? "#38bdf8" : "#94a3b8" }}>
+                    <span style={{ fontSize: isMobile ? "0.68rem" : "0.75rem", color: isSelected ? "#38bdf8" : "#94a3b8", fontWeight: isSelected ? "800" : "500" }}>
                       {isSelected ? "선택됨" : "터치하여 확인"}
                     </span>
                   </div>
@@ -229,32 +230,32 @@ export default function EvidenceSelectModal({
             )}
           </div>
 
-          {/* B. 하단 선택된 증거 상세 감식록 */}
-          <div style={{ flex: 1, minHeight: 0, overflowY: "auto", padding: "16px", display: "flex", flexDirection: "column", gap: "10px" }}>
+          {/* B. 하단 선택된 증거 상세 감식록 (시원시원해진 폰트와 여백) */}
+          <div style={{ flex: 1, minHeight: 0, overflowY: "auto", padding: isMobile ? "16px" : "22px 24px", display: "flex", flexDirection: "column", gap: "12px" }}>
             {selectedClue ? (
               <>
-                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
                   <div style={{
-                    width: "28px", height: "28px", borderRadius: "6px",
+                    width: isMobile ? "30px" : "36px", height: isMobile ? "30px" : "36px", borderRadius: "8px",
                     backgroundColor: "rgba(245, 158, 11, 0.15)", border: "1px solid rgba(245, 158, 11, 0.3)",
-                    display: "flex", alignItems: "center", justifyContent: "center", color: "#f59e0b"
+                    display: "flex", alignItems: "center", justifyContent: "center", color: "#f59e0b", flexShrink: 0
                   }}>
-                    <FileText size={15} />
+                    <FileText size={isMobile ? 16 : 18} />
                   </div>
                   <div>
-                    <h3 style={{ margin: 0, fontSize: "1rem", fontWeight: "900", color: "#fff" }}>
+                    <h3 style={{ margin: 0, fontSize: isMobile ? "1.05rem" : "1.2rem", fontWeight: "900", color: "#fff" }}>
                       {typeof selectedClue === "string" ? selectedClue : (selectedClue.name || selectedClue.title)}
                     </h3>
-                    <span style={{ fontSize: "0.68rem", color: "#38bdf8", fontWeight: "700" }}>정식 감식 완료 물증</span>
+                    <span style={{ fontSize: isMobile ? "0.72rem" : "0.8rem", color: "#38bdf8", fontWeight: "700" }}>정식 감식 완료 물증</span>
                   </div>
                 </div>
 
                 <div style={{
-                  padding: "12px", borderRadius: "12px",
-                  backgroundColor: "rgba(15, 23, 42, 0.8)", border: "1px solid rgba(255,255,255,0.06)",
-                  fontSize: "0.8rem", color: "#cbd5e1", lineHeight: "1.6"
+                  padding: isMobile ? "14px" : "16px 18px", borderRadius: "14px",
+                  backgroundColor: "rgba(15, 23, 42, 0.8)", border: "1px solid rgba(255,255,255,0.08)",
+                  fontSize: isMobile ? "0.85rem" : "0.94rem", color: "#cbd5e1", lineHeight: "1.7"
                 }}>
-                  <span style={{ display: "block", fontSize: "0.7rem", color: "#94a3b8", fontWeight: "800", marginBottom: "4px" }}>
+                  <span style={{ display: "block", fontSize: isMobile ? "0.75rem" : "0.82rem", color: "#94a3b8", fontWeight: "800", marginBottom: "6px" }}>
                     ■ 감식 및 현장 발견 기록
                   </span>
                   {typeof selectedClue === "object" 
@@ -262,20 +263,22 @@ export default function EvidenceSelectModal({
                     : "현장에서 공식 수색을 통해 확보된 중요 참고 물증입니다."}
                 </div>
 
-                {/* 모순 간파 힌트 (데이터에 있을 경우) */}
+                {/* 모순 간파 힌트 (있을 경우 눈에 띄게 강조) */}
                 {selectedClue?.contradiction && (
                   <div style={{
-                    padding: "10px 12px", borderRadius: "10px",
-                    backgroundColor: "rgba(239, 68, 68, 0.1)", border: "1px solid rgba(239, 68, 68, 0.3)",
-                    fontSize: "0.75rem", color: "#fca5a5", lineHeight: "1.5"
+                    padding: isMobile ? "12px" : "14px 18px", borderRadius: "12px",
+                    backgroundColor: "rgba(239, 68, 68, 0.12)", border: "1px solid rgba(239, 68, 68, 0.35)",
+                    fontSize: isMobile ? "0.82rem" : "0.9rem", color: "#fca5a5", lineHeight: "1.6"
                   }}>
-                    <span style={{ fontWeight: "800", color: "#ef4444" }}>⚠ 모순점 힌트: </span>
+                    <span style={{ fontWeight: "900", color: "#ef4444", display: "flex", alignItems: "center", gap: "6px", marginBottom: "3px" }}>
+                      <AlertCircle size={15} /> 모순점 힌트
+                    </span>
                     {selectedClue.contradiction}
                   </div>
                 )}
               </>
             ) : (
-              <div style={{ margin: "auto", textAlign: "center", color: "#64748b", fontSize: "0.8rem" }}>
+              <div style={{ margin: "auto", textAlign: "center", color: "#64748b", fontSize: "0.9rem" }}>
                 상단에서 증거품을 선택하면 감식 결과가 표시됩니다.
               </div>
             )}
@@ -285,18 +288,18 @@ export default function EvidenceSelectModal({
 
         {/* 5. 하단 액션 버튼: [ 💥 모순 포착 : 반증 제시 ] */}
         <div style={{
-          padding: "12px 18px",
+          padding: isMobile ? "14px 18px" : "18px 24px",
           backgroundColor: "rgba(15, 23, 42, 0.95)",
           borderTop: "1px solid rgba(255,255,255,0.08)",
-          display: "flex", gap: "10px", flexShrink: 0
+          display: "flex", gap: "12px", flexShrink: 0
         }}>
           <button
             type="button"
             onClick={onClose}
             style={{
-              padding: "13px 18px", borderRadius: "14px",
+              padding: isMobile ? "13px 18px" : "14px 24px", borderRadius: "14px",
               backgroundColor: "rgba(255,255,255,0.06)", color: "#94a3b8", border: "1px solid rgba(255,255,255,0.08)",
-              fontWeight: "800", fontSize: "0.85rem", cursor: "pointer"
+              fontWeight: "800", fontSize: isMobile ? "0.88rem" : "0.95rem", cursor: "pointer"
             }}
           >
             취소
@@ -306,19 +309,19 @@ export default function EvidenceSelectModal({
             onClick={handleConfirmPresent}
             disabled={!selectedClue}
             style={{
-              flex: 1, padding: "13px", borderRadius: "14px",
+              flex: 1, padding: isMobile ? "13px" : "14px", borderRadius: "14px",
               backgroundColor: selectedClue ? "#0284c7" : "#1e293b",
               color: selectedClue ? "#fff" : "#64748b",
               border: `1px solid ${selectedClue ? "#38bdf8" : "transparent"}`,
-              fontWeight: "900", fontSize: "0.92rem", cursor: selectedClue ? "pointer" : "not-allowed",
-              display: "flex", alignItems: "center", justifyContent: "center", gap: "6px",
-              boxShadow: selectedClue ? "0 4px 18px rgba(2, 132, 199, 0.4)" : "none",
+              fontWeight: "900", fontSize: isMobile ? "0.94rem" : "1.05rem", cursor: selectedClue ? "pointer" : "not-allowed",
+              display: "flex", alignItems: "center", justifyContent: "center", gap: "8px",
+              boxShadow: selectedClue ? "0 4px 20px rgba(2, 132, 199, 0.4)" : "none",
               transition: "all 0.2s ease"
             }}
           >
-            <Sparkles size={16} />
+            <Sparkles size={18} />
             <span>💥 모순 포착 : 반증 제시</span>
-            <ChevronRight size={16} />
+            <ChevronRight size={18} />
           </button>
         </div>
 
