@@ -2753,96 +2753,88 @@ let newPhoneMsg = null;
             {activeTab === "lobby" && (
               <div style={{ display: "flex", flexDirection: "column", gap: isMobile ? "14px" : "18px", animation: "fadeIn 0.2s ease-out", width: "100%" }}>
               
-                {/* 🌟 [슬림 콤팩트] 나만의 시나리오 제작 & 붙여넣기 배너 */}
+{/* 🌟 [아이콘 버튼형] 나만의 시나리오 제작 배너 */}
                 <section style={{
                   ...GLASS_STYLE,
-                  padding: isMobile ? "12px 14px" : "14px 20px",
+                  padding: "12px 16px",
                   backgroundColor: theme.panel,
                   borderRadius: "16px",
                   border: `1px solid ${theme.border}`,
                   display: "flex",
-                  flexDirection: isMobile ? "column" : "row",
-                  alignItems: isMobile ? "stretch" : "center",
+                  alignItems: "center",
                   justifyContent: "space-between",
-                  gap: isMobile ? "10px" : "16px",
-                  boxSizing: "border-box"
+                  gap: "12px",
+                  boxSizing: "border-box",
+                  width: "100%"
                 }}>
-                  {/* 좌측: 타이틀 및 한 줄 설명 */}
-                  <div style={{ display: "flex", alignItems: "center", gap: "12px", minWidth: 0 }}>
+                  {/* 좌측: 타이틀 및 안내 문구 */}
+                  <div style={{ display: "flex", alignItems: "center", gap: "10px", minWidth: 0, flex: 1 }}>
                     <div style={{
-                      width: "36px", height: "36px", borderRadius: "10px",
+                      width: "34px", height: "34px", borderRadius: "10px",
                       backgroundColor: "rgba(236, 72, 153, 0.12)", border: `1px solid ${theme.accent}`,
                       display: "flex", alignItems: "center", justifyContent: "center", color: theme.accent, flexShrink: 0
                     }}>
-                      <Sparkles size={18} strokeWidth={2.5} />
+                      <Sparkles size={17} strokeWidth={2.5} />
                     </div>
-                    <div style={{ display: "flex", flexDirection: "column", gap: "1px", minWidth: 0 }}>
-                      <span style={{ fontSize: "0.92rem", fontWeight: "800", color: theme.text, letterSpacing: "-0.3px" }}>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "2px", minWidth: 0 }}>
+                      <span style={{ fontSize: "0.9rem", fontWeight: "800", color: theme.text, letterSpacing: "-0.3px", whiteSpace: "nowrap" }}>
                         나만의 시나리오 제작
                       </span>
-                      <span style={{ fontSize: "0.75rem", color: theme.textMuted, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                        AI 스튜디오에서 1분 만에 집필하고 로비에 바로 배치하세요.
+                      <span style={{ fontSize: "0.72rem", color: theme.textMuted, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        AI 스튜디오에서 1분 만에 집필하고 바로 플레이해보세요.
                       </span>
                     </div>
                   </div>
 
-                  {/* 우측: 슬림 캡슐 버튼 그룹 */}
-                  <div style={{ display: "flex", gap: "6px", alignItems: "center", flexShrink: 0, justifyContent: isMobile ? "flex-end" : "flex-start" }}>
-                    {/* 1. 텍스트 붙여넣기 (가벼운 서브 버튼) */}
+                  {/* 우측: 직관적인 아이콘 버튼 2개 */}
+                  <div style={{ display: "flex", gap: "6px", alignItems: "center", flexShrink: 0 }}>
+                    {/* 1. 붙여넣기 아이콘 버튼 */}
                     <button
                       type="button"
                       onClick={() => setShowPasteModal(true)}
                       title="시나리오 텍스트 붙여넣기"
                       style={{
-                        padding: "7px 12px",
-                        borderRadius: "20px",
+                        width: "36px",
+                        height: "36px",
+                        borderRadius: "10px",
                         backgroundColor: theme.panelAlt,
                         border: `1px solid ${theme.borderHighlight || theme.border}`,
-                        color: theme.text,
-                        fontSize: "0.78rem",
-                        fontWeight: "700",
+                        color: theme.accent,
                         cursor: "pointer",
                         display: "flex",
                         alignItems: "center",
-                        gap: "5px",
-                        transition: "all 0.15s ease",
-                        flex: isMobile ? 1 : "none",
-                        justifyContent: "center"
+                        justifyContent: "center",
+                        transition: "all 0.15s ease"
                       }}
                       onMouseEnter={e => e.currentTarget.style.backgroundColor = theme.inputBg}
                       onMouseLeave={e => e.currentTarget.style.backgroundColor = theme.panelAlt}
                     >
-                      <ClipboardPaste size={14} strokeWidth={2} color={theme.accent} />
-                      <span>붙여넣기</span>
+                      <ClipboardPaste size={18} strokeWidth={2} />
                     </button>
 
-                    {/* 2. 시나리오 제작하기 (세련된 포인트 캡슐 버튼) */}
+                    {/* 2. AI 스튜디오 제작하기 아이콘 버튼 */}
                     <button
                       type="button"
                       onClick={() => setShowScenarioStudio(true)}
-                      title="시나리오 프롬프트 스튜디오 열기"
+                      title="AI 스튜디오에서 시나리오 제작하기"
                       style={{
-                        padding: "7px 14px",
-                        borderRadius: "20px",
+                        width: "36px",
+                        height: "36px",
+                        borderRadius: "10px",
                         backgroundColor: theme.accent,
                         border: "none",
                         color: isDarkMode ? "#1a1817" : "#ffffff",
-                        fontSize: "0.78rem",
-                        fontWeight: "800",
                         cursor: "pointer",
                         display: "flex",
                         alignItems: "center",
-                        gap: "5px",
+                        justifyContent: "center",
                         boxShadow: `0 2px 10px ${theme.accentGlow || "rgba(236, 72, 153, 0.25)"}`,
-                        transition: "transform 0.15s ease",
-                        flex: isMobile ? 1.2 : "none",
-                        justifyContent: "center"
+                        transition: "transform 0.15s ease"
                       }}
-                      onMouseEnter={e => e.currentTarget.style.transform = "scale(1.02)"}
+                      onMouseEnter={e => e.currentTarget.style.transform = "scale(1.05)"}
                       onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}
                     >
-                      <Sparkles size={13} strokeWidth={2.5} />
-                      <span>제작하기 〉</span>
+                      <Sparkles size={18} strokeWidth={2.5} />
                     </button>
                   </div>
                 </section>
