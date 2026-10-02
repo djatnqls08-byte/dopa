@@ -3,6 +3,9 @@
 import { useState, useEffect, useRef } from "react";
 import SecretBoard from "@/components/SecretBoard";
 import CharacterSheet from "@/components/CharacterSheet";
+import GhostDiceDock, { playHeartbeatSound, triggerHapticPulse } from "@/components/GhostDiceDock";
+import PhoneDrawer from "@/components/PhoneDrawer";
+import GhostBoard from "@/components/GhostBoard";
 import { createClient } from '@supabase/supabase-js'; 
 
 // 🌟 이제 금고(Vercel 환경 변수)에서 안전하게 꺼내옵니다! (NEXT_PUBLIC_이 붙어야 화면에서 쓸 수 있어요!)
@@ -357,6 +360,19 @@ export default function GamePlatform() {
 
   // ── [괴담 모드 전용 상태] ──
   const [horrorStats, setHorrorStats] = useState({ 체력: 5, 순발: 5, 관찰: 5, 추론: 5, 정신: 5, 사교: 5 });
+// 🩸 괴담 모드 행동 굴림 & 3중 감각 상태
+const [rollRequest, setRollRequest] = useState(null); // AI 판정 요청 데이터
+const [isVignetteActive, setIsVignetteActive] = useState(false); // 핏빛 비네팅 스위치
+const [inGameTime, setInGameTime] = useState("1일차 새벽 · 03:44 AM"); // 서사 시간
+
+// 🩸 3중 감각(비네팅 + 심장음 + 진동) 원터치 발동 함수
+const triggerSensoryShock = () => {
+  setIsVignetteActive(true);
+  setTimeout(() => setIsVignetteActive(false), 700);
+  if (typeof playHeartbeatSound === "function") playHeartbeatSound();
+  if (typeof triggerHapticPulse === "function") triggerHapticPulse();
+};
+
   const availableStatPoints = 35 - Object.values(horrorStats).reduce((a, b) => a + b, 0);
 
   const [horrorTraits, setHorrorTraits] = useState([]);
@@ -1432,6 +1448,40 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
       const endCallMatch = rawText.match(/<!--\s*END_CALL:\s*(\{[\s\S]*?\})\s*-->/);
       if (endCallMatch) { setIsVoiceCallActive(false); setIsCallModalOpen(false); setVoiceCallNpc(null); rawText = rawText.replace(endCallMatch[0], "").trim(); }
 
+// 🎲 1. 위기 행동 굴림 요청 태그 낚아채기
+const rollReqMatch = rawText.match(/<!--\s*ROLL_REQ:\s*(\{[\s\S]*?\})\s*-->/i);
+if (rollReqMatch) {
+  try {
+    setRollRequest(JSON.parse(rollReqMatch[1]));
+  } catch(e) {}
+  rawText = rawText.replace(rollReqMatch[0], "");
+}
+
+// 🩸 2. 침식도 변동 태그 낚아채기 (수치 누적 + 3중 감각 충격)
+const erosionMatch = rawText.match(/<!--\s*EROSION_DELTA:\s*(\{[\s\S]*?\})\s*-->/i);
+if (erosionMatch) {
+  try {
+    const deltaData = JSON.parse(erosionMatch[1]);
+    const addedVal = Number(deltaData.value || deltaData.delta || 0);
+    if (addedVal > 0) {
+      triggerSensoryShock();
+      setSessions(prev => prev.map(s => {
+        if (s.id !== activeSessionId) return s;
+        const curFatigue = Number(s.sheet?.fatigue || 0);
+        return { ...s, sheet: { ...s.sheet, fatigue: Math.min(100, curFatigue + addedVal) } };
+      }));
+    }
+  } catch(e) {}
+  rawText = rawText.replace(erosionMatch[0], "");
+}
+
+// ⏱️ 3. 서사 시간대 갱신 태그 낚아채기
+const timeMatch = rawText.match(/<!--\s*TIME_SET:\s*["']?([^"'>\n]+)["']?\s*-->/i);
+if (timeMatch) {
+  setInGameTime(timeMatch[1].trim());
+  rawText = rawText.replace(timeMatch[0], "");
+}
+      
       // 🌟 [핵심] 스마트폰 톡 & 사진 완벽 낚아채기 파서
       let newPhoneMsg = null;
       const phoneMsgMatch = rawText.match(/<!--\s*PHONE_MSG:\s*(\{[\s\S]*?\})\s*-->/i);
@@ -1880,7 +1930,10 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
   // 🌟 (여기에 사라졌던 뼈대 2줄 복구!)
   return (
     <div style={{ display: "flex", height: "100dvh", width: "100vw", backgroundColor: theme.bg, color: theme.text, overflow: "hidden", position: "relative" }}>
+{/* 🩸 괴담 모드 핏빛 심장박동 비네팅 오버레이 */}
+    <div className={`vignette-overlay ${isVignetteActive ? "active" : ""}`} />
 
+    
       <style>{`
         @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
         @font-face { font-family: 'RIDIBatang'; src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_twelve@1.0/RIDIBatang.woff') format('woff'); font-weight: 400; font-style: normal; }
@@ -1898,6 +1951,9 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
         .glass-alt { background: ${theme.panelAlt}; backdrop-filter: blur(10px); border: 1px solid ${theme.border}; }
         @keyframes diceTumble { 0% { transform: rotate(0deg) scale(0.85); } 50% { transform: rotate(180deg) scale(1.15); } 100% { transform: rotate(360deg) scale(1); } }
         .anim-dice-rolling { animation: diceTumble 0.35s infinite linear; }
+        .vignette-overlay { position: fixed; inset: 0; pointer-events: none; z-index: 99990; opacity: 0; transition: opacity 0.15s ease-out; background: radial-gradient(circle at center, transparent 40%, rgba(185, 28, 28, 0.4) 80%, rgba(50, 5, 5, 0.95) 100%); }
+.vignette-overlay.active { animation: heartbeatVignette 0.65s cubic-bezier(0.2, 0.8, 0.2, 1); }
+@keyframes heartbeatVignette { 0% { opacity: 0; transform: scale(1); } 25% { opacity: 0.85; transform: scale(1.02); } 45% { opacity: 0.35; transform: scale(1); } 60% { opacity: 0.75; transform: scale(1.015); } 100% { opacity: 0; transform: scale(1); } }
         @keyframes typingBounce { 0%, 60%, 100% { transform: translateY(0); opacity: 0.3; } 30% { transform: translateY(-5px); opacity: 1; } }
         .typing-dot { animation: typingBounce 1.3s infinite ease-in-out; }
       `}</style>
@@ -2092,23 +2148,27 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
                   </>
                 )}
 
-                {/* 🕯️ 괴담 모드 */}
-                {activeSession.ruleMode === "horror" && (
-                  <>
-                    <button type="button" onClick={() => rollDiceDirectly()} title="행동 판정" style={{ background: "none", border: "none", cursor: "pointer", color: theme.warning, display: "flex", alignItems: "center" }}>
-                      <Dices size={22} strokeWidth={2} />
-                    </button>
-                    <button type="button" onClick={() => setIsTabletopOpen(!isTabletopOpen)} title="핸드아웃" style={{ background: "none", border: "none", cursor: "pointer", color: theme.text, display: "flex", alignItems: "center" }}>
-                      <LibraryBig size={22} strokeWidth={2} />
-                    </button>
-                    <button type="button" onClick={() => triggerMadnessDirectly(activeSessionId)} title="괴담 현상 발동" style={{ background: "none", border: "none", cursor: "pointer", color: theme.danger, display: "flex", alignItems: "center" }}>
-                      <Ghost size={22} strokeWidth={2} />
-                    </button>
-                    <button type="button" onClick={() => alert("장면 닫기 구현 필요")} title="장면 닫기" style={{ background: "none", border: "none", cursor: "pointer", color: theme.text, display: "flex", alignItems: "center" }}>
-                      <LogOut size={22} strokeWidth={2} />
-                    </button>
-                  </>
-                )}
+                {/* 🕯️ 괴담 모드 (무공해 미니멀 헤더: 스마트폰 + 괴이 조사록) */}
+{activeSession.ruleMode === "horror" && (
+  <>
+    <button 
+      type="button" 
+      onClick={(e) => { e.preventDefault(); e.stopPropagation(); setIsPhoneDrawerOpen(true); setIsSheetOpen(false); }} 
+      title="스마트폰" 
+      style={{ background: "none", border: "none", cursor: "pointer", color: theme.text, display: "flex", alignItems: "center" }}
+    >
+      <Smartphone size={22} strokeWidth={2} />
+    </button>
+    <button 
+      type="button" 
+      onClick={(e) => { e.stopPropagation(); setShowEvidenceBoard(!showEvidenceBoard); }} 
+      title="괴이 조사록" 
+      style={{ background: "none", border: "none", cursor: "pointer", color: theme.accent, display: "flex", alignItems: "center" }}
+    >
+      <FileText size={22} strokeWidth={2} />
+    </button>
+  </>
+)}
 
                {/* 공통: 캐릭터 시트 */}
                 <div style={{ width: "1px", height: "16px", backgroundColor: theme.border, margin: "0 4px" }} />
@@ -3791,6 +3851,24 @@ color: "#fff", border: "none", cursor: "pointer",
                 )}
               </div>
 
+{/* 🎲 괴담 모드 전용 1D10 행동 굴림 독 */}
+  {activeSession?.ruleMode === "horror" && rollRequest && (
+    <div style={{ width: "100%", maxWidth: "680px" }}>
+      <GhostDiceDock
+        rollRequest={rollRequest}
+        characterSheet={activeSession.sheet}
+        theme={theme}
+        isDarkMode={isDarkMode}
+        onRollComplete={(result) => {
+          const rollFormatted = `[🎲 ${result.stat} 판정 ${result.isSuccess ? "성공" : "실패"} · 주사위 ${result.roll} (목표 ${result.target}+)]`;
+          executeMessage(rollFormatted);
+          setRollRequest(null);
+        }}
+        onCancelRoll={() => setRollRequest(null)}
+      />
+    </div>
+  )}
+                  
               <footer style={{
                 position: "absolute", bottom: 0, left: 0, right: 0,
                 padding: "16px max(16px, env(safe-area-inset-bottom))",
@@ -3891,6 +3969,30 @@ color: "#fff", border: "none", cursor: "pointer",
               />
             )}
 
+{/* 🕯️ 괴담 모드 괴이 조사록 모달 */}
+{showEvidenceBoard && activeSession && activeSession.ruleMode === "horror" && (
+  <GhostBoard
+    isOpen={showEvidenceBoard}
+    onClose={() => setShowEvidenceBoard(false)}
+    activeSession={activeSession}
+    theme={theme}
+    isDarkMode={isDarkMode}
+    isMobile={isMobile}
+    onDeclareRitual={(data) => {
+      setShowEvidenceBoard(false);
+      const formattedRitualText = `[🕯️ 결착 선언 : 파훼 의식 집행]
+• 봉인 대상: ${data.target}
+• 이면의 진상: ${data.truth}
+• 사용할 매개체: ${data.item}
+• 집행 계획: ${data.steps}
+
+위의 진상과 수칙을 바탕으로, 지금 즉시 괴이의 파훼 의식을 시작한다!`;
+      setInputMsg(formattedRitualText);
+    }}
+  />
+)}
+
+              
             <CharacterSheet
               activeSession={activeSession}
               isDarkMode={isDarkMode}
@@ -4265,7 +4367,25 @@ color: "#fff", border: "none", cursor: "pointer",
           </div>
         );
       })()}
-      
+
+{/* 📱 괴담 모드 전용 스마트폰 컴포넌트 우선 분기 */}
+{isPhoneDrawerOpen && activeSession && activeSession.ruleMode === "horror" ? (
+  <PhoneDrawer
+    isOpen={isPhoneDrawerOpen}
+    onClose={() => setIsPhoneDrawerOpen(false)}
+    theme={theme}
+    inGameTime={inGameTime}
+    genre="modern"
+    isHorror={true}
+    contactName={activeSession.sheet?.npcs?.[0]?.name || "미확인 발신자"}
+    contactJob={activeSession.sheet?.npcs?.[0]?.job || "발신번호표시제한"}
+    affection={activeSession.sheet?.npcs?.[0]?.affection || 0}
+    messages={((activeSession.sheet?.phoneChats || {})[activeSession.sheet?.npcs?.[0]?.id || 1]) || []}
+    onSendMessage={(text) => executeMessage(`[메신저 전송] ${text}`)}
+  />
+) : null}
+
+        
       {/* 📱 3. 하단 팝업 메신저 서랍 */}
       {isPhoneDrawerOpen && activeSession && (
         <div onClick={() => { setIsPhoneDrawerOpen(false); setIsMyProfileOpen(false); setSelectedProfileNpc(null); setActivePhoneContactId(null); }} style={{ position: "fixed", inset: 0, zIndex: 125, display: "flex", justifyContent: "center", alignItems: "flex-end", backgroundColor: "rgba(0,0,0,0.65)" }}>
