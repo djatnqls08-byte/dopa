@@ -1603,6 +1603,25 @@ let newPhoneMsg = null;
         rawText = rawText.replace(autoSnapMatch[0], "");
       }
 
+// 🎁 [신규] 인벤토리 변동 태그 파싱
+      let invUpdate = null;
+      const invMatch = rawText.match(/<!--\s*INVENTORY:\s*(\{[\s\S]*?\})\s*-->/i);
+      if (invMatch) { 
+        try { invUpdate = JSON.parse(invMatch[1]); } catch(e) {} 
+        rawText = rawText.replace(invMatch[0], ""); 
+      }
+
+      // 💖 [신규] 멀티/단일 호감도 변동 태그 파싱
+      let affUpdates = [];
+      const affMatch = rawText.match(/<!--\s*AFFECTION:\s*(\[[\s\S]*?\]|\{[\s\S]*?\})\s*-->/i);
+      if (affMatch) {
+        try {
+          const parsedAff = JSON.parse(affMatch[1]);
+          affUpdates = Array.isArray(parsedAff) ? parsedAff : [parsedAff];
+        } catch(e) {}
+        rawText = rawText.replace(affMatch[0], "");
+      }
+      
       // 🌟 찌꺼기 청소 및 선택지 추출 (기존의 강력한 3중 필터 적용)
       let suggActions = [];
       const suggMatch = rawText.match(/<!--\s*SUGGESTIONS:\s*(\[[\s\S]*?\])\s*-{1,3}>/i);
@@ -1669,8 +1688,39 @@ let newPhoneMsg = null;
 // 🌟 [핵심] AI 응답에도 전화 중 꼬리표를 달아 통화 화면에만 예쁘게 출력되게 합니다!
       setSessions(prev => prev.map(s => {
         if (s.id !== activeSessionId) return s;
+        let currentSheet = { ...(s.sheet || {}) };
+
+        // 1. 인벤토리 차감 및 획득 반영
+        if (invUpdate) {
+          let updatedItems = [...(currentSheet.items || [])];
+          if (invUpdate.remove) {
+            updatedItems = updatedItems.filter(it => it.name !== invUpdate.remove && !it.name.includes(invUpdate.remove));
+            triggerToast("소지품 사용", `[${invUpdate.remove}]을(를) 건넸습니다.`, "🎁");
+          }
+          if (invUpdate.add) {
+            updatedItems.push(typeof invUpdate.add === "string" ? { name: invUpdate.add } : invUpdate.add);
+            triggerToast("소지품 획득", `[${invUpdate.add.name || invUpdate.add}]을(를) 입수했습니다.`, "✨");
+          }
+          currentSheet.items = updatedItems;
+        }
+
+        // 2. 호감도 변동(AFFECTION) 반영
+        if (affUpdates.length > 0) {
+          const updatedNpcs = (currentSheet.npcs || []).map(npc => {
+            const match = affUpdates.find(u => u.name === npc.name || (npc.name && npc.name.includes(u.name)));
+            if (match && match.delta) {
+              const prevAff = Number(npc.affection || 0);
+              const nextAff = Math.max(0, Math.min(100, prevAff + Number(match.delta)));
+              return { ...npc, affection: nextAff };
+            }
+            return npc;
+          });
+          currentSheet.npcs = updatedNpcs;
+        }
+
         return {
           ...s,
+          sheet: currentSheet,
           messages: [...updatedMessages, { role: "model", text: cleanText, isVoiceCall: isVoiceCallActive }],
           suggestedActions: suggActions
         };
@@ -1685,7 +1735,6 @@ let newPhoneMsg = null;
     }
   };
 
-  // 🌟 주사위 굴림 애니메이션 상태 (건드리지 마세요!)
 // 🌟 주사위 굴림 애니메이션 상태
   const [isRolling, setIsRolling] = useState(false);
   const [rollingDisplayNum, setRollingDisplayNum] = useState(1);
