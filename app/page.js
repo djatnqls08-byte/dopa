@@ -911,94 +911,92 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
     }
   };
 
-// 🛡️ [핵심] 로컬 데이터를 암호화(서명)하여 JSON 파일로 내보내는 함수
-  const handleExportData = () => {
-    if (selectedExportSessions.length === 0) {
-      triggerToast("선택 안 됨", "내보낼 세션을 하나 이상 선택해주세요.", "⚠️");
+// 🛡️ [보안 강화] 계정 귀속 백업 및 내보내기 엔진
+  const executeExport = () => {
+    const targets = sessions.filter(s => selectedExportSessionIds.includes(s.id));
+    if (targets.length === 0) return triggerToast("선택 오류", "내보낼 세션을 하나 이상 선택해주세요.", "⚠️");
+
+    const dateStr = new Date().toISOString().split('T')[0];
+
+    // 1. JSON 완전 백업인 경우 (계정 보안 서명 삽입!)
+    if (exportFormat === "json") {
+      const exportData = {
+        _meta: {
+          version: "1.5.0",
+          ownerEmail: currentUser?.email || "guest", // 🌟 현재 로그인한 유저 이메일 박제
+          exportedAt: new Date().toISOString()
+        },
+        sessions: targets
+      };
+      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a"); a.href = url; a.download = `SecretNovel_Save_${dateStr}.json`; a.click(); URL.revokeObjectURL(url);
+      closeModal(setShowExportModal);
+      triggerToast("백업 완료", "세이브 데이터가 안전하게 암호화되어 다운로드되었습니다.", <DownloadCloud size={18} color={theme.success}/>);
       return;
     }
 
-    if (exportFormat === "json") {
-      // 🌟 [보안] JSON 완전 백업의 경우, 소유자 검증용 UID를 몰래 심어둡니다.
-      const exportData = {
-        _meta: {
-          version: "1.0",
-          ownerId: currentUser?.uid || "guest", // 유저 UID 서명
-          exportedAt: new Date().toISOString()
-        },
-        sessions: sessions.filter(s => selectedExportSessions.includes(s.id)),
-        library: savedLibrary // 서재 데이터도 함께 백업하려면 추가
-      };
+    // 2. 텍스트/마크다운 추출인 경우 (보안 해제, 감상용)
+    let fullOutput = "";
+    targets.forEach(s => {
+      let msgs = s.messages || [];
+      if (exportScope === "storyOnly") {
+        msgs = msgs.filter(m => !m.text.includes("[🎲") && !m.text.includes("[⚠️") && !m.text.includes("[시스템"));
+      }
+      const pName = s.sheet?.name || "주인공";
+      const kName = s.sheet?.npcs?.[0]?.name || "상대방";
 
-      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportData));
-      const downloadAnchorNode = document.createElement('a');
-      downloadAnchorNode.setAttribute("href", dataStr);
-      downloadAnchorNode.setAttribute("download", `SecretNovel_Backup_${new Date().toISOString().split('T')[0]}.json`);
-      document.body.appendChild(downloadAnchorNode);
-      downloadAnchorNode.click();
-      downloadAnchorNode.remove();
-      triggerToast("백업 완료", "세이브 데이터가 안전하게 암호화되어 다운로드되었습니다.", <DownloadCloud size={18} color={theme.success}/>);
-      setShowDataModal(false);
-    } else {
-      // txt, md 포맷 내보내기 로직 (감상용이므로 보안 검증 없음)
-      let textContent = "";
-      selectedExportSessions.forEach(sessionId => {
-        const s = sessions.find(x => x.id === sessionId);
-        if (!s) return;
-        textContent += `========== [${s.title}] ==========\n`;
-        s.messages.forEach(m => {
-          if (exportRange === "story" && m.role === "user" && m.text.startsWith("[")) return; // 순수 서사 필터링
-          textContent += `${m.role === "user" ? "▶ 탐색자:" : "🗣️ 서술:"} ${m.text}\n\n`;
-        });
-        textContent += "\n\n";
+      fullOutput += `========== [${s.title}] (${s.ruleMode?.toUpperCase()}) ==========\n\n`;
+      msgs.forEach(m => {
+        fullOutput += `${m.role === "user" ? `▶ ${pName}` : `🗣️ ${kName}`}: ${m.text}\n\n`;
       });
+      fullOutput += "\n\n";
+    });
 
-      const mimeType = exportFormat === "md" ? "text/markdown" : "text/plain";
-      const dataStr = `data:${mimeType};charset=utf-8,` + encodeURIComponent(textContent);
-      const downloadAnchorNode = document.createElement('a');
-      downloadAnchorNode.setAttribute("href", dataStr);
-      downloadAnchorNode.setAttribute("download", `SecretNovel_Log_${new Date().toISOString().split('T')[0]}.${exportFormat}`);
-      document.body.appendChild(downloadAnchorNode);
-      downloadAnchorNode.click();
-      downloadAnchorNode.remove();
-      triggerToast("내보내기 완료", "플레이 로그가 텍스트로 추출되었습니다.", "📄");
-      setShowDataModal(false);
-    }
+    const mimeType = exportFormat === "md" ? "text/markdown" : "text/plain";
+    const blob = new Blob([fullOutput], { type: `${mimeType};charset=utf-8` });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a"); a.href = url; a.download = `SecretNovel_Log_${dateStr}.${exportFormat}`; a.click(); URL.revokeObjectURL(url);
+    closeModal(setShowExportModal);
+    triggerToast("내보내기 완료", "플레이 로그가 성공적으로 추출되었습니다.", "📄");
   };
 
-  // 🛡️ [핵심] JSON 백업 파일을 읽어올 때 소유권을 검증하는 함수
-  const handleImportData = (event) => {
-    const file = event.target.files[0];
+  // 🛡️️ [보안 강화] 계정 대조 복원 엔진
+  const importSaveFile = (e) => {
+    const file = e.target.files[0];
     if (!file) return;
-
     const reader = new FileReader();
-    reader.onload = (e) => {
+    reader.onload = (ev) => {
       try {
-        const importedData = JSON.parse(e.target.result);
+        let imported = JSON.parse(ev.target.result);
         
-        // 🌟 [보안] 파일 내부의 소유자 UID와 현재 로그인한 유저의 UID를 대조!
-        if (importedData._meta?.ownerId !== (currentUser?.uid || "guest")) {
-          triggerToast("보안 차단", "본인의 계정으로 백업한 데이터만 복원할 수 있습니다. (계정 불일치)", "🚫");
-          return;
+        // 🌟 타 유저의 유료 세션 파일인지 검증!
+        if (imported._meta) {
+          if (imported._meta.ownerEmail !== (currentUser?.email || "guest")) {
+            triggerToast("보안 차단", "본인의 계정으로 백업한 세이브만 복원할 수 있습니다. (계정 불일치)", "🚫");
+            return;
+          }
+          imported = imported.sessions; // 실제 세션 데이터 추출
+        } else {
+          // 구버전 보안 없는 파일의 경우 배열로 감싸줌
+          if (!Array.isArray(imported)) imported = [imported];
         }
 
-        // 복원 로직: 기존 데이터에 덮어씌우거나 병합 (여기선 병합 예시)
-        if (importedData.sessions) {
-          const newSessions = [...sessions];
-          importedData.sessions.forEach(impS => {
-            if (!newSessions.some(s => s.id === impS.id)) newSessions.push(impS);
-          });
-          setSessions(newSessions);
-        }
-        
-        triggerToast("복원 성공", "세이브 데이터가 성공적으로 복원되었습니다.", "✨");
-        setShowSettingsModal(false); // 설정 창 닫기
-      } catch (err) {
-        triggerToast("파일 오류", "올바른 백업 파일 형식이 아닙니다.", "⚠️");
+        setSessions(prev => {
+          const map = new Map(); 
+          prev.forEach(s => map.set(s.id, s)); 
+          imported.forEach(s => map.set(s.id, s)); 
+          return Array.from(map.values()).sort((a, b) => b.id - a.id);
+        });
+        triggerToast("복원 성공", `${imported.length}개의 세션을 성공적으로 복원했습니다!`, "✨");
+        setShowSettingsModal(false);
+        setShowExportModal(false);
+      } catch (err) { 
+        triggerToast("복원 실패", "파일 형식이 올바르지 않습니다.", "⚠️"); 
       }
     };
     reader.readAsText(file);
-    event.target.value = null; // input 초기화
+    e.target.value = null; // 입력 초기화
   };
 
 // ── [10. 코어 엔진: 세션 시작 및 통신] ──
@@ -1585,7 +1583,7 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
          <button onClick={() => { setIsDrawerOpen(false); setShowSettingsModal(true); }} style={{ flex: 1, padding: "10px", backgroundColor: theme.panel, border: `1px solid ${theme.border}`, borderRadius: "8px", color: theme.text, fontSize: "0.78rem", fontWeight: "700", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}>
             <Settings size={16} strokeWidth={2.5} /> 설정
           </button>
-          <button onClick={() => { setIsDrawerOpen(false); setShowDataModal(true); }} style={{ flex: 1, padding: "10px", backgroundColor: theme.panel, border: `1px solid ${theme.border}`, borderRadius: "8px", color: theme.text, fontSize: "0.78rem", fontWeight: "700", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}>
+          <button onClick={() => { setIsDrawerOpen(false); setShowExportModal(true); }} style={{ flex: 1, padding: "10px", backgroundColor: theme.panel, border: `1px solid ${theme.border}`, borderRadius: "8px", color: theme.text, fontSize: "0.78rem", fontWeight: "700", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}>
             <Database size={16} strokeWidth={2.5} /> 데이터
           </button>
         </div>
@@ -1642,20 +1640,8 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
 {/* 🕵️ 추리 모드 */}
                 {activeSession.ruleMode === "freeform" && (
                   <>
-                    {/* 👇 추리 모드용 메신저(증거품) 버튼 추가! */}
                     <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setIsPhoneDrawerOpen(true); setIsSheetOpen(false); }} title="증거품 휴대폰" style={{ background: "none", border: "none", cursor: "pointer", color: theme.text, display: "flex", alignItems: "center" }}>
                       <Smartphone size={22} strokeWidth={2} />
-                    </button>
-                    {/* 👆 여기까지 추가 */}
-
-                    <button type="button" onClick={() => setInputMsg("[🔍 현장 조사] 주변의 수상한 점이나 단서를 유심히 살펴본다. ")} title="현장 조사" style={{ background: "none", border: "none", cursor: "pointer", color: theme.text, display: "flex", alignItems: "center" }}>
-                      <Search size={22} strokeWidth={2} />
-                    </button>
-                    <button type="button" onClick={() => setInputMsg("[🤫 특수 정보 수집] 남몰래 기기를 해킹하거나 은밀하게 정보를 캐낸다. ")} title="정보 수집" style={{ background: "none", border: "none", cursor: "pointer", color: theme.text, display: "flex", alignItems: "center" }}>
-                      <FileSearch size={22} strokeWidth={2} />
-                    </button>
-                    <button type="button" onClick={() => setInputMsg("[💬 심문/추궁] 상대방의 말에서 모순점이나 수상한 알리바이를 날카롭게 캐묻는다. ")} title="알리바이 심문" style={{ background: "none", border: "none", cursor: "pointer", color: theme.text, display: "flex", alignItems: "center" }}>
-                      <MessageCircle size={22} strokeWidth={2} />
                     </button>
                     <button type="button" onClick={() => setInputMsg("[💡 진상 추리 선언] 지금까지 모은 단서들을 바탕으로 이 사건의 진실을 밝혀낸다! ")} title="진상 추리" style={{ background: "none", border: "none", cursor: "pointer", color: theme.danger, display: "flex", alignItems: "center" }}>
                       <Lightbulb size={22} strokeWidth={2} />
@@ -3043,9 +3029,9 @@ color: "#fff", border: "none", cursor: "pointer",
                   display: "flex", flexDirection: "column", gap: "28px", 
                   maxWidth: "760px", margin: "0 auto", width: "100%", boxSizing: "border-box", 
                   color: theme.text, letterSpacing: "-0.02em",
-                  // 🌟 여기서 설정한 폰트와 사이즈가 실시간으로 들어갑니다!
-                  fontFamily: appFont === "ridi" ? "'RIDIBatang', serif" : "'Pretendard', sans-serif",
-                  fontSize: `${1.12 * fontSize}rem`, 
+                  // 🌟 [핵심] 설정에서 고른 폰트와 사이즈가 즉시 적용됩니다!
+                  fontFamily: fontChoice === "ridi" ? "'RIDIBatang', serif" : "'Pretendard', sans-serif",
+                  fontSize: `${1.12 * (chatFontSize || 1)}rem`, 
                   lineHeight: 2.1,
                   fontWeight: 400
                 }}
@@ -3055,57 +3041,55 @@ color: "#fff", border: "none", cursor: "pointer",
                   const isLastUserMsg = isUser && idx === activeSession.messages.map(x => x.role).lastIndexOf("user");
                   
                   return (
-                    <div key={idx} style={{ 
-                      alignSelf: "stretch", color: isUser ? theme.accent : theme.text, fontWeight: "400", opacity: 0.95,
-                      textAlign: isUser ? "center" : "left", fontStyle: isUser ? "italic" : "normal", wordBreak: "keep-all",
-                      padding: isUser ? "16px 0" : "0", borderTop: isUser ? `1px dashed ${theme.border}` : "none",
-                      borderBottom: isUser ? `1px dashed ${theme.border}` : "none", margin: isUser ? "10px 0" : "0"
-                    }}>
-                      <div style={{ display: "flex", flexDirection: "column", alignItems: isUser ? "center" : "flex-start", width: "100%" }}>
-                        
-                        <div 
-                          style={{ 
+                    <div key={idx} style={{ alignSelf: "stretch", display: "flex", flexDirection: "column" }}>
+                      
+                      <div style={{ 
+                        color: isUser ? theme.accent : theme.text, fontWeight: "400", opacity: 0.95,
+                        textAlign: isUser ? "center" : "left", fontStyle: isUser ? "italic" : "normal", wordBreak: "keep-all",
+                        padding: isUser ? "16px 0" : "0", borderTop: isUser ? `1px dashed ${theme.border}` : "none",
+                        borderBottom: isUser ? `1px dashed ${theme.border}` : "none", margin: isUser ? "10px 0" : "0"
+                      }}>
+                        <div style={{ display: "flex", flexDirection: "column", alignItems: isUser ? "center" : "flex-start", width: "100%" }}>
+                          
+                          <div style={{ 
                             backgroundColor: m.text.includes("[🎲") || m.text.includes("[⚠️") ? "rgba(229, 169, 60, 0.12)" : "transparent", 
                             color: isUser ? (theme.accent || "#d97706") : theme.text, 
                             border: m.text.includes("[⚠️") ? `1px solid ${theme.danger}` : m.text.includes("[🎲") ? `1px solid ${theme.warning}` : "none", 
                             padding: m.role === "user" ? "20px 0" : "4px 0", 
                             margin: m.role === "user" ? "16px 0" : "0",
-                            borderRadius: "8px", 
-                            width: "100%",
+                            borderRadius: "8px", width: "100%",
                             textAlign: m.role === "user" ? "center" : "left",
                             fontStyle: m.role === "user" ? "italic" : "normal",
                             fontWeight: m.role === "user" ? "700" : "400",
-                            /* 🌟 에러의 주범이었던 주석 수정 완료! 유저는 고딕, 모델은 리디바탕 고정 */
-                            fontFamily: isUser ? "'Pretendard', sans-serif" : "'RIDIBatang', serif"
-                          }}
-                        >
-                          {m.cg && (
-                            <div style={{ marginBottom: "14px", borderRadius: "10px", overflow: "hidden", position: "relative", border: "1px solid rgba(245, 158, 11, 0.35)", backgroundColor: "rgba(15, 23, 42, 0.85)" }}>
-                              {(m.cg.imageUrl || m.cg.url) ? (
-                                <img src={m.cg.imageUrl || m.cg.url} alt={m.cg.title || "이벤트 CG"} style={{ width: "100%", maxHeight: "380px", objectFit: "cover", display: "block" }} />
-                              ) : (
-                                <div style={{ padding: "16px 14px", textAlign: "center", background: "linear-gradient(135deg, rgba(30, 41, 59, 0.9), rgba(15, 23, 42, 0.95))" }}>
-                                  <span style={{ fontSize: "1.4rem", display: "block", marginBottom: "4px" }}>🎬</span>
-                                  <span style={{ fontSize: "0.85rem", fontWeight: "800", color: "#fbbf24" }}>[이벤트 씬 개막] {m.cg.title}</span>
-                                </div>
-                              )}
+                            fontFamily: isUser ? "'Pretendard', sans-serif" : "inherit"
+                          }}>
+                            {m.cg && (
+                              <div style={{ marginBottom: "14px", borderRadius: "10px", overflow: "hidden", position: "relative", border: "1px solid rgba(245, 158, 11, 0.35)", backgroundColor: "rgba(15, 23, 42, 0.85)" }}>
+                                {(m.cg.imageUrl || m.cg.url) ? (
+                                  <img src={m.cg.imageUrl || m.cg.url} alt={m.cg.title || "이벤트 CG"} style={{ width: "100%", maxHeight: "380px", objectFit: "cover", display: "block" }} />
+                                ) : (
+                                  <div style={{ padding: "16px 14px", textAlign: "center", background: "linear-gradient(135deg, rgba(30, 41, 59, 0.9), rgba(15, 23, 42, 0.95))" }}>
+                                    <span style={{ fontSize: "1.4rem", display: "block", marginBottom: "4px" }}>🎬</span>
+                                    <span style={{ fontSize: "0.85rem", fontWeight: "800", color: "#fbbf24" }}>[이벤트 씬 개막] {m.cg.title}</span>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                            
+                            <div style={{ display: "flex", flexDirection: "column", gap: "22px", lineHeight: "2.1" }}>
+                              {m.text.split('\n').filter(line => line.trim() !== '').map((line, lIdx) => (
+                                <span key={lIdx} style={{ display: "block" }}>
+                                  {line}
+                                </span>
+                              ))}
                             </div>
-                          )}
-                          
-                          {/* 🌟 문단 단위로 쪼개어 마진을 시원하게 벌려줍니다. */}
-                          <div style={{ display: "flex", flexDirection: "column", gap: "22px", lineHeight: "2.1" }}>
-                            {m.text.split('\n').filter(line => line.trim() !== '').map((line, lIdx) => (
-                              <span key={lIdx} style={{ display: "block" }}>
-                                {line}
-                              </span>
-                            ))}
                           </div>
                         </div>
                       </div>
 
-                      {/* 🌟 취소 버튼 바깥 동그라미 및 테두리 완전 제거 */}
+                      {/* 🌟 점선 아래로 빠진 취소 버튼 & 얇은 글씨체 적용 */}
                       {isLastUserMsg && !isLoading && (
-                        <div style={{ display: "flex", justifyContent: "center", marginTop: "14px" }}>
+                        <div style={{ display: "flex", justifyContent: "center", marginTop: "4px" }}>
                           <button
                             type="button"
                             onClick={() => {
@@ -3121,13 +3105,13 @@ color: "#fff", border: "none", cursor: "pointer",
                             }}
                             style={{
                               background: "none", border: "none", 
-                              padding: "6px 16px", color: theme.textMuted, fontSize: "0.78rem", fontWeight: "700", 
+                              padding: "6px 16px", color: theme.textMuted, fontSize: "0.75rem", fontWeight: "500", 
                               cursor: "pointer", display: "flex", alignItems: "center", gap: "6px", transition: "color 0.2s"
                             }}
                             onMouseEnter={e => e.currentTarget.style.color = theme.text}
                             onMouseLeave={e => e.currentTarget.style.color = theme.textMuted}
                           >
-                            <span style={{ fontSize: "1.1rem" }}>⎌</span> 대화 전송 취소하기
+                            <span style={{ fontSize: "0.9rem" }}>⎌</span> 대화 전송 취소하기
                           </button>
                         </div>
                       )}
@@ -3142,18 +3126,16 @@ color: "#fff", border: "none", cursor: "pointer",
                 )}
               </div>
 
-             <footer style={{
+              <footer style={{
                 position: "absolute", bottom: 0, left: 0, right: 0,
                 padding: "16px max(16px, env(safe-area-inset-bottom))",
                 background: `linear-gradient(to top, ${theme.bg} 85%, transparent)`,
                 display: "flex", flexDirection: "column", alignItems: "center", gap: "12px", zIndex: 30
               }}>
                 
-                {/* 💡 상단: 1, 2, 3 숫자 텍스트 대신 깔끔한 버튼(칩) 형태로 렌더링! */}
                 {activeSession?.suggestedActions?.length > 0 && (
                   <div style={{ display: "flex", gap: "8px", overflowX: "auto", width: "100%", maxWidth: "680px", paddingBottom: "4px", WebkitOverflowScrolling: "touch" }}>
                     {activeSession.suggestedActions.map((sugg, idx) => {
-                       // 🌟 "1. 텍스트" 형식으로 넘어올 경우 숫자와 쌍따옴표를 예쁘게 제거합니다.
                        const cleanSugg = sugg.replace(/^\d+\.\s*/, "").replace(/^"/, "").replace(/"$/, "");
                        return (
                         <button
@@ -3184,15 +3166,16 @@ color: "#fff", border: "none", cursor: "pointer",
                     onKeyDown={e => {
                       if (e.key === "Enter") {
                         if (e.shiftKey) {
-                          e.preventDefault();
+                          // 자연스러운 줄바꿈
+                        } else {
+                          // 🌟 엔터만 누르면 바로 전송!
+                          e.preventDefault(); 
                           handleSendMessage();
                           e.target.style.height = "auto";
-                        } else {
-                          e.preventDefault();
                         }
                       }
                     }}
-                    placeholder="행동을 선언하거나 대사를 입력하세요... (Shift+Enter 전송)"
+                    placeholder="행동을 선언하거나 대사를 입력하세요... (Enter 전송, Shift+Enter 줄바꿈)"
                     rows={1}
                     style={{
                       flex: 1, border: "none", backgroundColor: "transparent", color: theme.text,
@@ -3562,7 +3545,7 @@ color: "#fff", border: "none", cursor: "pointer",
             {/* 🔹 분기별 화면 렌더링 */}
             <div style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column" }}>
               
-              {/* 👤 [화면 A: 내 프로필 상세 - 데이터 파싱 완벽 적용!] */}
+             {/* 👤 [화면 A: 내 프로필 상세 - 데이터 파싱 완벽 적용!] */}
               {isMyProfileOpen ? (
                 <div style={{ padding: "24px", display: "flex", flexDirection: "column", alignItems: "center", gap: "20px" }}>
                   <span style={{ fontSize: "0.85rem", color: activePhoneSkin.textMuted, fontWeight: "600" }}>{activeSession.sheet?.job || "직업 미상"}</span>
@@ -3576,10 +3559,36 @@ color: "#fff", border: "none", cursor: "pointer",
                     <h2 style={{ margin: 0, fontSize: "1.4rem", fontWeight: "900", color: activePhoneSkin.text }}>{activeSession.sheet?.name || "이름 미상"}</h2>
                     <span style={{ fontSize: "0.85rem", color: activePhoneSkin.textMuted }}>새겨진 전언이 없습니다. ✏️</span>
                   </div>
-                  <div style={{ width: "100%", backgroundColor: activePhoneSkin.panel, borderRadius: "16px", padding: "20px", display: "flex", flexDirection: "column", gap: "16px", border: `1px solid ${activePhoneSkin.border}`, boxSizing: "border-box" }}>
-                    <div><span style={{ fontSize: "0.75rem", color: activePhoneSkin.textMuted, fontWeight: "700" }}>신분 / 직책</span><div style={{ fontSize: "0.95rem", fontWeight: "800", color: activePhoneSkin.text, marginTop: "4px" }}>{activeSession.sheet?.job || "기록 없음"}</div></div>
-                    <div style={{ borderTop: `1px solid ${activePhoneSkin.border}` }}/>
-                    <div><span style={{ fontSize: "0.75rem", color: activePhoneSkin.textMuted, fontWeight: "700" }}>백스토리 및 성격</span><div style={{ fontSize: "0.85rem", color: activePhoneSkin.text, marginTop: "6px", lineHeight: 1.6, whiteSpace: "pre-wrap" }}>{activeSession.sheet?.background || "기록된 배경이 없습니다."}</div></div>
+                  
+                  <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: "12px" }}>
+                    {/* 🌟 멘탈 & 스트레스 패널 통합 */}
+                    <div style={{ display: "flex", gap: "10px" }}>
+                      <div style={{ flex: 1, backgroundColor: isDarkMode ? "rgba(34, 197, 94, 0.15)" : "#dcfce7", border: `1px solid rgba(34, 197, 94, 0.4)`, borderRadius: "12px", padding: "12px", display: "flex", flexDirection: "column", alignItems: "center", gap: "4px" }}>
+                        <span style={{ fontSize: "0.75rem", fontWeight: "800", color: "#16a34a" }}>멘탈</span>
+                        <span style={{ fontSize: "1.1rem", fontWeight: "900", color: "#16a34a" }}>{activeSession.sheet?.hp || 100}</span>
+                      </div>
+                      <div style={{ flex: 1, backgroundColor: isDarkMode ? "rgba(245, 158, 11, 0.15)" : "#fef3c7", border: `1px solid rgba(245, 158, 11, 0.4)`, borderRadius: "12px", padding: "12px", display: "flex", flexDirection: "column", alignItems: "center", gap: "4px" }}>
+                        <span style={{ fontSize: "0.75rem", fontWeight: "800", color: "#d97706" }}>스트레스 지수</span>
+                        <span style={{ fontSize: "1.1rem", fontWeight: "900", color: "#d97706" }}>{activeSession.sheet?.fatigue || 0}%</span>
+                      </div>
+                    </div>
+
+                    <div style={{ width: "100%", backgroundColor: activePhoneSkin.panel, borderRadius: "16px", padding: "20px", display: "flex", flexDirection: "column", gap: "16px", border: `1px solid ${activePhoneSkin.border}`, boxSizing: "border-box" }}>
+                      <div><span style={{ fontSize: "0.75rem", color: activePhoneSkin.textMuted, fontWeight: "700" }}>신분 / 직책</span><div style={{ fontSize: "0.95rem", fontWeight: "800", color: activePhoneSkin.text, marginTop: "4px" }}>{activeSession.sheet?.job || "기록 없음"}</div></div>
+                      <div style={{ borderTop: `1px solid ${activePhoneSkin.border}` }}/>
+                      <div><span style={{ fontSize: "0.75rem", color: activePhoneSkin.textMuted, fontWeight: "700" }}>백스토리 및 성격</span><div style={{ fontSize: "0.85rem", color: activePhoneSkin.text, marginTop: "6px", lineHeight: 1.6, whiteSpace: "pre-wrap" }}>{activeSession.sheet?.background || "기록된 배경이 없습니다."}</div></div>
+                      
+                      {/* 🌟 소지품 인벤토리 추가 */}
+                      <div style={{ borderTop: `1px solid ${activePhoneSkin.border}` }}/>
+                      <div>
+                        <span style={{ fontSize: "0.75rem", color: activePhoneSkin.textMuted, fontWeight: "700" }}>소지품 및 단서</span>
+                        <div style={{ fontSize: "0.85rem", color: activePhoneSkin.text, marginTop: "6px", lineHeight: 1.6 }}>
+                          {activeSession.sheet?.items?.length > 0 || activeSession.sheet?.clues?.length > 0
+                            ? [...(activeSession.sheet.items || []).map(i => i.name), ...(activeSession.sheet.clues || []).map(c => c.name)].join(", ")
+                            : "획득한 소지품이나 단서가 없습니다."}
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
@@ -4233,44 +4242,95 @@ color: "#fff", border: "none", cursor: "pointer",
 
 {/* ⚙️ 환경 설정 모달 */}
       {showSettingsModal && (
-        <div onClick={() => setShowSettingsModal(false)} style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999, padding: "20px" }}>
-          <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: "420px", backgroundColor: theme.panel, borderRadius: "20px", padding: "24px", display: "flex", flexDirection: "column", gap: "20px", boxShadow: "0 20px 40px rgba(0,0,0,0.4)" }}>
+        <div onClick={() => setShowSettingsModal(false)} style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.65)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999, padding: "20px", animation: "fadeIn 0.2s ease-out" }}>
+          <div onClick={e => e.stopPropagation()} className="glass-card" style={{ width: "100%", maxWidth: "460px", backgroundColor: theme.panel, borderRadius: "20px", padding: "24px", display: "flex", flexDirection: "column", gap: "24px", boxShadow: "0 20px 40px rgba(0,0,0,0.4)" }}>
+            
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: `1px solid ${theme.border}`, paddingBottom: "12px" }}>
-              <span style={{ fontWeight: "800", fontSize: "1.1rem", display: "flex", alignItems: "center", gap: "8px", color: theme.text }}>
-                <Settings size={20} color={theme.accent} /> 환경 설정
+              <span style={{ fontWeight: "800", fontSize: "1.15rem", display: "flex", alignItems: "center", gap: "8px", color: theme.text }}>
+                <Settings size={22} color={theme.accent} /> 환경 설정
               </span>
-              <button onClick={() => setShowSettingsModal(false)} style={{ background: "none", border: "none", color: theme.textMuted, cursor: "pointer" }}><X size={24}/></button>
+              <button onClick={() => setShowSettingsModal(false)} style={{ background: "none", border: "none", color: theme.textMuted, cursor: "pointer" }}><X size={26}/></button>
             </div>
 
-            {/* 폰트 설정 */}
-            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-              <label style={{ fontSize: "0.85rem", fontWeight: "700", color: theme.text }}>본문 서사 글씨체</label>
+            {/* 테마 팔레트 */}
+            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <label style={{ fontSize: "0.85rem", fontWeight: "800", color: theme.text }}>2026 팬톤 테마 팔레트</label>
+                <button onClick={() => setIsDarkMode(!isDarkMode)} style={{ background: "none", border: "none", color: theme.accent, fontSize: "0.8rem", fontWeight: "700", cursor: "pointer" }}>
+                  {isDarkMode ? "🌙 나이트" : "☀️ 라이트"}
+                </button>
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
+                {Object.entries(THEME_PALETTES).map(([k, p]) => (
+                  <button key={k} onClick={() => handleSelectPalette(k)} style={{ padding: "12px", borderRadius: "10px", border: `1.5px solid ${currentPalette === k ? theme.accent : theme.border}`, backgroundColor: currentPalette === k ? theme.panelAlt : "transparent", color: theme.text, fontSize: "0.8rem", cursor: "pointer", fontWeight: currentPalette === k ? "800" : "500", transition: "all 0.2s" }}>
+                    {p.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* 글씨체 설정 */}
+            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+              <label style={{ fontSize: "0.85rem", fontWeight: "800", color: theme.text }}>본문 서사 글씨체</label>
               <div style={{ display: "flex", gap: "10px" }}>
-                <button onClick={() => setAppFont("ridi")} style={{ flex: 1, padding: "12px", borderRadius: "10px", border: `1px solid ${appFont === "ridi" ? theme.accent : theme.border}`, backgroundColor: appFont === "ridi" ? theme.panelAlt : theme.inputBg, color: theme.text, fontFamily: "'RIDIBatang', serif", fontWeight: "600", cursor: "pointer" }}>리디바탕 (명조체)</button>
-                <button onClick={() => setAppFont("pretendard")} style={{ flex: 1, padding: "12px", borderRadius: "10px", border: `1px solid ${appFont === "pretendard" ? theme.accent : theme.border}`, backgroundColor: appFont === "pretendard" ? theme.panelAlt : theme.inputBg, color: theme.text, fontFamily: "'Pretendard', sans-serif", fontWeight: "600", cursor: "pointer" }}>프리텐다드 (고딕체)</button>
+                <button onClick={() => setFontChoice("ridi")} style={{ flex: 1, padding: "12px", borderRadius: "10px", border: `1.5px solid ${fontChoice === "ridi" ? theme.accent : theme.border}`, backgroundColor: fontChoice === "ridi" ? theme.panelAlt : "transparent", color: theme.text, fontFamily: "'RIDIBatang', serif", fontWeight: "700", cursor: "pointer", transition: "all 0.2s" }}>
+                  📖 리디바탕 (명조체)
+                </button>
+                <button onClick={() => setFontChoice("gothic")} style={{ flex: 1, padding: "12px", borderRadius: "10px", border: `1.5px solid ${fontChoice === "gothic" ? theme.accent : theme.border}`, backgroundColor: fontChoice === "gothic" ? theme.panelAlt : "transparent", color: theme.text, fontFamily: "'Pretendard', sans-serif", fontWeight: "700", cursor: "pointer", transition: "all 0.2s" }}>
+                  📱 프리텐다드 (고딕체)
+                </button>
               </div>
             </div>
 
             {/* 폰트 크기 슬라이더 */}
             <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <label style={{ fontSize: "0.85rem", fontWeight: "700", color: theme.text }}>채팅 폰트 크기</label>
-                <span style={{ fontSize: "0.8rem", fontWeight: "600", color: theme.accent }}>{fontSize}rem</span>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <label style={{ fontSize: "0.85rem", fontWeight: "800", color: theme.text }}>채팅 폰트 크기</label>
+                <span style={{ fontSize: "0.8rem", fontWeight: "700", color: theme.accent }}>{chatFontSize || 1}rem</span>
               </div>
-              <input type="range" min="0.8" max="1.5" step="0.1" value={fontSize} onChange={(e) => setFontSize(parseFloat(e.target.value))} style={{ width: "100%", accentColor: theme.accent }} />
+              <input type="range" min="0.8" max="1.5" step="0.05" value={chatFontSize || 1} onChange={e => handleSaveFontSize(Number(e.target.value))} style={{ width: "100%", accentColor: theme.accent, marginTop: "4px" }} />
             </div>
 
-            <div style={{ borderTop: `1px solid ${theme.border}` }} />
+            {/* 주사위 볼륨 슬라이더 */}
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px", borderTop: `1px dashed ${theme.border}`, paddingTop: "16px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <label style={{ fontSize: "0.85rem", fontWeight: "800", color: theme.text }}>주사위 효과음 볼륨</label>
+                <span style={{ fontSize: "0.8rem", fontWeight: "700", color: theme.accent }}>{Math.round((soundVolume || 0.6) * 100)}%</span>
+              </div>
+              <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
+                <input type="range" min="0" max="1" step="0.05" value={soundVolume || 0.6} onChange={e => handleSaveVolume(Number(e.target.value))} style={{ flex: 1, accentColor: theme.accent }} />
+                <button onClick={playDiceSound} style={{ padding: "6px 12px", backgroundColor: theme.panelAlt, border: `1px solid ${theme.borderHighlight}`, color: theme.text, borderRadius: "8px", fontSize: "0.75rem", fontWeight: "700", cursor: "pointer", display: "flex", alignItems: "center", gap: "4px" }}>
+                  🔊 테스트
+                </button>
+              </div>
+            </div>
 
-            {/* 하단 백업/복원 버튼 영역 */}
-            <div style={{ display: "flex", gap: "10px" }}>
-              <button onClick={() => { setShowSettingsModal(false); setShowDataModal(true); }} style={{ flex: 1, padding: "12px", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", backgroundColor: theme.inputBg, border: `1px solid ${theme.border}`, borderRadius: "12px", color: theme.accent, fontWeight: "700", cursor: "pointer" }}>
-                <Download size={18} /> 백업
+            {/* 알림 진동 설정 */}
+            <div style={{ display: "flex", flexDirection: "column", gap: "10px", borderTop: `1px dashed ${theme.border}`, paddingTop: "16px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <label style={{ fontSize: "0.85rem", fontWeight: "800", color: theme.text }}>스마트폰 알림 진동 (햅틱)</label>
+                <span style={{ fontSize: "0.8rem", fontWeight: "700", color: theme.accent }}>📳 {vibrationLevel === "off" ? "끄기" : vibrationLevel === "light" ? "부드럽게" : vibrationLevel === "medium" ? "보통" : "강하게"}</span>
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: "6px" }}>
+                {[{ k: "off", l: "끄기" }, { k: "light", l: "부드럽게" }, { k: "medium", l: "보통" }, { k: "strong", l: "강하게" }].map(opt => (
+                  <button key={opt.k} onClick={() => handleSaveVibration(opt.k)} style={{ padding: "10px 0", borderRadius: "10px", border: `1.5px solid ${vibrationLevel === opt.k ? theme.accent : theme.border}`, backgroundColor: vibrationLevel === opt.k ? theme.panelAlt : "transparent", color: theme.text, fontSize: "0.75rem", fontWeight: vibrationLevel === opt.k ? "700" : "500", cursor: "pointer", transition: "all 0.2s" }}>
+                    {opt.l}
+                  </button>
+                ))}
+              </div>
+              <button onClick={() => triggerVibration(vibrationLevel)} style={{ width: "100%", padding: "10px", backgroundColor: theme.inputBg, border: `1px solid ${theme.borderHighlight}`, color: theme.accent, borderRadius: "10px", fontSize: "0.8rem", fontWeight: "700", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", marginTop: "4px" }}>
+                📳 진동 테스트
               </button>
-              
-              <label style={{ flex: 1, padding: "12px", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", backgroundColor: theme.inputBg, border: `1px solid ${theme.border}`, borderRadius: "12px", color: theme.danger, fontWeight: "700", cursor: "pointer" }}>
-                <Upload size={18} /> 복원
-                <input type="file" accept=".json" style={{ display: "none" }} onChange={handleImportData} />
+            </div>
+
+            {/* 백업 및 복원 버튼 (최하단) */}
+            <div style={{ display: "flex", gap: "12px", borderTop: `1px solid ${theme.border}`, paddingTop: "20px" }}>
+              <button onClick={() => { setShowSettingsModal(false); setShowExportModal(true); }} style={{ flex: 1, padding: "14px", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", backgroundColor: theme.panelAlt, border: `1px solid ${theme.borderHighlight}`, borderRadius: "14px", color: theme.text, fontSize: "0.9rem", fontWeight: "800", cursor: "pointer" }}>
+                <Download size={18} color={theme.accent} /> 백업
+              </button>
+              <label style={{ flex: 1, padding: "14px", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", backgroundColor: theme.panelAlt, border: `1px solid ${theme.borderHighlight}`, borderRadius: "14px", color: theme.danger, fontSize: "0.9rem", fontWeight: "800", cursor: "pointer" }}>
+                <Upload size={18} color={theme.danger} /> 복원
+                <input type="file" accept=".json" style={{ display: "none" }} onChange={importSaveFile} />
               </label>
             </div>
           </div>
@@ -4278,57 +4338,58 @@ color: "#fff", border: "none", cursor: "pointer",
       )}
 
       {/* 💾 데이터 관리 (내보내기 & 백업) 모달 */}
-      {showDataModal && (
-        <div onClick={() => setShowDataModal(false)} style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 10000, padding: "20px" }}>
-          <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: "460px", backgroundColor: theme.panel, borderRadius: "20px", padding: "24px", display: "flex", flexDirection: "column", gap: "20px", boxShadow: "0 20px 40px rgba(0,0,0,0.4)" }}>
+      {showExportModal && (
+        <div onClick={() => setShowExportModal(false)} style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.65)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 10000, padding: "20px", animation: "fadeIn 0.2s ease-out" }}>
+          <div onClick={e => e.stopPropagation()} className="glass-card" style={{ width: "100%", maxWidth: "480px", backgroundColor: theme.panel, borderRadius: "20px", padding: "24px", display: "flex", flexDirection: "column", gap: "20px", boxShadow: "0 20px 40px rgba(0,0,0,0.4)" }}>
+            
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: `1px solid ${theme.border}`, paddingBottom: "12px" }}>
               <span style={{ fontWeight: "800", fontSize: "1.1rem", display: "flex", alignItems: "center", gap: "8px", color: theme.text }}>
-                <Database size={20} color="#8b5cf6" /> 데이터 관리 (내보내기 & 백업)
+                <Database size={22} color="#8b5cf6" /> 데이터 관리 (내보내기 & 백업)
               </span>
-              <button onClick={() => setShowDataModal(false)} style={{ background: "none", border: "none", color: theme.textMuted, cursor: "pointer" }}><X size={24}/></button>
+              <button onClick={() => setShowExportModal(false)} style={{ background: "none", border: "none", color: theme.textMuted, cursor: "pointer" }}><X size={26}/></button>
             </div>
 
-            {/* 세션 선택 리스트 */}
-            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+            {/* 내보낼 세션 선택 */}
+            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <label style={{ fontSize: "0.85rem", fontWeight: "700", color: theme.text }}>내보낼 세션 선택:</label>
-                <button onClick={() => setSelectedExportSessions(sessions.length === selectedExportSessions.length ? [] : sessions.map(s => s.id))} style={{ background: "none", border: "none", fontSize: "0.75rem", color: theme.accent, cursor: "pointer", fontWeight: "700" }}>
-                  {sessions.length === selectedExportSessions.length ? "선택 해제" : "전체 선택"}
+                <label style={{ fontSize: "0.85rem", fontWeight: "800", color: theme.text }}>내보낼 세션 선택:</label>
+                <button onClick={() => setSelectedExportSessionIds(sessions.length === selectedExportSessionIds.length ? [] : sessions.map(s => s.id))} style={{ background: "none", border: "none", fontSize: "0.75rem", color: theme.accent, cursor: "pointer", fontWeight: "800" }}>
+                  {sessions.length === selectedExportSessionIds.length ? "선택 해제" : "전체 선택"}
                 </button>
               </div>
-              <div style={{ maxHeight: "150px", overflowY: "auto", border: `1px solid ${theme.border}`, borderRadius: "8px", padding: "8px", display: "flex", flexDirection: "column", gap: "6px", backgroundColor: theme.inputBg }}>
+              <div style={{ maxHeight: "160px", overflowY: "auto", border: `1px solid ${theme.borderHighlight}`, borderRadius: "10px", padding: "8px", display: "flex", flexDirection: "column", gap: "6px", backgroundColor: theme.inputBg }}>
                 {sessions.map(s => (
-                  <label key={s.id} style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "0.85rem", color: theme.text, cursor: "pointer" }}>
-                    <input type="checkbox" checked={selectedExportSessions.includes(s.id)} onChange={() => {
-                      if (selectedExportSessions.includes(s.id)) setSelectedExportSessions(selectedExportSessions.filter(id => id !== s.id));
-                      else setSelectedExportSessions([...selectedExportSessions, s.id]);
-                    }} style={{ accentColor: theme.accent }} />
-                    {s.title}
+                  <label key={s.id} style={{ display: "flex", alignItems: "center", gap: "10px", fontSize: "0.85rem", color: theme.text, cursor: "pointer", padding: "4px 6px" }}>
+                    <input type="checkbox" checked={selectedExportSessionIds.includes(s.id)} onChange={() => {
+                      if (selectedExportSessionIds.includes(s.id)) setSelectedExportSessionIds(selectedExportSessionIds.filter(id => id !== s.id));
+                      else setSelectedExportSessionIds([...selectedExportSessionIds, s.id]);
+                    }} style={{ width: "16px", height: "16px", accentColor: theme.accent, cursor: "pointer" }} />
+                    <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontWeight: "600" }}>{s.title}</span>
                   </label>
                 ))}
               </div>
             </div>
 
-            {/* 내보내기 범위 (라디오 버튼) */}
-            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-              <label style={{ fontSize: "0.85rem", fontWeight: "700", color: theme.text }}>내보내기 범위:</label>
+            {/* 내보내기 범위 */}
+            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+              <label style={{ fontSize: "0.85rem", fontWeight: "800", color: theme.text }}>내보내기 범위:</label>
               <div style={{ display: "flex", gap: "10px" }}>
-                <button onClick={() => setExportRange("all")} style={{ flex: 1, padding: "10px", borderRadius: "8px", border: `1px solid ${exportRange === "all" ? theme.accent : theme.border}`, backgroundColor: exportRange === "all" ? theme.panelAlt : theme.inputBg, color: theme.text, fontWeight: "600", cursor: "pointer" }}>전체 기록</button>
-                <button onClick={() => setExportRange("story")} style={{ flex: 1, padding: "10px", borderRadius: "8px", border: `1px solid ${exportRange === "story" ? theme.accent : theme.border}`, backgroundColor: exportRange === "story" ? theme.panelAlt : theme.inputBg, color: theme.text, fontWeight: "600", cursor: "pointer" }}>순수 서사만</button>
+                <button onClick={() => setExportScope("all")} style={{ flex: 1, padding: "12px", borderRadius: "10px", border: `1px solid ${exportScope === "all" ? theme.accent : theme.border}`, backgroundColor: exportScope === "all" ? theme.panelAlt : theme.inputBg, color: theme.text, fontWeight: "700", cursor: "pointer", fontSize: "0.85rem" }}>전체 기록</button>
+                <button onClick={() => setExportScope("storyOnly")} style={{ flex: 1, padding: "12px", borderRadius: "10px", border: `1px solid ${exportScope === "storyOnly" ? theme.accent : theme.border}`, backgroundColor: exportScope === "storyOnly" ? theme.panelAlt : theme.inputBg, color: theme.text, fontWeight: "700", cursor: "pointer", fontSize: "0.85rem" }}>순수 서사만</button>
               </div>
             </div>
 
-            {/* 파일 형식 (드롭다운) */}
-            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-              <label style={{ fontSize: "0.85rem", fontWeight: "700", color: theme.text }}>파일 형식 (포맷):</label>
-              <select value={exportFormat} onChange={e => setExportFormat(e.target.value)} style={{ padding: "12px", borderRadius: "8px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.9rem", outline: "none", cursor: "pointer" }}>
+            {/* 파일 형식 포맷 */}
+            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+              <label style={{ fontSize: "0.85rem", fontWeight: "800", color: theme.text }}>파일 형식 (포맷):</label>
+              <select value={exportFormat} onChange={e => setExportFormat(e.target.value)} style={{ padding: "14px", borderRadius: "10px", border: `1px solid ${theme.borderHighlight}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.85rem", fontWeight: "600", outline: "none", cursor: "pointer" }}>
                 <option value="txt">📄 텍스트 메모장 문서 (.txt)</option>
                 <option value="md">📝 마크다운 서식 문서 (.md)</option>
                 <option value="json">📦 게임 세이브 완전 백업 (.json - 복원 가능)</option>
               </select>
             </div>
 
-            <button onClick={handleExportData} style={{ width: "100%", padding: "14px", backgroundColor: "#8b5cf6", color: "#fff", border: "none", borderRadius: "12px", fontSize: "0.95rem", fontWeight: "800", cursor: "pointer", marginTop: "10px", boxShadow: "0 4px 12px rgba(139, 92, 246, 0.3)" }}>
+            <button onClick={executeExport} style={{ width: "100%", padding: "16px", backgroundColor: "#8b5cf6", color: "#fff", border: "none", borderRadius: "14px", fontSize: "0.95rem", fontWeight: "800", cursor: "pointer", marginTop: "8px", boxShadow: "0 6px 16px rgba(139, 92, 246, 0.3)", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
               다운로드 / 실행
             </button>
           </div>
