@@ -4938,10 +4938,6 @@ color: "#fff", border: "none", cursor: "pointer",
               </button>
             </div>
 
-          </div>
-        </div>
-      )}
-
             {/* 백업 및 복원 버튼 (최하단) */}
             <div style={{ display: "flex", gap: "12px", borderTop: `1px solid ${theme.border}`, paddingTop: "20px" }}>
               <button onClick={() => { setShowSettingsModal(false); setShowExportModal(true); }} style={{ flex: 1, padding: "14px", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", backgroundColor: theme.panelAlt, border: `1px solid ${theme.borderHighlight}`, borderRadius: "14px", color: theme.text, fontSize: "0.9rem", fontWeight: "800", cursor: "pointer" }}>
