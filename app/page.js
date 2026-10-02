@@ -2840,10 +2840,10 @@ color: "#fff", border: "none", cursor: "pointer",
                               onMouseEnter={e => e.currentTarget.style.opacity = 0.7}
                               onMouseLeave={e => e.currentTarget.style.opacity = 1}
                             >
-                              <span style={{ fontWeight: "900", fontSize: "1.1rem", color: "#36312E" }}>{pcName || "이름 미상"}</span>
-                              <span style={{ fontSize: "0.8rem", color: "#78716c", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                                {pcBackground ? `■ 백스토리 및 성격: ${pcBackground}` : "상태 메시지가 없습니다."}
-                              </span>
+<span style={{ fontWeight: "900", fontSize: "1.1rem", color: "#36312E" }}>{pcName || "이름 미상"}</span>
+<span style={{ fontSize: "0.8rem", color: "#78716c", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+  {pcBackground || "상태 메시지가 없습니다."}
+</span>
                             </div>
                           </div>
 
@@ -2870,10 +2870,10 @@ color: "#fff", border: "none", cursor: "pointer",
                                     <button type="button" onClick={(e) => handleDeleteSuspect(e, s.id)} style={{ position: "absolute", top: "0", right: "0", background: "none", color: "#f43f5e", border: "none", cursor: "pointer", fontSize: "0.75rem", fontWeight: "800", padding: "4px" }}>삭제</button>
                                   )}
                                   
-                                  <span style={{ fontWeight: "900", fontSize: "1.1rem", color: "#36312E" }}>{s.name || "이름 미상"}</span>
-                                  <span style={{ fontSize: "0.8rem", color: "#78716c", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                                    {s.behavior ? `■ 외모 및 성격 : ${s.behavior}` : "상태 메시지가 없습니다."}
-                                  </span>
+<span style={{ fontWeight: "900", fontSize: "1.1rem", color: "#36312E" }}>{s.name || "이름 미상"}</span>
+<span style={{ fontSize: "0.8rem", color: "#78716c", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+  {s.behavior || "상태 메시지가 없습니다."}
+</span>
                                 </div>
                               ))}
                             </div>
@@ -3148,12 +3148,6 @@ color: "#fff", border: "none", cursor: "pointer",
                       </div>
                     </div>
 
-{/* 괴담 모드에 누락되었던 백스토리 입력칸 추가 */}
-<div style={{ marginTop: "8px" }}>
-  <label style={{ fontSize: "0.7rem", color: theme.textMuted, fontWeight: "700", display: "block", marginBottom: "3px" }}>탐색자의 배경 및 특징 (성격, 약점 등)</label>
-  <textarea rows={2} value={pcBackground} onChange={e => setPcBackground(e.target.value)} placeholder="사건에 휘말리게 된 계기나 평소 성격..." style={{ width: "100%", boxSizing: "border-box", padding: "8px 10px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.82rem", outline: "none", resize: "vertical" }} />
-</div>
-
                     {/* 우측 데이터 입력란 (flex: 1 및 minWidth: 0으로 튀어나옴 완벽 방지) */}
                     <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: "12px", width: "100%" }}>
                       
@@ -3163,6 +3157,11 @@ color: "#fff", border: "none", cursor: "pointer",
                         <input type="text" autoComplete="off" value={pcJob} onChange={e => setPcJob(e.target.value)} placeholder="직업/역할" style={{ padding: "8px 10px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.82rem", outline: "none", width: "100%", boxSizing: "border-box" }} />
                       </div>
 
+                      {/* ✅ 여기에 백스토리가 들어가야 안 찌그러집니다! */}
+              <div>
+                <label style={{ fontSize: "0.7rem", color: theme.textMuted, fontWeight: "700", display: "block", marginBottom: "3px" }}>탐색자의 배경 및 특징 (성격, 약점 등)</label>
+                <textarea rows={2} value={pcBackground} onChange={e => setPcBackground(e.target.value)} placeholder="사건에 휘말리게 된 계기나 평소 성격..." style={{ width: "100%", boxSizing: "border-box", padding: "8px 10px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.82rem", outline: "none", resize: "vertical" }} />
+              </div>
                       <button type="button" onClick={() => setShowTraitModal(true)} style={{ width: "100%", padding: "10px", backgroundColor: theme.panelAlt, border: `1.5px dashed ${theme.borderHighlight}`, borderRadius: "8px", color: theme.accent, fontSize: "0.82rem", fontWeight: "700", cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                         <span style={{ display: "flex", alignItems: "center", gap: "6px" }}><Tag size={16} strokeWidth={2.5}/> 특성 및 트라우마</span>
                         <span style={{ fontSize: "0.75rem", color: theme.textMuted }}>선택 완료: 특성 {horrorTraits.length} | 트라우마 {horrorTraumas.length}</span>
@@ -4828,10 +4827,10 @@ color: "#fff", border: "none", cursor: "pointer",
               <span style={{ fontWeight: "800", fontSize: "1.15rem", display: "flex", alignItems: "center", gap: "8px", color: theme.text }}>
                 <Settings size={22} color={theme.accent} /> 환경 설정
               </span>
-              <button onClick={() => setShowSettingsModal(false)} style={{ background: "none", border: "none", color: theme.textMuted, cursor: "pointer" }}><X size={26}/></button>
+              <button onClick={() => setShowSettingsModal(false)} style={{ background: "none", border: "none", color: theme.textMuted, cursor: "pointer", display: "flex" }}><X size={26}/></button>
             </div>
 
-            {/* 테마 팔레트 */}
+            {/* 1. 테마 팔레트 */}
             <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <label style={{ fontSize: "0.85rem", fontWeight: "800", color: theme.text }}>2026 팬톤 테마 팔레트</label>
@@ -4841,70 +4840,79 @@ color: "#fff", border: "none", cursor: "pointer",
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
                 {Object.entries(THEME_PALETTES).map(([k, p]) => (
-                  <button key={k} onClick={() => handleSelectPalette(k)} style={{ padding: "12px", borderRadius: "10px", border: `1.5px solid ${currentPalette === k ? theme.accent : theme.border}`, backgroundColor: currentPalette === k ? theme.panelAlt : "transparent", color: theme.text, fontSize: "0.8rem", cursor: "pointer", fontWeight: currentPalette === k ? "800" : "500", transition: "all 0.2s" }}>
-                    {p.name}
+                  <button 
+                    key={k} 
+                    onClick={() => setThemeKey(k)} 
+                    style={{ 
+                      padding: "12px", borderRadius: "12px", 
+                      border: `1.5px solid ${themeKey === k ? theme.accent : theme.border}`, 
+                      backgroundColor: themeKey === k ? theme.panelAlt : theme.inputBg, 
+                      color: themeKey === k ? theme.accent : theme.text, 
+                      fontSize: "0.85rem", cursor: "pointer", fontWeight: themeKey === k ? "800" : "600", transition: "all 0.2s" 
+                    }}>
+                    {p.name || k}
                   </button>
                 ))}
               </div>
             </div>
 
-            {/* 글씨체 설정 */}
+            {/* 2. 글씨체 설정 */}
             <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
               <label style={{ fontSize: "0.85rem", fontWeight: "800", color: theme.text }}>본문 서사 글씨체</label>
-              <div style={{ display: "flex", gap: "10px" }}>
-                <button 
-                  type="button" 
-                  onClick={() => setFontChoice("ridi")} 
-                  style={{ padding: "12px", borderRadius: "10px", border: `1.5px solid ${fontChoice === "ridi" ? theme.accent : theme.border}`, backgroundColor: fontChoice === "ridi" ? theme.panelAlt : "transparent", color: theme.text, fontFamily: "'RIDIBatang', serif", fontWeight: "700", cursor: "pointer", transition: "all 0.2s" }}
-                >
-                  📖 리디바탕 (명조체)
+              <div style={{ display: "flex", gap: "8px" }}>
+                <button type="button" onClick={() => setFontChoice("ridi")} style={{ flex: 1, padding: "12px", borderRadius: "12px", border: `1.5px solid ${fontChoice === "ridi" ? theme.accent : theme.border}`, backgroundColor: fontChoice === "ridi" ? theme.panelAlt : theme.inputBg, color: fontChoice === "ridi" ? theme.accent : theme.text, fontFamily: "'RIDIBatang', serif", fontWeight: "700", cursor: "pointer", transition: "all 0.2s" }}>
+                  📖 리디바탕 (명조)
                 </button>
-                <button onClick={() => setFontChoice("gothic")} style={{ flex: 1, padding: "12px", borderRadius: "10px", border: `1.5px solid ${fontChoice === "gothic" ? theme.accent : theme.border}`, backgroundColor: fontChoice === "gothic" ? theme.panelAlt : "transparent", color: theme.text, fontFamily: "'Pretendard', sans-serif", fontWeight: "700", cursor: "pointer", transition: "all 0.2s" }}>
-                  📱 프리텐다드 (고딕체)
+                <button onClick={() => setFontChoice("gothic")} style={{ flex: 1, padding: "12px", borderRadius: "12px", border: `1.5px solid ${fontChoice === "gothic" ? theme.accent : theme.border}`, backgroundColor: fontChoice === "gothic" ? theme.panelAlt : theme.inputBg, color: fontChoice === "gothic" ? theme.accent : theme.text, fontFamily: "'Pretendard', sans-serif", fontWeight: "700", cursor: "pointer", transition: "all 0.2s" }}>
+                  📱 프리텐다드 (고딕)
                 </button>
               </div>
             </div>
 
-            {/* 폰트 크기 슬라이더 */}
+            {/* 3. 폰트 크기 슬라이더 */}
             <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <label style={{ fontSize: "0.85rem", fontWeight: "800", color: theme.text }}>채팅 폰트 크기</label>
-                <span style={{ fontSize: "0.8rem", fontWeight: "700", color: theme.accent }}>{chatFontSize || 1}rem</span>
+                <span style={{ fontSize: "0.85rem", fontWeight: "700", color: theme.accent }}>{chatFontSize || 1}rem</span>
               </div>
               <input type="range" min="0.8" max="1.5" step="0.05" value={chatFontSize || 1} onChange={e => setChatFontSize(Number(e.target.value))} style={{ width: "100%", accentColor: theme.accent, marginTop: "4px" }} />
             </div>
 
-            {/* 주사위 볼륨 슬라이더 */}
+            {/* 4. 주사위 볼륨 슬라이더 */}
             <div style={{ display: "flex", flexDirection: "column", gap: "8px", borderTop: `1px dashed ${theme.border}`, paddingTop: "16px" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <label style={{ fontSize: "0.85rem", fontWeight: "800", color: theme.text }}>주사위 효과음 볼륨</label>
-                <span style={{ fontSize: "0.8rem", fontWeight: "700", color: theme.accent }}>{Math.round((soundVolume || 0.6) * 100)}%</span>
+                <span style={{ fontSize: "0.85rem", fontWeight: "700", color: theme.accent }}>{Math.round((soundVolume || 0.6) * 100)}%</span>
               </div>
               <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
                 <input type="range" min="0" max="1" step="0.05" value={soundVolume || 0.6} onChange={e => setSoundVolume(Number(e.target.value))} style={{ flex: 1, accentColor: theme.accent }} />
-                <button onClick={playDiceSound} style={{ padding: "6px 12px", backgroundColor: theme.panelAlt, border: `1px solid ${theme.borderHighlight}`, color: theme.text, borderRadius: "8px", fontSize: "0.75rem", fontWeight: "700", cursor: "pointer", display: "flex", alignItems: "center", gap: "4px" }}>
+                <button onClick={playDiceSound} style={{ padding: "8px 14px", backgroundColor: theme.panelAlt, border: `1px solid ${theme.borderHighlight}`, color: theme.text, borderRadius: "8px", fontSize: "0.8rem", fontWeight: "700", cursor: "pointer", display: "flex", alignItems: "center", gap: "4px" }}>
                   🔊 테스트
                 </button>
               </div>
             </div>
 
-            {/* 알림 진동 설정 */}
+            {/* 5. 알림 진동 설정 */}
             <div style={{ display: "flex", flexDirection: "column", gap: "10px", borderTop: `1px dashed ${theme.border}`, paddingTop: "16px" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <label style={{ fontSize: "0.85rem", fontWeight: "800", color: theme.text }}>스마트폰 알림 진동 (햅틱)</label>
-                <span style={{ fontSize: "0.8rem", fontWeight: "700", color: theme.accent }}>📳 {vibrationLevel === "off" ? "끄기" : vibrationLevel === "light" ? "부드럽게" : vibrationLevel === "medium" ? "보통" : "강하게"}</span>
+                <span style={{ fontSize: "0.85rem", fontWeight: "700", color: theme.accent }}>📳 {vibrationLevel === "off" ? "끄기" : vibrationLevel === "light" ? "부드럽게" : vibrationLevel === "medium" ? "보통" : "강하게"}</span>
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: "6px" }}>
-                {[{ k: "off", l: "끄기" }, { k: "light", l: "부드럽게" }, { k: "medium", l: "보통" }, { k: "strong", l: "강하게" }].map(opt => (
-                  <button key={opt.k} onClick={() => handleSaveVibration(opt.k)} style={{ padding: "10px 0", borderRadius: "10px", border: `1.5px solid ${vibrationLevel === opt.k ? theme.accent : theme.border}`, backgroundColor: vibrationLevel === opt.k ? theme.panelAlt : "transparent", color: theme.text, fontSize: "0.75rem", fontWeight: vibrationLevel === opt.k ? "700" : "500", cursor: "pointer", transition: "all 0.2s" }}>
+                {[{ k: "off", l: "끄기" }, { k: "light", l: "약하게" }, { k: "medium", l: "보통" }, { k: "strong", l: "강하게" }].map(opt => (
+                  <button key={opt.k} onClick={() => setVibrationLevel(opt.k)} style={{ padding: "10px 0", borderRadius: "10px", border: `1.5px solid ${vibrationLevel === opt.k ? theme.accent : theme.border}`, backgroundColor: vibrationLevel === opt.k ? theme.panelAlt : theme.inputBg, color: vibrationLevel === opt.k ? theme.accent : theme.text, fontSize: "0.8rem", fontWeight: vibrationLevel === opt.k ? "800" : "600", cursor: "pointer", transition: "all 0.2s" }}>
                     {opt.l}
                   </button>
                 ))}
               </div>
-              <button onClick={() => triggerVibration(vibrationLevel)} style={{ width: "100%", padding: "10px", backgroundColor: theme.inputBg, border: `1px solid ${theme.borderHighlight}`, color: theme.accent, borderRadius: "10px", fontSize: "0.8rem", fontWeight: "700", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", marginTop: "4px" }}>
+              <button onClick={() => { if(navigator.vibrate) navigator.vibrate(200); triggerToast("테스트", "진동이 울렸습니다.", "📳"); }} style={{ width: "100%", padding: "12px", backgroundColor: theme.inputBg, border: `1px solid ${theme.borderHighlight}`, color: theme.textMuted, borderRadius: "10px", fontSize: "0.8rem", fontWeight: "700", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", marginTop: "4px" }}>
                 📳 진동 테스트
               </button>
             </div>
+
+          </div>
+        </div>
+      )}
 
             {/* 백업 및 복원 버튼 (최하단) */}
             <div style={{ display: "flex", gap: "12px", borderTop: `1px solid ${theme.border}`, paddingTop: "20px" }}>
