@@ -3555,7 +3555,7 @@ color: "#fff", border: "none", cursor: "pointer",
           </main>
 
 ) : (
-          <div style={{ flex: 1, display: "flex", overflow: "hidden", position: "relative", backgroundColor: theme.bg }}>
+         <div style={{ flex: 1, display: "flex", overflow: "hidden", position: "relative", backgroundColor: theme.bg }}>
             
             <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", position: "relative" }}>
               <div 
