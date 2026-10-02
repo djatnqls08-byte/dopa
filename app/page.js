@@ -7,6 +7,7 @@ import GhostDiceDock, { playHeartbeatSound, triggerHapticPulse } from "@/compone
 import PhoneDrawer from "@/components/PhoneDrawer";
 import GhostBoard from "@/components/GhostBoard";
 import EvidenceSelectModal from "@/components/EvidenceSelectModal";
+import ScenarioStudioModal from "@/components/ScenarioStudioModal";
 import { createClient } from '@supabase/supabase-js'; 
 
 // 🌟 이제 금고(Vercel 환경 변수)에서 안전하게 꺼내옵니다! (NEXT_PUBLIC_이 붙어야 화면에서 쓸 수 있어요!)
@@ -19,7 +20,7 @@ import {
   Search, Heart, Flame, LayoutGrid, LibraryBig, PenTool, UserRound, 
   Menu, Moon, Sun, Save, FileUp, HelpCircle, X, ChevronDown, ChevronUp, Image as ImageIcon,
   ClipboardList, Pin, FileSearch, Mailbox, Play,
-  FolderOpen, Lock, Settings, Database, ClipboardPaste, LogOut,
+  FolderOpen, Lock, Settings, Database, ClipboardPaste, LogOut, Sparkles,
   ArrowUp, Smartphone, BookOpen, Dices, ChevronLeft, ChevronRight, UploadCloud, AlertTriangle, CheckCircle2,
   Brain, Skull, Eye, Activity, ShieldAlert, ToggleLeft, ToggleRight, Plus, Minus, Ghost, Gift, Video, CreditCard, Headphones,
   Trash2, Clock, Tag, Droplet, MessageCircle, MessageSquare, Bandage, Clapperboard, Lightbulb, 
@@ -309,6 +310,7 @@ export default function GamePlatform() {
   const [activeTab, setActiveTab] = useState("explore");
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [showPasteModal, setShowPasteModal] = useState(false);
+const [showScenarioStudio, setShowScenarioStudio] = useState(false);
   const [pastedText, setPastedText] = useState("");
   const [ruleHelpModal, setRuleHelpModal] = useState(null);
 
@@ -740,19 +742,21 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
     }
   };
 
-  // 폰 테마 및 진동 상태
+ // 폰 테마 및 진동 상태
   const [phoneTheme, setPhoneTheme] = useState("parchment");
-  useState(() => (typeof window !== "undefined" ? localStorage.getItem("secret_novel_vibration") || "medium" : "medium"))
+  const [vibrationLevel, setVibrationLevel] = useState(() => {
+    if (typeof window !== "undefined") return localStorage.getItem("secret_novel_vibration") || "medium";
+    return "medium";
+  });
 
-// ── [환경 설정 및 폰트 상태 관리] ──
+  // ── [환경 설정 및 폰트 상태 관리 (새로고침 증발 방지)] ──
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   
-  // 🌟 새로고침해도 기억하도록 localStorage 연동 초기화
   const [fontChoice, setFontChoice] = useState(() => {
     if (typeof window !== "undefined") return localStorage.getItem("secret_novel_font") || "ridi";
     return "ridi";
   });
-  
+
   const [chatFontSize, setChatFontSize] = useState(() => {
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem("secret_novel_font_size");
@@ -760,7 +764,7 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
     }
     return 1;
   });
-  
+
   const [soundVolume, setSoundVolume] = useState(() => {
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem("secret_novel_volume");
@@ -769,7 +773,7 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
     return 0.6;
   });
 
-  // 변경될 때마다 브라우저에 실시간 영구 보관
+  // 변경 즉시 브라우저에 영구 저장
   useEffect(() => {
     localStorage.setItem("secret_novel_font", fontChoice);
   }, [fontChoice]);
@@ -2293,15 +2297,15 @@ let newPhoneMsg = null;
 
           <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
             
-            {!activeSession && (
-              <>
-                <button onClick={() => setShowPasteModal(true)} title="시나리오 불러오기" style={{ background: "none", border: "none", cursor: "pointer", padding: "8px", color: theme.text, display: "flex", alignItems: "center" }}>
-                  <FileUp size={20} strokeWidth={1.5} />
-                </button>
-                <button onClick={handleSaveToLibrary} title="세팅 저장" style={{ background: "none", border: "none", cursor: "pointer", padding: "8px", color: theme.text, display: "flex", alignItems: "center" }}>
-                  <Save size={20} strokeWidth={1.5} color={theme.text} />
-                </button>
-              </>
+            {/* 🌟 로비 탭에 있을 때만 헤더에 '세팅 저장' 노출 (탐색/서재에서는 숨김!) */}
+            {!activeSession && activeTab === "lobby" && (
+              <button 
+                onClick={handleSaveToLibrary} 
+                title="세팅 저장" 
+                style={{ background: "none", border: "none", cursor: "pointer", padding: "8px", color: theme.text, display: "flex", alignItems: "center" }}
+              >
+                <Save size={20} strokeWidth={1.5} color={theme.text} />
+              </button>
             )}
             
             {activeSession && (
@@ -2749,10 +2753,105 @@ let newPhoneMsg = null;
             {activeTab === "lobby" && (
               <div style={{ display: "flex", flexDirection: "column", gap: isMobile ? "14px" : "18px", animation: "fadeIn 0.2s ease-out", width: "100%" }}>
               
-            <section style={{ ...GLASS_STYLE, padding: isMobile ? "14px" : "18px", backgroundColor: theme.panel, borderRadius: "16px", border: `1px solid ${theme.border}` }}>
-              <div style={{ fontSize: "0.9rem", fontWeight: "600", marginBottom: "12px", color: theme.text }}>
-                1. 룰 시스템 선택
-              </div>
+                {/* 🌟 [신규] 나만의 시나리오 만들기 배너 (하단 카드들과 규격/디자인 100% 일치) */}
+                <section style={{
+                  ...GLASS_STYLE,
+                  padding: isMobile ? "14px" : "18px",
+                  backgroundColor: theme.panel,
+                  borderRadius: "16px",
+                  border: `1px solid ${theme.border}`,
+                  display: "flex",
+                  flexDirection: isMobile ? "column" : "row",
+                  alignItems: isMobile ? "stretch" : "center",
+                  justifyContent: "space-between",
+                  gap: isMobile ? "12px" : "16px",
+                  boxSizing: "border-box"
+                }}>
+                  {/* 좌측: 타이틀 및 설명 */}
+                  <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                    <div style={{
+                      width: "42px", height: "42px", borderRadius: "12px",
+                      backgroundColor: "rgba(236, 72, 153, 0.12)", border: `1px solid ${theme.accent}`,
+                      display: "flex", alignItems: "center", justifyContent: "center", color: theme.accent, flexShrink: 0
+                    }}>
+                      <Sparkles size={22} strokeWidth={2.5} />
+                    </div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+                      <span style={{ fontSize: "0.95rem", fontWeight: "800", color: theme.text }}>
+                        나만의 시나리오 만들기
+                      </span>
+                      <span style={{ fontSize: "0.76rem", color: theme.textMuted }}>
+                        태그를 조합해 전용 Gem으로 맞춤 집필하고, 완성된 글을 바로 배치하세요.
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* 우측: 텍스트 붙여넣기 + 제작하기 버튼 한 쌍 */}
+                  <div style={{ display: "flex", gap: "8px", alignItems: "center", flexShrink: 0 }}>
+                    {/* 1. 시나리오 텍스트 붙여넣기 */}
+                    <button
+                      type="button"
+                      onClick={() => setShowPasteModal(true)}
+                      title="시나리오 붙여넣기"
+                      style={{
+                        padding: "9px 14px",
+                        borderRadius: "10px",
+                        backgroundColor: theme.panelAlt,
+                        border: `1px solid ${theme.borderHighlight || theme.border}`,
+                        color: theme.text,
+                        fontSize: "0.82rem",
+                        fontWeight: "700",
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "6px",
+                        transition: "all 0.15s ease",
+                        flex: isMobile ? 1 : "none",
+                        justifyContent: "center"
+                      }}
+                      onMouseEnter={e => e.currentTarget.style.backgroundColor = theme.inputBg}
+                      onMouseLeave={e => e.currentTarget.style.backgroundColor = theme.panelAlt}
+                    >
+                      <ClipboardPaste size={16} strokeWidth={2} color={theme.accent} />
+                      <span>텍스트 붙여넣기</span>
+                    </button>
+
+                    {/* 2. 시나리오 제작하기 */}
+                    <button
+                      type="button"
+                      onClick={() => setShowScenarioStudio(true)}
+                      title="시나리오 프롬프트 스튜디오 열기"
+                      style={{
+                        padding: "9px 16px",
+                        borderRadius: "10px",
+                        backgroundColor: theme.accent,
+                        border: "none",
+                        color: isDarkMode ? "#1a1817" : "#ffffff",
+                        fontSize: "0.82rem",
+                        fontWeight: "800",
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "6px",
+                        boxShadow: `0 3px 12px ${theme.accentGlow || "rgba(236, 72, 153, 0.3)"}`,
+                        transition: "transform 0.15s ease",
+                        flex: isMobile ? 1 : "none",
+                        justifyContent: "center"
+                      }}
+                      onMouseEnter={e => e.currentTarget.style.transform = "scale(1.02)"}
+                      onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}
+                    >
+                      <Sparkles size={15} strokeWidth={2.5} />
+                      <span>제작하기 〉</span>
+                    </button>
+                  </div>
+                </section>
+
+                {/* 1. 룰 시스템 선택 (기존 코드 그대로 이어짐) */}
+                <section style={{ ...GLASS_STYLE, padding: isMobile ? "14px" : "18px", backgroundColor: theme.panel, borderRadius: "16px", border: `1px solid ${theme.border}` }}>
+                  <div style={{ fontSize: "0.9rem", fontWeight: "600", marginBottom: "12px", color: theme.text }}>
+                    1. 룰 시스템 선택
+                  </div>
               
               <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "10px" }}>
                 {[
@@ -5240,6 +5339,16 @@ color: "#fff", border: "none", cursor: "pointer",
             </div>
           </div>
         )}
+
+{/* 🎬 DOPA 시나리오 프롬프트 기획 스튜디오 마운트 */}
+        <ScenarioStudioModal
+          isOpen={showScenarioStudio}
+          onClose={() => setShowScenarioStudio(false)}
+          theme={theme}
+          isDarkMode={isDarkMode}
+          isMobile={isMobile}
+          triggerToast={triggerToast}
+        />
 
 {/* 👑 어드민 전용 메인 배너 교체 팝업 */}
         {showBannerEdit && editingBanner && (
