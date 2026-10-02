@@ -3244,21 +3244,6 @@ color: "#fff", border: "none", cursor: "pointer",
                         <input type="text" autoComplete="off" value={pcJob} onChange={e => setPcJob(e.target.value)} placeholder="직업/역할" style={{ padding: "8px 10px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.82rem", outline: "none", width: "100%", boxSizing: "border-box" }} />
                       </div>
 
-                      {/* ✅ 여기에 백스토리가 들어가야 안 찌그러집니다! */}
-             {/* 🌟 괴담 모드 주인공 비밀 추가 */}
-              <div style={{ backgroundColor: isDarkMode ? "rgba(0,0,0,0.2)" : "rgba(255,255,255,0.6)", borderRadius: "8px", border: `1px solid ${theme.danger}`, padding: "10px 12px", marginTop: "4px", marginBottom: "8px" }}>
-                <button type="button" onClick={() => setShowPcSecret(!showPcSecret)} style={{ width: "100%", textAlign: "left", background: "none", border: "none", fontSize: "0.76rem", color: theme.danger, cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center", padding: 0 }}>
-                  <span style={{ fontWeight: "600", display: "flex", alignItems: "center", gap: "6px" }}>
-                    <Lock size={15} strokeWidth={2.5} /> 탐색자의 숨겨진 비밀 / 약점
-                  </span>
-                  <span style={{ display: "flex", alignItems: "center" }}>
-                    {showPcSecret ? <ChevronUp size={18} strokeWidth={2} /> : <ChevronDown size={18} strokeWidth={2} />}
-                  </span>
-                </button>
-                {showPcSecret && (
-                  <input type="text" autoComplete="off" value={pcJob} onChange={e => setPcJob(e.target.value)} placeholder="직업/역할" style={{ padding: "8px 10px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.82rem", outline: "none", width: "100%", boxSizing: "border-box" }} />
-                      </div>
-
                       {/* ✅ 탐색자 배경 및 특징 복구 */}
                       <div>
                         <label style={{ fontSize: "0.7rem", color: theme.textMuted, fontWeight: "700", display: "block", marginBottom: "3px" }}>탐색자의 배경 및 특징 (성격, 약점 등)</label>
@@ -3289,9 +3274,6 @@ color: "#fff", border: "none", cursor: "pointer",
                       <div style={{ backgroundColor: theme.panelAlt, borderRadius: "10px", padding: "12px", border: `1px solid ${theme.borderHighlight || theme.border}` }}>
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
                           <span style={{ fontSize: "0.82rem", fontWeight: "700", color: theme.text }}>탐색자 스탯 분배</span>
-                      <div style={{ backgroundColor: theme.panelAlt, borderRadius: "10px", padding: "12px", border: `1px solid ${theme.borderHighlight || theme.border}` }}>
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
-                          <span style={{ fontSize: "0.82rem", fontWeight: "700", color: theme.text }}>탐색자 스탯 분배</span>
                           <span style={{ fontSize: "0.75rem", fontWeight: "700", color: availableStatPoints === 0 ? theme.success : theme.danger }}>잔여: {availableStatPoints} pt</span>
                         </div>
                         <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr 1fr" : "repeat(6, 1fr)", gap: "6px" }}>
@@ -3307,6 +3289,22 @@ color: "#fff", border: "none", cursor: "pointer",
                           ))}
                         </div>
                       </div>
+
+                      <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                        <span style={{ fontSize: "0.75rem", fontWeight: "700", color: theme.textMuted }}>시작 소지품 세팅</span>
+                        {horrorInventory.map((item, idx) => (
+                          <div key={item.id} style={{ display: "flex", gap: "8px" }}>
+                            <select value={item.type} onChange={e => setHorrorInventory(horrorInventory.map((inv, i) => i === idx ? { ...inv, type: e.target.value } : inv))} style={{ flex: 1, padding: "8px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.78rem", outline: "none", cursor: "pointer", minWidth: 0 }}>
+                              <option value="멘탈 회복">멘탈 회복</option>
+                              <option value="특수 기믹 패스">특수 기믹 패스</option>
+                              <option value="재굴림">재굴림</option>
+                            </select>
+                            <input type="text" autoComplete="off" value={item.name} onChange={e => setHorrorInventory(horrorInventory.map((inv, i) => i === idx ? { ...inv, name: e.target.value } : inv))} placeholder="아이템명" style={{ flex: 2, padding: "8px 10px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.78rem", outline: "none", minWidth: 0 }} />
+                          </div>
+                        ))}
+                      </div>
+
+                    </div>
 
                       <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
                         <span style={{ fontSize: "0.75rem", fontWeight: "700", color: theme.textMuted }}>시작 소지품 세팅</span>
