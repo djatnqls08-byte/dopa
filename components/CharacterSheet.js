@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { X, BookOpen, Heart, UserRound, Lock, ShieldAlert, Image as ImageIcon } from "lucide-react";
+import { X, BookOpen, Heart, UserRound, Lock, Image as ImageIcon } from "lucide-react";
 
 export default function CharacterSheet({ activeSession, isDarkMode, isMobile, isSheetOpen, setIsSheetOpen, theme, setActivePortraitTarget, setShowPortraitEditModal }) {
   const [expandedNpcId, setExpandedNpcId] = useState(null);
@@ -13,7 +13,6 @@ export default function CharacterSheet({ activeSession, isDarkMode, isMobile, is
   const npcs = sheet.npcs || [];
   const itemsAndClues = [...(sheet.items || []), ...(sheet.clues || []), ...(sheet.handouts?.filter(h => h.revealed) || [])];
   
-  // 추리/괴담 모드는 hp, 연애 모드는 hp가 없을 수 있으므로 기본값 100
   const hp = sheet.hp !== undefined ? sheet.hp : 100;
   const maxHp = sheet.maxHp || 100;
   const fatigue = sheet.fatigue || 0;
@@ -23,6 +22,7 @@ export default function CharacterSheet({ activeSession, isDarkMode, isMobile, is
       <div onClick={() => setIsSheetOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 99990, backgroundColor: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)" }} />
       <div style={{ position: "fixed", top: 0, bottom: 0, right: 0, zIndex: 99999, width: isMobile ? "100%" : "420px", backgroundColor: theme.bg, borderLeft: `1px solid ${theme.border}`, boxShadow: "-10px 0 40px rgba(0,0,0,0.2)", display: "flex", flexDirection: "column", animation: "slideLeft 0.3s ease-out" }}>
         
+        {/* 헤더 */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "18px 24px", backgroundColor: theme.panel, borderBottom: `1px solid ${theme.border}` }}>
           <span style={{ fontSize: "1.2rem", fontWeight: "900", color: theme.text }}>캐릭터 시트</span>
           <button onClick={() => setIsSheetOpen(false)} style={{ background: "none", border: "none", color: theme.textMuted, cursor: "pointer", padding: "4px" }}><X size={26} strokeWidth={2.5} /></button>
@@ -30,7 +30,7 @@ export default function CharacterSheet({ activeSession, isDarkMode, isMobile, is
 
         <div style={{ flex: 1, overflowY: "auto", padding: "20px", display: "flex", flexDirection: "column", gap: "20px" }}>
           
-          {/* 🌟 주인공 프로필 카드 */}
+          {/* 주인공 프로필 카드 */}
           <div style={{ backgroundColor: theme.panel, borderRadius: "16px", padding: "18px", border: `1px solid ${theme.border}`, boxShadow: "0 8px 20px rgba(0,0,0,0.05)", display: "flex", alignItems: "center", gap: "16px" }}>
             <div onClick={() => { if (setActivePortraitTarget) { setActivePortraitTarget("pc"); setShowPortraitEditModal(true); setIsSheetOpen(false); } }} style={{ width: "72px", height: "72px", borderRadius: "50%", overflow: "hidden", border: `2px solid ${theme.borderHighlight}`, backgroundColor: theme.inputBg, flexShrink: 0, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
               {sheet.portraitUrl || sheet.portrait ? <img src={sheet.portraitUrl || sheet.portrait} alt="주인공" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <UserRound size={32} color={theme.textMuted} />}
@@ -41,7 +41,7 @@ export default function CharacterSheet({ activeSession, isDarkMode, isMobile, is
             </div>
           </div>
 
-          {/* 🌟 백스토리 & 비밀 아코디언 */}
+          {/* 🌟 백스토리 & 비밀 아코디언 (연애, 추리 모드 무관하게 항상 표시됨!) */}
           <div style={{ backgroundColor: theme.panel, borderRadius: "12px", border: `1px solid ${theme.border}`, overflow: "hidden" }}>
             <button onClick={() => setShowBackstory(!showBackstory)} style={{ width: "100%", padding: "14px 18px", background: "none", border: "none", display: "flex", alignItems: "center", gap: "8px", cursor: "pointer", color: theme.textMuted }}>
               <BookOpen size={18} strokeWidth={2.5} />
@@ -77,9 +77,12 @@ export default function CharacterSheet({ activeSession, isDarkMode, isMobile, is
             </div>
           </div>
 
-          {/* 수집품 */}
+          {/* 수집품 및 단서 */}
           <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "6px", color: theme.textMuted, paddingLeft: "4px" }}><Heart size={16} strokeWidth={2.5} /><span style={{ fontSize: "0.85rem", fontWeight: "700" }}>기억 및 수집품 ({itemsAndClues.length}건)</span></div>
+            <div style={{ display: "flex", alignItems: "center", gap: "6px", color: theme.textMuted, paddingLeft: "4px" }}>
+              <Heart size={16} strokeWidth={2.5} />
+              <span style={{ fontSize: "0.85rem", fontWeight: "700" }}>기억 및 수집품 ({itemsAndClues.length}건)</span>
+            </div>
             {itemsAndClues.length === 0 ? (
               <div style={{ padding: "20px", textAlign: "center", backgroundColor: isDarkMode ? "rgba(255,255,255,0.02)" : "rgba(0,0,0,0.02)", border: `1px dashed ${theme.borderHighlight}`, borderRadius: "12px", color: theme.textMuted, fontSize: "0.85rem" }}>아직 획득한 수집품이나 단서가 없습니다.</div>
             ) : (
@@ -94,20 +97,23 @@ export default function CharacterSheet({ activeSession, isDarkMode, isMobile, is
             )}
           </div>
 
-          {/* 등장인물 */}
+          {/* 등장인물 (호감도 연동) */}
           <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "6px", color: theme.textMuted, paddingLeft: "4px" }}><UserRound size={16} strokeWidth={2.5} /><span style={{ fontSize: "0.85rem", fontWeight: "700" }}>주요 등장인물 ({npcs.length}명)</span></div>
+            <div style={{ display: "flex", alignItems: "center", gap: "6px", color: theme.textMuted, paddingLeft: "4px" }}>
+              <UserRound size={16} strokeWidth={2.5} />
+              <span style={{ fontSize: "0.85rem", fontWeight: "700" }}>주요 등장인물 ({npcs.length}명)</span>
+            </div>
             {npcs.length === 0 ? (
               <div style={{ padding: "20px", textAlign: "center", backgroundColor: isDarkMode ? "rgba(255,255,255,0.02)" : "rgba(0,0,0,0.02)", border: `1px dashed ${theme.borderHighlight}`, borderRadius: "12px", color: theme.textMuted, fontSize: "0.85rem" }}>등록된 인물이 없습니다.</div>
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: "12px", paddingBottom: "30px" }}>
                 {npcs.map((npc) => {
                   const isExpanded = expandedNpcId === npc.id;
-                  const aff = npc.affection || 0; // 호감도 방어 로직
-                  const fillPercent = Math.max(0, Math.min(100, aff)); // 0~100 사이 값 고정
+                  const aff = npc.affection || 0;
+                  const fillPercent = Math.max(0, Math.min(100, aff));
                   
                   return (
-                    <div key={npc.id} style={{ backgroundColor: theme.panel, border: `1px solid ${theme.border}`, borderRadius: "16px", overflow: "hidden" }}>
+                    <div key={npc.id} style={{ backgroundColor: theme.panel, border: `1px solid ${theme.border}`, borderRadius: "16px", overflow: "hidden", transition: "all 0.2s" }}>
                       <div onClick={() => setExpandedNpcId(isExpanded ? null : npc.id)} style={{ display: "flex", alignItems: "center", padding: "16px", cursor: "pointer" }}>
                         <div style={{ width: "52px", height: "52px", borderRadius: "50%", backgroundColor: theme.inputBg, border: `1px solid ${theme.borderHighlight}`, display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", flexShrink: 0 }}>
                           {npc.portraitUrl ? <img src={npc.portraitUrl} alt={npc.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <UserRound size={24} color={theme.textMuted} />}
@@ -116,8 +122,6 @@ export default function CharacterSheet({ activeSession, isDarkMode, isMobile, is
                           <span style={{ fontSize: "1.05rem", fontWeight: "900", color: theme.text }}>{npc.name || "이름 미상"}</span>
                           <span style={{ fontSize: "0.75rem", color: theme.textMuted, fontWeight: "600" }}>{npc.job || "직업 미상"}</span>
                         </div>
-                        
-                        {/* 🌟 찰랑이는 수직 호감도 하트 애니메이션 완벽 복구! */}
                         <div style={{ display: "flex", alignItems: "center", gap: "6px", backgroundColor: isDarkMode ? "rgba(239, 68, 68, 0.1)" : "#fef2f2", padding: "6px 12px", borderRadius: "20px" }}>
                           <svg width="18" height="18" viewBox="0 0 24 24">
                             <defs>
@@ -138,7 +142,7 @@ export default function CharacterSheet({ activeSession, isDarkMode, isMobile, is
                           <div style={{ display: "flex", gap: "8px", alignItems: "flex-start", backgroundColor: isDarkMode ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.04)", padding: "12px", borderRadius: "10px", border: `1px dashed ${theme.borderHighlight}` }}>
                             <Lock size={16} color={theme.textMuted} style={{ marginTop: "2px", flexShrink: 0 }} />
                             <div style={{ fontSize: "0.8rem", color: theme.textMuted, lineHeight: "1.5" }}>
-                              {npc.secretRevealed ? <span style={{ color: theme.text }}><strong style={{ color: theme.accent }}>[밝혀진 진심]</strong> {npc.secret}</span> : <span><strong style={{ color: theme.danger }}>[숨겨진 비밀/진심]</strong> 아직 서사 속에서 밝혀지지 않은 비밀입니다.</span>}
+                              {npc.secretRevealed ? <span style={{ color: theme.text }}><strong style={{ color: theme.accent }}>[밝혀진 진심]</strong> {npc.secret}</span> : <span><strong style={{ color: theme.danger }}>[숨겨진 비밀/진심]</strong> 아직 서사 속에서 밝혀지지 않은 비밀입니다. (조사 필요)</span>}
                             </div>
                           </div>
                         </div>
