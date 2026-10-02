@@ -52,10 +52,10 @@ export async function POST(req) {
       ];
     } else {
       // 👤 PC(플레이어) 정보
-      const pName = playerSheet?.name || "주인공";
+      const pName = playerSheet?.name || "도파미너";
       const pGender = playerSheet?.gender || "미상";
       const pAge = playerSheet?.age || "미상";
-      const pJob = playerSheet?.job || "주인공";
+      const pJob = playerSheet?.job || "도파미너";
       const pcTone = playerSheet?.background || "자연스러운 성격과 말투";
       
       // 🎯 대화 상대 확정 및 정보 추출
@@ -64,7 +64,7 @@ export async function POST(req) {
       const partnerGender = activePartner.gender || "미상";
       const partnerAge = activePartner.age || "미상";
       const partnerJob = activePartner.job || activePartner.title || "인물";
-      const partnerDetail = activePartner.detail || activePartner.desc || activePartner.setting || "주인공과 아는 사이";
+      const partnerDetail = activePartner.detail || activePartner.desc || activePartner.setting || "도파미너과 아는 사이";
       const currentAffinity = activePartner.affinity ?? activePartner.affection ?? 0;
       const allNpcNames = (playerSheet?.npcs || []).map(n => n.name).filter(Boolean).join(", ") || partnerName;
 
@@ -94,7 +94,7 @@ export async function POST(req) {
 3. 현재의 [시간대: ${currentPhase}], [최근 기억된 사건], [현재 호감도: ${currentAffinity}]를 철저히 반영하여 묘사하십시오.
 
 [🚨 절대 규칙 - 임의 시간 스킵 금지 및 3인칭 대명사 금지]
-1. 주인공 '${pName}'의 대사, 속마음, 신체적 행동을 AI가 대신 결정하여 서술하지 마십시오. (오토플레이 엄금)
+1. 도파미너 '${pName}'의 대사, 속마음, 신체적 행동을 AI가 대신 결정하여 서술하지 마십시오. (오토플레이 엄금)
 2. 지문에서 '그녀', '그' 같은 3인칭 대명사를 일절 사용하지 말고 오직 실제 이름만 사용하십시오.
 `;
 
@@ -127,14 +127,14 @@ export async function POST(req) {
           systemInstruction = `${coreIdentityPrompt}
 [비주얼 노벨 / 인터랙티브 서사 모드]
 당신은 두 사람의 관계성과 상황을 서술하는 AI 디렉터입니다.
-- 주인공(PC): '${pName}' (성별: ${pGender}, 특징: ${pcTone})
+- 도파미너(PC): '${pName}' (성별: ${pGender}, 특징: ${pcTone})
 - 현재 대면 상대: '${partnerName}' (현재 호감도: ${currentAffinity}점, 상세: ${partnerDetail})
 
 [📖 시나리오 배경 및 진상]
 ${scenarioText || "기본 서사"}
 
 [🚨 대면 서사 진행 및 발화 지침]
-1. 상대방 '${partnerName}'은 방관하지 않고 주인공의 말과 행동에 섬세하게 반응하십시오.
+1. 상대방 '${partnerName}'은 방관하지 않고 도파미너의 말과 행동에 섬세하게 반응하십시오.
 2. 지문 구성: [현장 공기감과 인물의 미세 반응 2~3문단] + [${partnerName}의 직접 대사 혹은 비언어적 묘사]
 
 [🚨 필수 시스템 태그 규칙 (지문 맨 끝에 단독 출력)]
