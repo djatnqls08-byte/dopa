@@ -36,7 +36,7 @@ export default function ScenarioStudioModal({
     "#아포칼립스", "#동양풍/사극", "#사이버펑크", "#황실/로판", "#학원물"
   ];
 
-  const [selectedTags, setSelectedTags] = useState(["#오컬트", "#도시괴담"]);
+  const [selectedTags, setSelectedTags] = useState([""]);
   const [customTagInput, setCustomTagInput] = useState("");
 
   // 3. 도파미너(주인공)
@@ -47,19 +47,19 @@ export default function ScenarioStudioModal({
 
   // 4. 룰별 맞춤 인물 설정
   // [연애]
-  const [datingTargetCount, setDatingTargetCount] = useState("1명");
+  const [datingTargetCount, setDatingTargetCount] = useState("");
   const [datingTargetJob, setDatingTargetJob] = useState("");
   const [datingTargetCharm, setDatingTargetCharm] = useState("");
 
   // [추리]
   const [mysteryVictim, setMysteryVictim] = useState("");
-  const [mysterySuspectCount, setMysterySuspectCount] = useState("3~4명");
+  const [mysterySuspectCount, setMysterySuspectCount] = useState("");
   const [mysterySuspects, setMysterySuspects] = useState("");
 
   // [괴담] 🌟 파트너(0~5명) vs 추가인물(0~15명) 완벽 분리
-  const [ghostPartnerCount, setGhostPartnerCount] = useState("1명 (생사고락 핵심 동료)");
+  const [ghostPartnerCount, setGhostPartnerCount] = useState("");
   const [ghostPartnerDesc, setGhostPartnerDesc] = useState("");
-  const [ghostExtraNpcCount, setGhostExtraNpcCount] = useState("없음 (단둘이 고립)");
+  const [ghostExtraNpcCount, setGhostExtraNpcCount] = useState("");
   const [ghostExtraNpcDesc, setGhostExtraNpcDesc] = useState("");
   const [ghostEntityIdea, setGhostEntityIdea] = useState("");
 
