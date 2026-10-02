@@ -3702,61 +3702,159 @@ color: "#fff", border: "none", cursor: "pointer",
         </div>
       )}
 
-      {/* 📞 2. 리얼 스마트폰 풀스크린 통화 모달 (전송 기능 활성화!) */}
-      {isVoiceCallActive && isCallModalOpen && voiceCallNpc && (
-        <div style={{ position: "fixed", inset: 0, zIndex: 99998, backgroundColor: "#0f111a", display: "flex", flexDirection: "column", animation: "fadeIn 0.2s ease-out" }}>
-          <div style={{ padding: "20px", display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-            <button onClick={() => setIsCallModalOpen(false)} style={{ width: "40px", height: "40px", borderRadius: "50%", backgroundColor: "rgba(255,255,255,0.1)", border: "none", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}><ChevronDown size={24} /></button>
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "4px" }}>
-              <span style={{ color: "#10b981", fontSize: "0.8rem", fontWeight: "700", display: "flex", alignItems: "center", gap: "6px" }}><span style={{ width: "8px", height: "8px", borderRadius: "50%", backgroundColor: "#10b981", animation: "pulse 1s infinite" }}/> 통화 중</span>
-              <span style={{ color: "rgba(255,255,255,0.5)", fontSize: "0.7rem" }}>HD Voice</span>
-            </div>
-            <div style={{ width: "40px" }} />
-          </div>
-
-          <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "20px", padding: "20px" }}>
-            <div style={{ width: "120px", height: "120px", borderRadius: "50%", overflow: "hidden", border: "2px solid rgba(255,255,255,0.2)", boxShadow: "0 0 30px rgba(255,255,255,0.05)" }}>
-              {voiceCallNpc.portraitUrl ? <img src={voiceCallNpc.portraitUrl} alt="상대방" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <UserRound size={60} color="rgba(255,255,255,0.3)" style={{ margin: "30px" }}/>}
-            </div>
+     {/* 📱 2. 리얼 스마트폰 풀스크린 통화 모달 (실시간 현장 중계 + 유지형) */}
+      {isVoiceCallActive && isCallModalOpen && (
+        <div style={{
+          position: "fixed", inset: 0, zIndex: 9998,
+          backgroundColor: "#0f172a", // 딥 다크 네이비 배경
+          display: "flex", flexDirection: "column", alignItems: "center",
+          padding: "40px 20px 30px", boxSizing: "border-box", color: "#f8fafc",
+          animation: "fadeIn 0.25s ease"
+        }}>
+          
+          {/* 1. 상단 바: 닫기(⌄) & 통화 상태 */}
+          <div style={{ width: "100%", maxWidth: "460px", display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+            <button 
+              type="button"
+              onClick={() => setIsCallModalOpen(false)} // 창만 내리고 통화는 유지
+              style={{ background: "rgba(255, 255, 255, 0.12)", border: "none", borderRadius: "50%", width: "42px", height: "42px", color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+              title="화면 내리기"
+            >
+              <ChevronDown size={24} />
+            </button>
             <div style={{ textAlign: "center" }}>
-              <h2 style={{ margin: 0, color: "#fff", fontSize: "1.8rem", fontWeight: "800" }}>{voiceCallNpc.name}</h2>
-              <p style={{ margin: "6px 0 0 0", color: "rgba(255,255,255,0.6)", fontSize: "0.9rem" }}>{voiceCallNpc.job || "연락처"}</p>
+              <div style={{ fontSize: "0.86rem", color: theme.accent || "#38bdf8", fontWeight: "700", letterSpacing: "1px" }}>● 통화 중</div>
+              <div style={{ fontSize: "0.75rem", color: "rgba(255, 255, 255, 0.6)", marginTop: "2px" }}>HD Voice</div>
             </div>
+            <div style={{ width: "42px" }} />
           </div>
 
-          <div style={{ padding: "40px 20px 60px 20px", display: "flex", flexDirection: "column", alignItems: "center", gap: "24px" }}>
-            <div style={{ width: "100%", maxWidth: "400px", display: "flex", gap: "10px" }}>
-              {/* 🌟 통화 인풋창 및 전송 기능 연결 */}
+          {/* 2. 중앙 프로필 이미지 & 이름 */}
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginBottom: "20px", flexShrink: 0 }}>
+            <div style={{ position: "relative", width: "100px", height: "100px", borderRadius: "50%", marginBottom: "12px", boxShadow: "0 0 30px rgba(255, 255, 255, 0.05)" }}>
+              <div style={{ position: "absolute", inset: "-8px", borderRadius: "50%", border: `1.5px solid ${theme.accent || "#38bdf8"}44`, animation: "pulse 2s infinite" }} />
+              {(() => {
+                const targetName = voiceCallNpc?.name || (typeof voiceCallNpc === "string" ? voiceCallNpc : "");
+                const foundNpc = (activeSession?.sheet?.npcs || []).find(n => n?.name === targetName || (targetName && n?.name && n.name.includes(targetName)));
+                const realImg = foundNpc?.portraitUrl || foundNpc?.portrait || voiceCallNpc?.portraitUrl || voiceCallNpc?.portrait;
+
+                return realImg ? (
+                  <img src={realImg} alt={targetName} style={{ width: "100%", height: "100%", borderRadius: "50%", objectFit: "cover", border: "2px solid rgba(255, 255, 255, 0.35)" }} />
+                ) : (
+                  <div style={{ width: "100%", height: "100%", borderRadius: "50%", backgroundColor: "rgba(255, 255, 255, 0.12)", display: "flex", alignItems: "center", justifyContent: "center", border: "2px solid rgba(255, 255, 255, 0.25)" }}>
+                    <UserRound size={40} color="rgba(255,255,255,0.5)" />
+                  </div>
+                );
+              })()}
+            </div>
+            <h2 style={{ margin: 0, color: "#fff", fontSize: "1.5rem", fontWeight: "800", letterSpacing: "-0.5px" }}>
+              {voiceCallNpc?.name || (typeof voiceCallNpc === "string" ? voiceCallNpc : "상대방")}
+            </h2>
+            <span style={{ fontSize: "0.85rem", color: "rgba(255, 255, 255, 0.65)", marginTop: "4px" }}>
+              {voiceCallNpc?.job || voiceCallNpc?.title || "통화 연결 됨"}
+            </span>
+          </div>
+
+          {/* 🌟 3. 실시간 현장 중계 (대화 로그 뷰어) - 원본 이미지 완벽 구현! */}
+          <div 
+            ref={(el) => { if (el) el.scrollTop = el.scrollHeight; }} // 항상 최하단 스크롤 유지
+            style={{
+              flex: 1, width: "100%", maxWidth: "460px",
+              backgroundColor: "rgba(255, 255, 255, 0.04)",
+              border: "1px solid rgba(255, 255, 255, 0.12)",
+              borderRadius: "16px", padding: "20px 16px",
+              display: "flex", flexDirection: "column", gap: "16px",
+              overflowY: "auto", marginBottom: "20px",
+              boxShadow: "inset 0 4px 20px rgba(0,0,0,0.2)"
+            }}
+          >
+            {activeSession && (activeSession.messages || []).slice(-6).map((m, idx) => {
+              const isUser = m.role === "user";
+              // AI 응답 중 대사(따옴표) 부분만 하이라이트 처리
+              const textContent = m.text;
+              const quoteMatch = textContent.match(/"([^"]+)"/);
+              
+              return (
+                <div key={idx} style={{ display: "flex", flexDirection: "column", alignItems: isUser ? "flex-end" : "flex-start", width: "100%" }}>
+                  <div style={{
+                    maxWidth: "90%",
+                    fontSize: "0.88rem", lineHeight: "1.65", wordBreak: "keep-all", whiteSpace: "pre-wrap",
+                    color: isUser ? "rgba(255,255,255,0.6)" : "#e2e8f0",
+                    textAlign: isUser ? "right" : "left",
+                    padding: isUser ? "0" : "0 0 10px 0",
+                    borderBottom: (!isUser && idx !== 5) ? "1px dashed rgba(255,255,255,0.15)" : "none"
+                  }}>
+                    {!isUser && quoteMatch ? (
+                      <>
+                        <div style={{ fontWeight: "800", fontSize: "1.05rem", color: "#fff", marginBottom: "8px" }}>
+                          "{quoteMatch[1]}"
+                        </div>
+                        <div style={{ color: "#94a3b8", fontSize: "0.82rem" }}>
+                          {textContent.replace(quoteMatch[0], "").trim()}
+                        </div>
+                      </>
+                    ) : (
+                      textContent
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+            {isLoading && (
+              <div style={{ color: theme.accent || "#38bdf8", fontSize: "0.8rem", textAlign: "center", animation: "pulse 1.5s infinite", marginTop: "10px" }}>
+                상대방이 대답하는 중...
+              </div>
+            )}
+          </div>
+
+          {/* 4. 하단 입력창 & 빨간 통화 종료 버튼 */}
+          <div style={{ width: "100%", maxWidth: "460px", display: "flex", flexDirection: "column", gap: "16px", alignItems: "center" }}>
+            <div style={{ display: "flex", width: "100%", gap: "10px" }}>
               <input 
                 type="text" 
                 value={phoneInput}
                 onChange={e => setPhoneInput(e.target.value)}
                 onKeyDown={e => {
-                  if (e.key === "Enter" && !e.shiftKey && phoneInput.trim()) {
+                  if (e.key === "Enter" && !e.shiftKey && phoneInput.trim() && !isLoading) {
                     e.preventDefault();
-                    executeMessage(`[전화 통화] ${phoneInput.trim()}`);
+                    // 🌟 [핵심] 모달을 닫지 않고 전송만 합니다!
+                    executeMessage(`[전화 통화] "${phoneInput.trim()}"`);
                     setPhoneInput("");
-                    setIsCallModalOpen(false); // 전송 후 통화창 살짝 내리기
                   }
                 }}
                 placeholder="수화기에 대고 말하기..." 
-                style={{ flex: 1, padding: "14px 20px", backgroundColor: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "30px", color: "#fff", fontSize: "0.9rem", outline: "none" }} 
+                style={{ flex: 1, padding: "14px 20px", backgroundColor: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.2)", borderRadius: "30px", color: "#fff", fontSize: "0.9rem", outline: "none" }} 
               />
               <button 
+                disabled={isLoading || !phoneInput.trim()}
                 onClick={() => {
                   if (phoneInput.trim()) {
-                    executeMessage(`[전화 통화] ${phoneInput.trim()}`);
+                    executeMessage(`[전화 통화] "${phoneInput.trim()}"`);
                     setPhoneInput("");
-                    setIsCallModalOpen(false);
                   }
                 }}
-                style={{ padding: "0 24px", backgroundColor: "rgba(255,255,255,0.15)", color: "#fff", border: "none", borderRadius: "30px", fontWeight: "700", cursor: "pointer" }}
+                style={{ padding: "0 24px", backgroundColor: "rgba(255,255,255,0.2)", color: "#fff", border: "none", borderRadius: "30px", fontWeight: "800", cursor: (isLoading || !phoneInput.trim()) ? "default" : "pointer", opacity: (isLoading || !phoneInput.trim()) ? 0.5 : 1 }}
               >전송</button>
             </div>
-            <button onClick={() => { setIsVoiceCallActive(false); setVoiceCallNpc(null); }} style={{ width: "72px", height: "72px", borderRadius: "50%", backgroundColor: "#ef4444", color: "#fff", border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", boxShadow: "0 10px 25px rgba(239, 68, 68, 0.4)", transition: "transform 0.2s" }} onMouseEnter={e => e.currentTarget.style.transform="scale(1.05)"} onMouseLeave={e => e.currentTarget.style.transform="scale(1)"}>
-              <Phone size={32} fill="currentColor" style={{ transform: "rotate(135deg)" }} />
+            
+            <button 
+              onClick={() => { 
+                setIsVoiceCallActive(false); 
+                setIsCallModalOpen(false); 
+                setVoiceCallNpc(null);
+                if (typeof executeMessage === "function") {
+                  executeMessage(`[통화 종료] 뚝, 하고 전화를 끊었습니다.`);
+                }
+              }} 
+              title="통화 완전히 종료"
+              style={{ width: "64px", height: "64px", borderRadius: "50%", backgroundColor: "#ef4444", color: "#fff", border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", boxShadow: "0 10px 25px rgba(239, 68, 68, 0.4)", transition: "transform 0.2s" }} 
+              onMouseEnter={e => e.currentTarget.style.transform="scale(1.05)"} 
+              onMouseLeave={e => e.currentTarget.style.transform="scale(1)"}
+            >
+              <Phone size={28} fill="currentColor" style={{ transform: "rotate(135deg)" }} />
             </button>
           </div>
+
         </div>
       )}
 
