@@ -3,7 +3,8 @@
 import React, { useState } from "react";
 import { 
   X, BookOpen, Heart, UserRound, Lock, 
-  Shield, Sparkles, Skull, Activity, Compass, Brain, Flame, Users
+  Shield, Sparkles, Skull, Activity, Compass, Brain, Flame, Users,
+  ChevronDown, ChevronUp, Package
 } from "lucide-react";
 
 export default function CharacterSheet({ 
@@ -14,7 +15,8 @@ export default function CharacterSheet({
   setIsSheetOpen, 
   theme, 
   setActivePortraitTarget, 
-  setShowPortraitEditModal 
+  setShowPortraitEditModal,
+  onUseItem // 🌟 1. 빠져있던 아이템 사용 핸들러 추가!
 }) {
   const [expandedNpcId, setExpandedNpcId] = useState(null);
   const [showBackstory, setShowBackstory] = useState(false);
@@ -23,8 +25,10 @@ export default function CharacterSheet({
 
   const sheet = activeSession.sheet || {};
   const npcs = sheet.npcs || [];
-  const itemsAndClues = [
-    ...(sheet.items || []), 
+  
+  // 소지품(사용 가능)과 일반 단서 분리
+  const items = sheet.items || [];
+  const clues = [
     ...(sheet.clues || []), 
     ...(sheet.handouts?.filter(h => h.revealed) || [])
   ];
@@ -39,7 +43,6 @@ export default function CharacterSheet({
 
   const hpLabel = isDating ? "멘탈" : isHorror ? "정신력" : "신뢰도";
   const fatigueLabel = isDating ? "스트레스 지수" : isHorror ? "침식도" : "수사 피로도";
-  const itemLabel = isDating ? "기억 및 수집품" : isHorror ? "소지품 및 단서" : "사건 파일 & 물증";
 
   // 🩸 괴담 모드 침식 심도(Depth) 단계 산출
   const getDepthInfo = (val) => {
@@ -94,7 +97,7 @@ export default function CharacterSheet({
       }}>
         
         {/* 헤더 */}
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "18px 24px", backgroundColor: theme.panel, borderBottom: `1px solid ${theme.border}` }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "18px 24px", backgroundColor: theme.panel, borderBottom: `1px solid ${theme.border}`, flexShrink: 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
             <span style={{ fontSize: "1.2rem", fontWeight: "900", color: theme.text }}>캐릭터 시트</span>
             {isHorror && (
@@ -108,8 +111,8 @@ export default function CharacterSheet({
           </button>
         </div>
 
-        {/* 바디 스크롤 영역 */}
-        <div style={{ flex: 1, overflowY: "auto", padding: "20px", display: "flex", flexDirection: "column", gap: "18px" }}>
+        {/* 🌟 바디 스크롤 영역 (하단 잘림 방지 paddingBottom: 80px) */}
+        <div style={{ flex: 1, overflowY: "auto", padding: "20px 20px 80px 20px", display: "flex", flexDirection: "column", gap: "18px" }}>
           
           {/* 1. 주인공 프로필 카드 */}
           <div style={{ backgroundColor: theme.panel, borderRadius: "16px", padding: "18px", border: `1px solid ${theme.border}`, boxShadow: "0 8px 20px rgba(0,0,0,0.05)", display: "flex", alignItems: "center", gap: "16px" }}>
@@ -136,18 +139,28 @@ export default function CharacterSheet({
             </div>
           </div>
 
-          {/* 2. 백스토리 & 비밀 아코디언 */}
-          <div style={{ backgroundColor: theme.panel, borderRadius: "12px", border: `1px solid ${theme.border}`, overflow: "hidden" }}>
-            <button onClick={() => setShowBackstory(!showBackstory)} style={{ width: "100%", padding: "14px 18px", background: "none", border: "none", display: "flex", alignItems: "center", gap: "8px", cursor: "pointer", color: theme.textMuted }}>
-              <BookOpen size={18} strokeWidth={2.5} />
-              <span style={{ fontWeight: "800", fontSize: "0.9rem", color: theme.text }}>내 캐릭터 백스토리 & 비밀</span>
+          {/* 🌟 2. 백스토리 & 비밀 아코디언 (화살표 추가 & 잘림 없는 깨끗한 레이아웃) */}
+          <div style={{ backgroundColor: theme.panel, borderRadius: "14px", border: `1px solid ${theme.border}`, overflow: "hidden" }}>
+            <button 
+              type="button"
+              onClick={() => setShowBackstory(!showBackstory)} 
+              style={{ width: "100%", padding: "14px 18px", background: "none", border: "none", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer", color: theme.text }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <BookOpen size={18} strokeWidth={2.5} color={theme.accent} />
+                <span style={{ fontWeight: "800", fontSize: "0.9rem", color: theme.text }}>내 캐릭터 백스토리 & 비밀</span>
+              </div>
+              {showBackstory ? <ChevronUp size={18} color={theme.textMuted} /> : <ChevronDown size={18} color={theme.textMuted} />}
             </button>
             {showBackstory && (
-              <div style={{ padding: "0 18px 18px 18px", fontSize: "0.85rem", color: theme.text, lineHeight: "1.6", whiteSpace: "pre-wrap" }}>
-                <div style={{ marginBottom: "10px" }}>{sheet.background || "기록된 배경 설정이 없습니다."}</div>
+              <div style={{ padding: "0 18px 18px 18px", fontSize: "0.85rem", color: theme.text, lineHeight: "1.6", whiteSpace: "pre-wrap", borderTop: `1px dashed ${theme.border}`, paddingTop: "14px" }}>
+                <div style={{ marginBottom: "12px" }}>
+                  <span style={{ fontWeight: "800", color: theme.accent, display: "block", marginBottom: "4px" }}>■ 배경 및 성격</span>
+                  {sheet.background || "기록된 배경 설정이 없습니다."}
+                </div>
                 {sheet.secret && (
-                  <div style={{ backgroundColor: isDarkMode ? "rgba(220, 38, 38, 0.1)" : "#fef2f2", color: theme.danger, padding: "10px", borderRadius: "8px", border: `1px solid rgba(220, 38, 38, 0.3)` }}>
-                    <strong style={{ display: "flex", alignItems: "center", gap: "4px", marginBottom: "4px" }}><Lock size={14} /> 나의 비밀</strong>
+                  <div style={{ backgroundColor: isDarkMode ? "rgba(220, 38, 38, 0.1)" : "#fef2f2", color: theme.danger, padding: "12px", borderRadius: "10px", border: `1px solid rgba(220, 38, 38, 0.3)` }}>
+                    <strong style={{ display: "flex", alignItems: "center", gap: "4px", marginBottom: "4px" }}><Lock size={14} /> 나의 비밀 / 약점</strong>
                     {sheet.secret}
                   </div>
                 )}
@@ -180,7 +193,7 @@ export default function CharacterSheet({
             </div>
           </div>
 
-          {/* 🌟 4. [괴담 모드 전용] 6대 스탯 그리드 (35pt 분배) */}
+          {/* 4. [괴담 모드 전용] 6대 스탯 그리드 (35pt 분배) */}
           {isHorror && (
             <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingLeft: "4px" }}>
@@ -206,7 +219,7 @@ export default function CharacterSheet({
             </div>
           )}
 
-          {/* 🌟 5. [괴담 모드 전용] 긍정 특성 & 트라우마 태그 */}
+          {/* 5. [괴담 모드 전용] 긍정 특성 & 트라우마 태그 */}
           {isHorror && (traits.length > 0 || traumas.length > 0) && (
             <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
               <span style={{ fontSize: "0.85rem", fontWeight: "800", color: theme.textMuted, paddingLeft: "4px" }}>특성 및 트라우마</span>
@@ -225,70 +238,96 @@ export default function CharacterSheet({
             </div>
           )}
 
-          {/* 6. 수집품 및 소지품 슬롯 */}
+          {/* 🌟 6. [빠져있던 핵심!] 소지품 및 생존 도구 (사용 버튼 추가) */}
           <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
             <div style={{ display: "flex", alignItems: "center", gap: "6px", color: theme.textMuted, paddingLeft: "4px" }}>
-              <Heart size={16} strokeWidth={2.5} />
-              <span style={{ fontSize: "0.85rem", fontWeight: "700" }}>{itemLabel} ({itemsAndClues.length}건)</span>
+              <Package size={16} strokeWidth={2.5} />
+              <span style={{ fontSize: "0.85rem", fontWeight: "700" }}>소지품 및 생존 도구 ({items.length}개)</span>
             </div>
-            {itemsAndClues.length === 0 ? (
-              <div style={{ padding: "20px", textAlign: "center", backgroundColor: isDarkMode ? "rgba(255,255,255,0.02)" : "rgba(0,0,0,0.02)", border: `1px dashed ${theme.borderHighlight}`, borderRadius: "12px", color: theme.textMuted, fontSize: "0.85rem" }}>
-                아직 획득한 아이템이 없습니다.
+            {items.length === 0 ? (
+              <div style={{ padding: "18px", textAlign: "center", backgroundColor: isDarkMode ? "rgba(255,255,255,0.02)" : "rgba(0,0,0,0.02)", border: `1px dashed ${theme.borderHighlight}`, borderRadius: "12px", color: theme.textMuted, fontSize: "0.82rem" }}>
+                소지품이 비어 있습니다.
               </div>
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                {itemsAndClues.map((item, idx) => (
-                  <div key={idx} style={{ padding: "12px 16px", backgroundColor: theme.panel, border: `1px solid ${theme.border}`, borderRadius: "12px" }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "4px" }}>
-                      <span style={{ fontWeight: "800", fontSize: "0.9rem", color: theme.text }}>{item.name}</span>
-                      {item.slot && (
-                        <span style={{ fontSize: "0.68rem", fontWeight: "800", padding: "2px 6px", borderRadius: "4px", backgroundColor: "rgba(255,255,255,0.08)", color: theme.textMuted }}>
-                          {item.slot}
-                        </span>
-                      )}
+                {items.map((item, idx) => (
+                  <div key={idx} style={{ padding: "12px 16px", backgroundColor: theme.panel, border: `1px solid ${theme.border}`, borderRadius: "12px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "2px", flex: 1, paddingRight: "10px" }}>
+                      <span style={{ fontWeight: "800", fontSize: "0.9rem", color: "#ea580c" }}>• {item.name}</span>
+                      <span style={{ fontSize: "0.75rem", color: theme.textMuted, lineHeight: "1.4" }}>
+                        {item.desc || (item.type === "멘탈 회복" ? "침식도 -20% 정화" : "상황 타개용 아이템")}
+                      </span>
                     </div>
-                    <span style={{ fontSize: "0.8rem", color: theme.textMuted, lineHeight: "1.5", display: "block" }}>
-                      {item.desc || item.overview || "설명 없음"}
-                    </span>
+                    {/* 사용 버튼 */}
+                    <button 
+                      type="button" 
+                      onClick={() => { if (onUseItem) onUseItem(item); }}
+                      style={{ padding: "6px 14px", borderRadius: "8px", backgroundColor: "#ea580c", color: "#fff", border: "none", fontSize: "0.78rem", fontWeight: "800", cursor: "pointer", flexShrink: 0 }}
+                    >
+                      사용
+                    </button>
                   </div>
                 ))}
               </div>
             )}
           </div>
 
-          {/* 7. 등장인물 & 메인 파트너 (사진 팝업 이벤트 분리 유지) */}
+          {/* 7. 확보된 사건 단서 & 물증 */}
+          {clues.length > 0 && (
+            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+              <span style={{ fontSize: "0.85rem", fontWeight: "700", color: theme.textMuted, paddingLeft: "4px" }}>
+                확보된 단서 ({clues.length}건)
+              </span>
+              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                {clues.map((clue, idx) => (
+                  <div key={idx} style={{ padding: "10px 14px", backgroundColor: theme.panel, border: `1px solid ${theme.border}`, borderRadius: "10px" }}>
+                    <div style={{ fontWeight: "800", fontSize: "0.85rem", color: theme.text }}>{clue.name || clue.title}</div>
+                    <div style={{ fontSize: "0.75rem", color: theme.textMuted, marginTop: "2px" }}>{clue.overview || clue.desc}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* 🌟 8. [빠져있던 핵심!] 주요 등장인물 & 메인 파트너 뱃지 */}
           <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
             <div style={{ display: "flex", alignItems: "center", gap: "6px", color: theme.textMuted, paddingLeft: "4px" }}>
               <UserRound size={16} strokeWidth={2.5} />
-              <span style={{ fontSize: "0.85rem", fontWeight: "700" }}>주요 등장인물 ({npcs.length}명)</span>
+              <span style={{ fontSize: "0.85rem", fontWeight: "700" }}>동행자 및 주요 인물 ({npcs.length}명)</span>
             </div>
             {npcs.length === 0 ? (
               <div style={{ padding: "20px", textAlign: "center", backgroundColor: isDarkMode ? "rgba(255,255,255,0.02)" : "rgba(0,0,0,0.02)", border: `1px dashed ${theme.borderHighlight}`, borderRadius: "12px", color: theme.textMuted, fontSize: "0.85rem" }}>
                 등록된 인물이 없습니다.
               </div>
             ) : (
-              <div style={{ display: "flex", flexDirection: "column", gap: "12px", paddingBottom: "30px" }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
                 {npcs.map((npc) => {
                   const isExpanded = expandedNpcId === npc.id;
                   const aff = npc.affection || 0;
                   const fillPercent = Math.max(0, Math.min(100, aff));
                   
                   return (
-                    <div key={npc.id} style={{ backgroundColor: theme.panel, border: `1px solid ${theme.border}`, borderRadius: "16px", overflow: "hidden", transition: "all 0.2s" }}>
-                      
+                    <div 
+                      key={npc.id} 
+                      style={{ 
+                        backgroundColor: theme.panel, 
+                        border: `1.5px solid ${npc.isPartner ? "#ea580c" : theme.border}`, 
+                        borderRadius: "16px", overflow: "hidden", transition: "all 0.2s" 
+                      }}
+                    >
                       {/* 카드 바디 (아코디언 트리거) */}
                       <div onClick={() => setExpandedNpcId(isExpanded ? null : npc.id)} style={{ display: "flex", alignItems: "center", padding: "16px", cursor: "pointer" }}>
                         
                         {/* 초상화 사진 (팝업 트리거, stopPropagation 유지) */}
                         <div 
-                          onClick={(e) => {
+                          onClick={(e) => { 
                             e.stopPropagation();
-                            if (setActivePortraitTarget && setShowPortraitEditModal) {
-                              setActivePortraitTarget(npc.id);
-                              setShowPortraitEditModal(true);
-                              setIsSheetOpen(false);
-                            }
-                          }}
+                            if (setActivePortraitTarget && setShowPortraitEditModal) { 
+                              setActivePortraitTarget(npc.id); 
+                              setShowPortraitEditModal(true); 
+                              setIsSheetOpen(false); 
+                            } 
+                          }} 
                           style={{ width: "52px", height: "52px", borderRadius: "50%", backgroundColor: theme.inputBg, border: `1px solid ${theme.borderHighlight}`, display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", flexShrink: 0 }}
                         >
                           {npc.portraitUrl ? <img src={npc.portraitUrl} alt={npc.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <UserRound size={24} color={theme.textMuted} />}
@@ -297,6 +336,12 @@ export default function CharacterSheet({
                         <div style={{ flex: 1, display: "flex", flexDirection: "column", marginLeft: "14px", gap: "2px" }}>
                           <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                             <span style={{ fontSize: "1.05rem", fontWeight: "900", color: theme.text }}>{npc.name || "이름 미상"}</span>
+                            {/* 🌟 파트너 전용 주황색 뱃지 */}
+                            {npc.isPartner && (
+                              <span style={{ fontSize: "0.65rem", fontWeight: "900", padding: "2px 6px", borderRadius: "6px", backgroundColor: "#ea580c", color: "#fff" }}>
+                                메인 파트너
+                              </span>
+                            )}
                             {isHorror && npc.specialty && (
                               <span style={{ fontSize: "0.68rem", fontWeight: "800", padding: "2px 6px", borderRadius: "4px", backgroundColor: "rgba(59, 130, 246, 0.15)", color: "#60a5fa" }}>
                                 {npc.specialty}
@@ -306,7 +351,7 @@ export default function CharacterSheet({
                           <span style={{ fontSize: "0.75rem", color: theme.textMuted, fontWeight: "600" }}>{npc.job || "직업 미상"}</span>
                         </div>
                         
-                        {/* 호감도 하트 게이지 */}
+                        {/* 호감도 하트 게이지 (기존의 멋진 SVG 유지!) */}
                         <div style={{ display: "flex", alignItems: "center", gap: "6px", backgroundColor: isDarkMode ? "rgba(239, 68, 68, 0.1)" : "#fef2f2", padding: "6px 12px", borderRadius: "20px" }}>
                           <svg width="18" height="18" viewBox="0 0 24 24">
                             <defs>
