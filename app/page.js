@@ -4427,7 +4427,7 @@ color: "#fff", border: "none", cursor: "pointer",
         );
       })()}
 
-{/* 📱 괴담 모드 전용 스마트폰 컴포넌트 우선 분기 */}
+{/* 📱 괴담 모드 전용 스마트폰 컴포넌트 */}
 {isPhoneDrawerOpen && activeSession && activeSession.ruleMode === "horror" ? (
   <PhoneDrawer
     isOpen={isPhoneDrawerOpen}
@@ -4436,11 +4436,11 @@ color: "#fff", border: "none", cursor: "pointer",
     inGameTime={inGameTime}
     genre="modern"
     isHorror={true}
-    contactName={activeSession.sheet?.npcs?.[0]?.name || "미확인 발신자"}
-    contactJob={activeSession.sheet?.npcs?.[0]?.job || "발신번호표시제한"}
-    affection={activeSession.sheet?.npcs?.[0]?.affection || 0}
-    messages={((activeSession.sheet?.phoneChats || {})[activeSession.sheet?.npcs?.[0]?.id || 1]) || []}
-    onSendMessage={(text) => executeMessage(`[메신저 전송] ${text}`)}
+    contacts={activeSession.sheet?.npcs || []} // 🌟 동행자 전체 목록 전달
+    messages={((activeSession.sheet?.phoneChats || {})[activeSession.sheet?.activeContactId || activeSession.sheet?.npcs?.[0]?.id || 1]) || []}
+    onSendMessage={(text, targetContact) => {
+      executeMessage(`[메신저 전송 - ${targetContact.name}] ${text}`);
+    }}
   />
 ) : null}
 
