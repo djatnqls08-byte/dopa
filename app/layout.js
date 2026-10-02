@@ -1,7 +1,7 @@
 // app/layout.js
 export const metadata = {
-  title: "시크릿 노벨",
-  description: "인터랙티브 스토리 플랫폼"
+  title: "도파",
+  description: "잉크 한 방울로 터지는 도파민 AI 롤플레잉",
 };
 
 export const viewport = {
