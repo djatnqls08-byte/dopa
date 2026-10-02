@@ -260,6 +260,8 @@ export default function GamePlatform() {
 
   // ── [2. 시스템 토스트 알림] ──
   const [toast, setToast] = useState(null);
+  const toastTimerRef = useRef(null); // 🌟 (핵심) 이전 타이머를 기억할 빈 상자 추가!
+
   const triggerToast = (title, message = "", icon = null) => {
     // 🌟 사반님 절대 규칙: 텍스트 이모지가 들어오면 강제로 Lucide 아이콘으로 정화!
     let finalIcon = icon;
@@ -272,8 +274,14 @@ export default function GamePlatform() {
       else if (icon.includes("📂") || icon.includes("📋") || icon.includes("💾")) finalIcon = <FolderOpen size={18} color={theme.accent} />;
       else finalIcon = <CheckCircle2 size={18} color={theme.accent} />;
     }
+    
     setToast({ title, message, icon: finalIcon });
-    setTimeout(() => setToast(null), 2500);
+    
+    // 🌟 (버그 픽스) 예전 타이머가 아직 돌고 있다면 강제로 멈추고 새 타이머만 깔끔하게 작동시킵니다!
+    if (toastTimerRef.current) {
+      clearTimeout(toastTimerRef.current);
+    }
+    toastTimerRef.current = setTimeout(() => setToast(null), 2500);
   };
 
 // ── [3. 상태 관리] ──
