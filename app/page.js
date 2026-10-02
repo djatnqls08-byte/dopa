@@ -1885,6 +1885,15 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
         .typing-dot { animation: typingBounce 1.3s infinite ease-in-out; }
       `}</style>
 
+      {/* 🌟 잃어버렸던 메인 화면용 토스트 알림창 복구! */}
+      {toast && (
+        <div onClick={() => setToast(null)} style={{ ...GLASS_STYLE, position: "absolute", top: "20px", left: "50%", transform: "translateX(-50%)", zIndex: 99999, backgroundColor: isDarkMode ? "rgba(35, 30, 28, 0.96)" : "rgba(255, 255, 255, 0.96)", border: `1.5px solid ${theme.accent}`, color: theme.text, padding: "12px 20px", borderRadius: "24px", display: "flex", alignItems: "center", gap: "10px", boxShadow: "0 10px 30px rgba(0,0,0,0.15)", cursor: "pointer", animation: "fadeIn 0.2s ease-out", width: "max-content", maxWidth: "90vw" }}>
+          <span style={{ display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontSize: "1.15rem" }}>{toast.icon}</span>
+          <span style={{ fontSize: "0.85rem", fontWeight: "700", color: theme.accent, whiteSpace: "nowrap", flexShrink: 0 }}>{toast.title}</span>
+          {toast.message && <span style={{ fontSize: "0.8rem", opacity: 0.85, wordBreak: "keep-all" }}>{toast.message}</span>}
+        </div>
+      )}
+
       {/* 🌟 toast -> itemToDelete 로 이름 변경! */}
       {itemToDelete && (
         <div onClick={() => setItemToDelete(null)} style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 99999, padding: "20px", animation: "fadeIn 0.2s ease-out" }}>
@@ -3586,7 +3595,26 @@ color: "#fff", border: "none", cursor: "pointer",
                   {[
                     { icon: <Clock size={20} color={theme.accent} />, title: "나의 플레이 기록", count: `${sessions.length}건`, onClick: () => setShowHistoryModal(true) },
                     { icon: <Heart size={20} color={theme.danger} fill={likedScenarios.length > 0 ? theme.danger : "none"} />, title: "관심 시나리오", count: `${likedScenarios.length}건`, onClick: () => setShowLikedModal(true) },
-                    { icon: <UploadCloud size={20} color="#60a5fa" />, title: "라운지 심사 및 발행 내역", count: `${savedLibrary.filter(s => s.status === "심사 대기").length}건 대기중`, onClick: () => setShowReviewModal(true) }
+                    { icon: <UploadCloud size={20} color="#60a5fa" />, title: "라운지 심사 및 발행 내역", count: `${savedLibrary.filter(s => s.status === "심사 대기").length}건 대기중`, onClick: () => setShowReviewModal(true) },
+                    
+                    // 🌟 수동 동기화 버튼 추가! (누르는 즉시 클라우드로 꽂아버리고 성공/실패 여부를 팝업으로 띄웁니다)
+                    { icon: <Database size={20} color={theme.success} />, title: "클라우드 강제 백업 (수동 저장)", count: "지금 동기화", onClick: async () => {
+                      if (!currentUser?.uid) return triggerToast("로그인 필요", "먼저 로그인해주세요.", "⚠️");
+                      triggerToast("동기화 중...", "클라우드에 강제로 데이터를 저장합니다.", "⏳");
+                      const { error } = await supabase.from('user_saves').upsert({
+                        user_id: currentUser.uid,
+                        library_data: savedLibrary,
+                        session_data: sessions,
+                        liked_data: likedScenarios,
+                        updated_at: new Date().toISOString()
+                      });
+                      if (error) {
+                        alert("🚨 서버 에러 원인 발견!!:\n" + error.message);
+                      } else {
+                        alert("✅ 클라우드 강제 저장 100% 성공!\n이제 모바일에서 도파에 접속해보세요.");
+                        triggerToast("저장 성공", "완벽하게 백업되었습니다.", "☁️");
+                      }
+                    }}
                   ].map((menu, i, arr) => (
                     <div key={i} onClick={menu.onClick} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "18px 20px", cursor: "pointer", borderBottom: i === arr.length - 1 ? "none" : `1px solid ${theme.border}`, transition: "background 0.2s" }} onMouseEnter={e => e.currentTarget.style.backgroundColor = theme.panelAlt} onMouseLeave={e => e.currentTarget.style.backgroundColor = "transparent"}>
                       <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
