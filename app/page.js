@@ -3552,12 +3552,33 @@ color: "#fff", border: "none", cursor: "pointer",
                   ))}
                 </div>
 
+                {/* 🌟 4. 새로 추가된 로그아웃 버튼! */}
+                <button 
+                  onClick={async () => {
+                    triggerToast("로그아웃 중...", "안전하게 연결을 해제하고 있습니다.", "⏳");
+                    await supabase.auth.signOut(); // Supabase 연결 해제
+                    setCurrentUser(null); // 내 정보 상자 비우기
+                    localStorage.removeItem("secret_novel_user"); // 컴퓨터에 저장된 찌꺼기 삭제
+                    setActiveTab("explore"); // 로비(탐색) 화면으로 돌려보내기
+                    triggerToast("로그아웃 완료", "다음에 또 만나요!", "👋");
+                  }}
+                  style={{ 
+                    width: "100%", padding: "18px 20px", backgroundColor: theme.panel, border: `1px solid ${theme.border}`, 
+                    borderRadius: "20px", color: theme.danger, fontSize: "0.95rem", fontWeight: "800", cursor: "pointer", 
+                    display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", 
+                    boxShadow: "0 8px 24px rgba(0,0,0,0.04)", transition: "background 0.2s", marginTop: "4px"
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.backgroundColor = theme.panelAlt} 
+                  onMouseLeave={e => e.currentTarget.style.backgroundColor = theme.panel}
+                >
+                  <LogOut size={20} strokeWidth={2.5} /> 로그아웃
+                </button>
+
               </div>
             )}
 
             <div style={{ height: "60px", flexShrink: 0 }} />
           </main>
-
 ) : (
          <div style={{ flex: 1, display: "flex", overflow: "hidden", position: "relative", backgroundColor: theme.bg }}>
             
