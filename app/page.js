@@ -9,6 +9,8 @@ import PhoneDrawer from "@/components/PhoneDrawer";
 import GhostBoard from "@/components/GhostBoard";
 import EvidenceSelectModal from "@/components/EvidenceSelectModal";
 import ScenarioStudioModal from "@/components/ScenarioStudioModal";
+import TasteModal from "@/components/TasteModal";
+import PromiseCalendarModal from "@/components/PromiseCalendarModal";
 import { createClient } from '@supabase/supabase-js'; 
 
 // 🌟 이제 금고(Vercel 환경 변수)에서 안전하게 꺼내옵니다! (NEXT_PUBLIC_이 붙어야 화면에서 쓸 수 있어요!)
@@ -18,7 +20,7 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 import { 
-  Search, Heart, Flame, LayoutGrid, LibraryBig, PenTool, UserRound, 
+  Calendar, Search, Heart, Flame, LayoutGrid, LibraryBig, PenTool, UserRound,
   Menu, Moon, Sun, Save, FileUp, HelpCircle, X, ChevronDown, ChevronUp, Image as ImageIcon,
   ClipboardList, Pin, FileSearch, Mailbox, Play,
   FolderOpen, Lock, Settings, Database, ClipboardPaste, LogOut, Sparkles,
@@ -1287,25 +1289,6 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
     }
   };
 
-{/* 🎁 [신규] 인벤토리 변동 태그 파싱 (선물 전달 시 아이템) */}
-      const invMatch = rawText.match(/<!--\s*INVENTORY:\s*(\{[\s\S]*?\})\s*-->/i);
-      let invUpdate = null;
-      if (invMatch) {
-        try { invUpdate = JSON.parse(invMatch[1]); } catch(e) {}
-        rawText = rawText.replace(invMatch[0], "");
-      }
-
-      // 💖 [신규] 멀티/단일 호감도 변동 태그 파싱
-      const affMatch = rawText.match(/<!--\s*AFFECTION:\s*(\[[\s\S]*?\]|\{[\s\S]*?\})\s*-->/i);
-      let affUpdates = [];
-      if (affMatch) {
-        try {
-          const parsedAff = JSON.parse(affMatch[1]);
-          affUpdates = Array.isArray(parsedAff) ? parsedAff : [parsedAff];
-        } catch(e) {}
-        rawText = rawText.replace(affMatch[0], "");
-      }
-
   // 🌟 (복구) 여기에 사라졌던 executeMessage 함수를 넣습니다!
   const executeMessage = async (textToSend) => {
     if (!textToSend.trim() || !activeSession) return;
@@ -1786,7 +1769,7 @@ let newPhoneMsg = null;
           suggestedActions: suggActions
         };
       }));
-      
+    } catch (err) {
       if (err.name === "AbortError") return;
       triggerToast("통신 오류", "메시지 전송 중 오류가 발생했습니다.", "⚠️");
     } finally {
