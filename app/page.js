@@ -1001,142 +1001,306 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
   };
 
 // ── [10. 코어 엔진: 세션 시작 및 통신] ──
-  const startNewSession = async () => {
-    if (!scenarioTitle.trim()) {
-      triggerToast("제목 입력", "이야기를 시작하려면 제목을 입력해주세요.", "⚠️");
+// ... (startNewSession 함수는 건드리지 마세요!) ...
+
+  // 🌟 (복구) 여기에 사라졌던 executeMessage 함수를 넣습니다!
+  const executeMessage = async (textToSend) => {
+    if (!textToSend.trim() || !activeSession) return;
+
+    // 🚨 [추리 모드] 피로도 100% 도달 시 행동 강제 차단
+    if (activeSession.ruleMode === "freeform" && (activeSession.sheet?.fatigue || 0) >= 100) {
+      triggerToast("수사 불가", "피로도가 한계에 달했습니다. 화면 하단 [+] 메뉴에서 [🛏️ 휴식 및 수면]을 취해주세요.", "🛑");
       return;
     }
 
-    const pName = pcName.trim() || "주인공";
-    
-    // 🌟 [전방위 이름 치환 마법!] 텍스트뿐만 아니라 배열/객체를 통째로 스캔해서 이름을 싹 다 바꿔버립니다!
-    const deepReplace = (data) => {
-      if (!originalPcName || originalPcName === pName) return data;
-      // 객체나 배열을 통째로 문자열로 만들어서 이름을 싹 바꾸고 다시 조립하는 완벽한 꼼수!
-      let str = typeof data === 'string' ? data : JSON.stringify(data);
-      str = str.replace(new RegExp(originalPcName, 'g'), pName);
-      return typeof data === 'string' ? str : JSON.parse(str);
-    };
-
-    // 🌟 서막, 시놉시스, 진상 치환
-    const finalOpening = deepReplace(openingScene);
-    const finalSynopsis = deepReplace(publicSynopsis);
-    const finalTruth = deepReplace(hiddenTruth);
-
-    const initialSheet = {
-      name: pName,
-      job: pcJob || "조사원",
-      ageGender: pcAgeGender || "",
-      background: deepReplace(pcBackground || ""),
-      secret: deepReplace(pcSecret || ""),
-      portrait: pcPortraitUrl || "",
-      hp: 100, 
-      maxHp: 100,
-      npcs: deepReplace(suspects).map(s => ({ ...s, secretRevealed: false })), // NPC 관계도/비밀 치환
-      handouts: deepReplace(evidenceList).map(e => ({ ...e, revealed: false })), // 단서 설명/모순점 치환
-      fatigue: 0,
-      horrorStats: horrorStats,
-      horrorTraits: horrorTraits,
-      horrorTraumas: horrorTraumas,
-      abyssTriggers: deepReplace(abyssTriggers), // 괴담 모드 발현 지문 치환
-      cgGallery: deepReplace(cgList),          // 🌟 AI가 CG 조건과 대사도 알 수 있게 뇌에 주입! (이름 치환 완비)
-      routes: deepReplace(routeList),          // 🌟 AI가 공략 루트와 호감도 변화도 알 수 있게 추가!
-      partners: deepReplace(mainPartners)      // 🌟 메인 파트너 정보 주입!
-    };
-    
-   const newId = Date.now();
-    const newSession = {
-      id: newId,
-      title: scenarioTitle,
-      thumbnail: scenarioImageUrl, // 🌟 여기서 세션 카드를 영구 저장합니다!
-      ruleMode: selectedMode === "추리" ? "freeform" : selectedMode === "연애" ? "dating" : "horror",
-      preference: playPreference.trim(),
-      // 🌟 AI에게 치환이 완료된(final) 텍스트를 전달합니다!
-      scenarioText: `[시나리오 제목: ${scenarioTitle}]\n\n[공개 시놉시스]\n${finalSynopsis}\n\n[초기 배경/서막]\n${finalOpening}\n\n[키퍼 전용 기밀/진상]\n${finalTruth}`,
-      sheet: initialSheet,
-      messages: [], 
-      suggestedActions: [] 
-    };
-
-    setSessions([newSession, ...sessions]);
-    setActiveSessionId(newId);
-    setIsLoading(true);
-
-    let openingPrompt = "";
-
-    if (newSession.ruleMode === "dating") {
-      openingPrompt = `[세션 시작: 연애 모드 서막 요청]
-시나리오의 [초기 배경/서막]을 플레이어가 몰입할 수 있는 도입부 지문으로 서술하십시오.
-[절대 수칙]
-1. 메타 정보, 괄호 속 해설 등 스포일러를 절대 노출하지 마십시오.
-2. 오직 주인공 '${pName}'의 시점에서 현장 분위기, 인물 간의 시선과 공기의 온도를 4~5문장으로 묘사하십시오.
-3. 지문 끝에 주인공이 취할 만한 선택지 3개를 반드시 출력하십시오:
-<!-- SUGGESTIONS: ["선택지 1", "선택지 2", "선택지 3"] -->`;
-    } else if (newSession.ruleMode === "freeform") {
-      openingPrompt = `[세션 시작: 추리/수사 모드 사전 교류 서막 요청]
-시나리오의 [초기 배경/서막]에 참혹한 사건이나 본격적인 갈등이 적혀 있더라도, 1턴부터 바로 사건을 터뜨리지 마십시오.
-대신 사건이 발생하기 전, 인물들이 한 공간에 모여 일상적인 대화를 나누거나 묘한 긴장감이 흐르는 '폭풍전야'의 시점(명탐정 코난, 소년탐정 김전일의 에피소드 초반부처럼)으로 서막을 시작하십시오.
-
-[도입부 연출 수칙]
-1. [사건 발생 전 상황 조성]:
-- 본격적인 사건이 터지기 전, 인물들의 성격과 관계성을 엿볼 수 있는 상황을 4~5문장으로 서술하십시오.
-2. [인물과의 첫 대면 기회 제공]:
-- 주인공 '${pName}'이 자리에 합류하여 주변 용의자 중 한 명과 가볍게 눈인사를 나누거나 첫마디를 건넬 수 있는 타이밍에서 지문을 멈추십시오.
-3. [자연스러운 대화 유도 선택지]:
-<!-- SUGGESTIONS: ["가까이 있는 인물에게 다가가 가볍게 인사를 건넨다", "자리에 모인 인물들의 낯빛과 기류를 살핀다", "조용히 주변을 둘러보며 자리를 잡는다"] -->`;
-    } else if (newSession.ruleMode === "horror") {
-      openingPrompt = `[세션 시작: 괴담 모드 서막 요청]
-시나리오의 [초기 배경/서막]을 기괴하고 서늘한 분위기로 윤색하여 서술하십시오.
-[절대 수칙]
-1. 괴이의 정체를 미리 밝히지 말고, 시각/청각적인 불쾌감과 서늘한 징조만을 4~5문장으로 서술하십시오.
-2. 주인공 '${pName}'이 미지의 존재에 대한 압박감을 느낄 수 있도록 묘사하십시오.
-3. 지문 끝에 행동을 위한 선택지 3개를 출력하십시오:
-<!-- SUGGESTIONS: ["주변을 조심스레 살펴본다", "불길한 징조의 흔적을 쫓는다", "기척에 귀를 기울인다"] -->`;
+    // 🕒 [시간대 즉시 복구 치트키]
+    if (textToSend.trim().startsWith("/시간")) {
+      const parts = textToSend.trim().split(/\s+/);
+      const targetTime = parts[1];
+      if (["새벽", "아침", "낮", "저녁", "밤"].includes(targetTime)) {
+        setSessions(prev => prev.map(s => s.id === activeSessionId ? { ...s, currentPhase: targetTime, sheet: { ...s.sheet, currentPhase: targetTime } } : s));
+        if (typeof triggerToast === "function") triggerToast("시간대 변경 완료", `현재 시각이 [${targetTime}](으)로 설정되었습니다.`, "🕒");
+        setInputMsg(""); return; 
+      }
     }
+ 
+    // 💖 [호감도 복구/조정 치트키]
+    if (textToSend.trim().startsWith("/호감도") || textToSend.trim().startsWith("/치트")) {
+      const parts = textToSend.trim().split(/\s+/);
+      let targetName = null; let targetVal = 50;
+      if (parts.length >= 3) { targetName = parts[1]; targetVal = parseInt(parts[2], 10); } 
+      else if (parts.length === 2) { targetVal = parseInt(parts[1], 10); }
+
+      if (!isNaN(targetVal)) {
+        setSessions(prev => prev.map(s => {
+          if (s.id !== activeSessionId) return s;
+          const updatedNpcs = (s.sheet?.npcs || []).map((npc, idx) => {
+            const isMatch = targetName ? npc.name?.includes(targetName) : idx === 0;
+            return isMatch ? { ...npc, affection: targetVal, affinity: targetVal } : npc;
+          });
+          return { ...s, sheet: { ...s.sheet, npcs: updatedNpcs } };
+        }));
+        if (typeof triggerToast === "function") triggerToast("치트키 적용", `호감도가 ${targetVal}(으)로 변경되었습니다.`, "💖");
+        setInputMsg(""); return; 
+      }
+    }
+    
+    // 🧠 [캐릭터 성격 전체 복기 치트키]
+    if (textToSend.trim().startsWith("/리프레시") || textToSend.trim().startsWith("/싱크")) {
+      textToSend = `[🚨 시스템 관리자 명령: 캐릭터 성격 긴급 리프레시]\n현재 캐릭터의 말투와 태도가 설정에서 벗어났습니다. 물리적 강압이나 얀데레식 집착을 무효화하고 시트 본래의 성격(공사 구분, 절제된 거리감)을 100% 복기하여 상황을 정상화하십시오.`;
+      if (typeof triggerToast === "function") triggerToast("인격 동기화", `캐릭터 설정을 원본 시트로 리프레시합니다.`, "🧠");
+    }
+
+    // 📵 유저가 전화를 끊는 말을 입력했을 때 즉시 통화 State 강제 해제
+    const endCallKeywords = ["전화끊", "전화 끊", "통화 종료", "끊을게", "끊겠습니다", "끊는다"];
+    const isTryingToHold = textToSend.includes("끊지") || textToSend.includes("끊지마") || textToSend.includes("끊지 마");
+    if (isVoiceCallActive && endCallKeywords.some(k => textToSend.includes(k)) && !isTryingToHold) {
+      setIsVoiceCallActive(false);
+      setIsCallModalOpen(false);
+      setVoiceCallNpc(null);
+    }
+ 
+    // 📞 부재중 전화 자동 처리 로직
+    let missedCallNotice = "";
+    if (incomingCall) {
+      const caller = incomingCall.caller || incomingCall;
+      const callerName = caller.name || "상대방";
+      const callerNpc = (activeSession.sheet?.npcs || []).find(n => n.name === callerName) || activeSession.sheet?.npcs?.[0];
+      const callerId = callerNpc?.id || 1;
+      const currentTime = new Date().toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" });
+
+      const missedCallBubble = { id: Date.now() + Math.random(), sender: "npc", text: `📞 [부재중 전화] ${callerName} 님이 건 전화를 받지 못했습니다.`, time: currentTime, unread: true, isMissedCall: true };
+
+      setSessions(prev => prev.map(s => {
+        if (s.id !== activeSessionId) return s;
+        const currentChats = s.sheet?.phoneChats || {};
+        const contactMsgs = currentChats[callerId] || [];
+        return {
+          ...s,
+          sheet: {
+            ...s.sheet,
+            phoneChats: { ...currentChats, [callerId]: [...contactMsgs, missedCallBubble] }
+          }
+        };
+      }));
+
+      triggerToast("📞 부재중 전화 1건", `${callerName}님의 전화를 받지 않았습니다.`, "📵");
+      setIncomingCall(null);
+      
+      missedCallNotice = `\n\n[🚨 부재중 전화 발생 및 인물 성격별 후속 수칙]
+방금 울리던 '${callerName}'의 전화를 플레이어가 무시했습니다.
+1. 집착/불안 성향: 전화를 안 받자 불안감이 폭발하여 곧바로 문자를 연달아 쏟아붓게 하십시오.
+2. 쿨함/냉정: 문자를 일절 남기지 않거나, 짧은 용건 1줄만 남기십시오.
+3. 소심: 걱정하는 안부 문자 1줄만 전송하십시오.`;
+    }
+
+    // ⭕ 대면 상대 자동 감지
+    const allNpcs = activeSession.sheet?.npcs || [];
+    let detectedPartner = null;
+    for (const n of allNpcs) {
+      const shortName = n.name.length >= 3 ? n.name.slice(1) : n.name;
+      if (textToSend.includes(n.name) || textToSend.includes(shortName) || textToSend.includes(`[${n.name}]`)) { detectedPartner = n; break; }
+    }
+    const currentContactId = detectedPartner?.id || activeSession.activeContactId || allNpcs[0]?.id;
+    const currentContact = allNpcs.find(n => n.id === currentContactId) || allNpcs[0];
+    const partnerName = currentContact?.name || "상대방";
+
+    if (detectedPartner && detectedPartner.id !== activeSession.activeContactId) {
+      setSessions(prev => prev.map(s => s.id === activeSessionId ? { ...s, activeContactId: detectedPartner.id, sheet: { ...s.sheet, activeContactId: detectedPartner.id } } : s));
+    }
+    
+    const snapshotSheet = JSON.parse(JSON.stringify(activeSession.sheet || {}));
+    const cleanDisplayText = textToSend.replace(/<!--[\s\S]*?-->/g, "").trim();
+    const isDirectCallSpeech = textToSend.startsWith("[전화 통화]");
+
+    const updatedMessages = [
+      ...(activeSession.messages || []), 
+      { role: "user", text: cleanDisplayText, contactId: currentContactId, prevSheet: snapshotSheet, isCall: isDirectCallSpeech, isVoiceCall: isVoiceCallActive, callNpc: voiceCallNpc?.name }
+    ];
+
+    // 피로도 연산 (추리 모드 전용)
+    let addedFatigue = 0;
+    if (activeSession.ruleMode === "freeform") {
+      if (textToSend.includes("[🔍") || textToSend.includes("[🤫") || textToSend.includes("[💬") || /알리바이|심문|추궁|조사|수색|증거|단서|용의자/.test(textToSend)) {
+        addedFatigue = 10;
+      }
+    }
+    const currentFatigue = Number(activeSession.sheet?.fatigue || 0);
+    const nextFatigue = Math.min(100, currentFatigue + addedFatigue);
+    
+    setSessions(prev => prev.map(s => s.id === activeSessionId ? { ...s, messages: updatedMessages, suggestedActions: [], sheet: { ...s.sheet, fatigue: nextFatigue } } : s));
+    setIsLoading(true);
+    setInputMsg("");
 
     const controller = new AbortController();
     setAbortController(controller);
 
+    const isDating = activeSession.ruleMode?.startsWith("dating");
+    const isFreeform = activeSession.ruleMode === "freeform";
+    const pcTone = activeSession.sheet?.background || "자연스러운 성격";
+
+    // 🌟 동적 프롬프트 조립
+    let dynamicRules = `\n\n[키퍼 마스터링 절대 수칙]
+1. 진상 스포일러 금지: 플레이어가 판정에 성공하거나 명확한 증거를 찾기 전엔 진상을 해설하지 마십시오.
+2. 시스템 태그 연동: 새로운 물건 획득 시 <!-- ITEM: {"name": "명칭", "desc": "설명"} --> / 인물 취향 발견 시 <!-- CLUE: {"name": "취향명", "desc": "설명", "type": "like"} -->
+3. 호감도 변동 시 <!-- AFFECTION: {"name": "인물명", "delta": 1} -->
+4. [돌발 전화 수신]: 타 장소의 인물이 급한 용건이 있다면 지문 끝에 <!-- INCOMING_CALL: {"name": "발신NPC명", "urgent": true} -->`;
+
+    // 👻 사망한 NPC의 카톡 강제 차단 앵커
+    const isDead = /사망|죽음|유골|고인/.test(currentContact?.statusMessage || "") || /사망|죽음|유골|고인/.test(currentContact?.behavior || "");
+    if (isDead) {
+      dynamicRules += `\n\n[🚨 상대방 사망 상태 알림: ${partnerName}]\n상대방 '${partnerName}'은 작중에서 이미 사망했습니다! 절대로 살아있는 척 답장하거나 전화를 걸게 하지 마십시오. 답장 대신 지문으로 오직 [수신인이 응답할 수 없는 침묵]만을 서술하십시오.`;
+    }
+
+    // 📱 스마트폰 메신저 프롬프트 분기!
+    if (isFreeform) {
+      dynamicRules += `\n\n[📱 추리 모드 특수 룰: 타인의 휴대폰 및 증거 조사]
+- 현재 플레이어는 스마트폰 메신저를 열어 피해자나 용의자의 휴대폰을 들여다보거나 조사하고 있습니다.
+- 플레이어가 폰 내용을 조사하면, 사건의 실마리가 될 과거의 수상한 대화 기록이나 실시간으로 도착하는 협박/비밀 문자를 자연스럽게 출력하십시오.
+- 형식: <!-- PHONE_MSG: {"from": "발신자명", "text": "과거 기록 또는 수신된 문자 내용 (1~2줄)"} -->
+- 화면이나 갤러리 속 사진 증거물: <!-- SNAP_PHOTO: {"prompt": "증거물 풍경", "caption": "사진 설명"} -->`;
+    } else {
+      dynamicRules += `\n\n[📱 메신저 선톡 및 일상 사진 전송 수칙]
+- 플레이어가 현재 다른 구역에 있거나 대화 턴이 누적되었을 때, 연락처가 있는 타 NPC가 안부, 질투, 혹은 비밀스러운 선톡을 1회 발송하게 하십시오.
+- 형식: <!-- PHONE_MSG: {"from": "발신NPC명", "text": "내용 (1~2줄)"} -->\n<!-- SNAP_PHOTO: {"prompt": "사물/풍경 묘사", "caption": "설명"} -->`;
+    }
+
+    dynamicRules += missedCallNotice; 
+
+    if (isDating) {
+      dynamicRules += `\n\n[미연시 대화 분기 수칙]\n- 지문 말미에 주인공이 보낼 수 있는 다음 선택지 3개를 <!-- SUGGESTIONS: ["대사1", "대사2", "대사3"] --> 태그로 출력하십시오. 주인공의 성격 [${pcTone}]에 맞춰 구성하십시오.`;
+    }
+    
+    const messagesForApi = updatedMessages.slice(-40).map(m => ({ role: m.role, text: m.text }));
+    
     try {
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         signal: controller.signal,
         body: JSON.stringify({
-          messages: [{ role: "user", text: openingPrompt }],
-          scenarioText: newSession.scenarioText,
-          playerSheet: initialSheet,
-          ruleMode: newSession.ruleMode,
-          playPreference: playPreference
+          messages: messagesForApi,
+          scenarioText: ((activeSession.scenarioText || "").split("[🚨 시나리오 원본")[0]) + dynamicRules,
+          playerSheet: activeSession.sheet,
+          ruleMode: activeSession.ruleMode,
+          playPreference: activeSession.preference
         })
       });
 
-      if (!res.ok) throw new Error("서버 응답 오류");
+      if (!res.ok) throw new Error(`서버 응답 오류 (${res.status})`);
       const data = await res.json();
+      let rawText = data.text || "";
+
+      // 📞 통화 종료 태그 감지
+      const endCallMatch = rawText.match(/<!--\s*END_CALL:\s*(\{[\s\S]*?\})\s*-->/);
+      if (endCallMatch) { setIsVoiceCallActive(false); setIsCallModalOpen(false); setVoiceCallNpc(null); rawText = rawText.replace(endCallMatch[0], "").trim(); }
+
+      // 🌟 [핵심] 스마트폰 톡 & 사진 완벽 낚아채기 파서
+      let newPhoneMsg = null;
+      const phoneMsgMatch = rawText.match(/<!--\s*PHONE_MSG:\s*(\{[\s\S]*?\})\s*-->/i);
+      if (phoneMsgMatch) { try { newPhoneMsg = JSON.parse(phoneMsgMatch[1]); } catch(e){} rawText = rawText.replace(phoneMsgMatch[0], ""); }
       
-      let cleanText = data.text || "";
-      let suggActions = [];
-      const suggMatch = cleanText.match(/<!--\s*SUGGESTIONS:\s*(\[[\s\S]*?\])\s*-{1,3}>/i);
-      if (suggMatch) {
-        try { suggActions = JSON.parse(suggMatch[1]); } catch(e) {}
+      if (!newPhoneMsg) {
+        const inlineMsgMatch = rawText.match(/\[([^\]]+)\]\s*[:：]\s*["'“]?([^"'”\n\r]+?)["'”]?\s*(?=\n|$)/);
+        if (inlineMsgMatch) { newPhoneMsg = { from: inlineMsgMatch[1].trim(), text: inlineMsgMatch[2].trim() }; }
       }
-      // 🌟 AI 시스템 태그 완전 차단!
-      cleanText = cleanText.replace(/<!--[\s\S]*?-->/g, "").trim();
-      setSessions(prev => prev.map(s => s.id === newId ? {
-        ...s,
-        messages: [{ role: "model", text: cleanText }],
-        suggestedActions: suggActions
-      } : s));
+
+      let autoSnapPhotoUrl = null;
+      const autoSnapMatch = rawText.match(/<!--\s*SNAP_PHOTO:\s*(\{[\s\S]*?\})\s*-->/i);
+      if (autoSnapMatch) {
+        try {
+          const snapData = JSON.parse(autoSnapMatch[1]);
+          let p = (snapData.prompt || snapData.caption || "").replace(/\b(1girl|1boy|girl|boy|human|person)\b/gi, "").trim();
+          if (!p) p = "aesthetic room interior, cozy atmosphere";
+          const safePrompt = `${p}, no humans, nobody, scenery only, still life, background focus`;
+          autoSnapPhotoUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(safePrompt)}?width=800&height=1000&nologo=true`;
+        } catch (e) {}
+        rawText = rawText.replace(autoSnapMatch[0], "");
+      }
+
+      // 🌟 찌꺼기 청소 및 선택지 추출 (기존의 강력한 3중 필터 적용)
+      let suggActions = [];
+      const suggMatch = rawText.match(/<!--\s*SUGGESTIONS:\s*(\[[\s\S]*?\])\s*-{1,3}>/i);
+      if (suggMatch) { try { suggActions = JSON.parse(suggMatch[1]); } catch(e) {} }
+
+      let cleanText = rawText
+        .replace(/<!--[\s\S]*?-{1,3}>/g, "")
+        .replace(/<!--[\s\S]*?$/g, "")
+        .replace(/(?:-\s*)?\*\*\[SUGGESTIONS\]\*\*[\s\S]*$/i, "")
+        .replace(/\[SUGGESTIONS\][\s\S]*$/i, "") 
+        .replace(/\n\s*1\.\s*".*$/g, "")
+        .replace(/\n\s*1\.\s*.+?(?=\n|$)/g, "")
+        .replace(/\n\s*[1-3]\.\s*.*/g, "")
+        .trim();
+
+      // 🌟 [렌더링] 추출해 낸 메시지를 3단으로 쪼개서 타이핑 딜레이 렌더링하기!
+      if (newPhoneMsg) {
+        const targetSenderName = (newPhoneMsg.from || "").trim();
+        const matchedNpc = (activeSession.sheet?.npcs || []).find(n => n.name === targetSenderName || n.name.includes(targetSenderName)) || activeSession.sheet?.npcs?.[0];
+        const contactId = matchedNpc?.id || 1;
+        const currentTime = new Date().toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" });
+
+        let rawItems = Array.isArray(newPhoneMsg.messages) ? newPhoneMsg.messages : [newPhoneMsg.text];
+        const msgList = rawItems.flatMap(item => {
+          const str = String(item).trim();
+          if (str.includes("||")) return str.split("||").map(s=>s.trim()).filter(Boolean);
+          if (str.includes("\n")) return str.split(/\n+/).map(s=>s.trim()).filter(Boolean);
+          return [str];
+        }).slice(0, 3); // 최대 3개 엄격 제한
+
+        const generatedIncomingMsgs = msgList.map((t, idx) => ({
+          id: Date.now() + Math.random() + idx,
+          sender: "npc",
+          text: t,
+          time: currentTime,
+          unread: true,
+          photo: idx === 0 ? autoSnapPhotoUrl : null // 첫 말풍선에 사진 첨부!
+        }));
+
+        triggerToast("📱 새 메시지 도착", `${targetSenderName}: "${generatedIncomingMsgs[0]?.text}"`, "💬");
+
+        // 여기서 순차 렌더링(타이핑 딜레이) 구현
+        for (let i = 0; i < generatedIncomingMsgs.length; i++) {
+          const bubbleMsg = generatedIncomingMsgs[i];
+          if (i > 0) {
+            const typingDelay = Math.min(1500, Math.max(1100, bubbleMsg.text.length * 40));
+            await new Promise(resolve => setTimeout(resolve, typingDelay));
+          }
+          // 하나씩 세션 상태에 밀어넣기
+          setSessions(prev => prev.map(s => {
+            if (s.id !== activeSessionId) return s;
+            const prevChats = s.sheet?.phoneChats || {};
+            return {
+              ...s,
+              sheet: {
+                ...s.sheet,
+                phoneChats: { ...prevChats, [contactId]: [...(prevChats[contactId] || []), bubbleMsg] }
+              }
+            };
+          }));
+        }
+      }
+
+      // 최종 메인 채팅방 세션 업데이트 
+      setSessions(prev => prev.map(s => {
+        if (s.id !== activeSessionId) return s;
+        return {
+          ...s,
+          messages: [...updatedMessages, { role: "model", text: cleanText }],
+          suggestedActions: suggActions
+        };
+      }));
 
     } catch (err) {
       if (err.name === "AbortError") return;
-      triggerToast("시작 오류", "서막을 불러오는 중 문제가 발생했습니다.", "⚠️");
+      triggerToast("통신 오류", "메시지 전송 중 오류가 발생했습니다.", "⚠️");
     } finally {
       setIsLoading(false);
       setAbortController(null);
     }
   };
 
+  // 🌟 주사위 굴림 애니메이션 상태 (건드리지 마세요!)
 // 🌟 주사위 굴림 애니메이션 상태
   const [isRolling, setIsRolling] = useState(false);
   const [rollingDisplayNum, setRollingDisplayNum] = useState(1);
@@ -2529,7 +2693,78 @@ color: "#fff", border: "none", cursor: "pointer",
                   <textarea rows={2} value={openingScene} onChange={e => setOpeningScene(e.target.value)} placeholder="첫 오프닝 지문..." style={{ width: "100%", boxSizing: "border-box", padding: "10px 12px", borderRadius: "8px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.83rem", resize: "none", outline: "none" }} />
                 </section>
 
-                
+{/* 📱 1. 스마트폰 모양의 프로필 & 인물 세팅 UI (완벽 복구!) */}
+                <div style={{
+                  width: "100%", maxWidth: "380px", margin: "0 auto", backgroundColor: theme.panel,
+                  border: isDarkMode ? "12px solid #3f3f46" : "12px solid #e2e8f0", 
+                  borderRadius: "40px", overflow: "hidden", display: "flex", flexDirection: "column",
+                  boxShadow: "0 25px 50px -12px rgba(0,0,0,0.25)", position: "relative",
+                  height: "700px", flexShrink: 0, boxSizing: "border-box"
+                }}>
+                  {/* 핸드폰 노치 상단바 */}
+                  <div style={{ height: "28px", backgroundColor: isDarkMode ? "#3f3f46" : "#e2e8f0", display: "flex", justifyContent: "center", alignItems: "center", flexShrink: 0 }}>
+                    <div style={{ width: "60px", height: "6px", backgroundColor: isDarkMode ? "#52525b" : "#cbd5e1", borderRadius: "10px" }} />
+                  </div>
+
+                  {/* 앱 헤더 */}
+                  <div style={{ padding: "16px", borderBottom: `1px solid ${theme.border}`, display: "flex", justifyContent: "center", alignItems: "center", backgroundColor: theme.panel, flexShrink: 0 }}>
+                    <span style={{ fontWeight: "800", fontSize: "1.05rem", color: theme.text }}>프로필 설정</span>
+                  </div>
+
+                  <div style={{ flex: 1, overflowY: "auto", padding: "20px", display: "flex", flexDirection: "column", gap: "24px", backgroundColor: theme.bg, WebkitOverflowScrolling: "touch" }}>
+                    
+                    {/* 내 프로필 세팅 */}
+                    <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                      <span style={{ fontSize: "0.8rem", fontWeight: "800", color: theme.textMuted }}>내 프로필 (주인공)</span>
+                      <div style={{ display: "flex", gap: "14px", alignItems: "center" }}>
+                        <div 
+                          onClick={(e) => { e.stopPropagation(); setActivePortraitSuspectId("pc"); setShowPortraitModal(true); }} 
+                          style={{ width: "72px", height: "72px", borderRadius: "25%", backgroundColor: theme.inputBg, border: `1px solid ${theme.borderHighlight}`, overflow: "hidden", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}
+                        >
+                          {pcPortraitUrl ? <img src={pcPortraitUrl} alt="나" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <ImageIcon size={24} color={theme.textMuted} />}
+                        </div>
+                        <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "6px" }}>
+                          <input type="text" value={pcName} onChange={e => setPcName(e.target.value)} placeholder="이름 (예: 서은우)" style={{ width: "100%", padding: "10px 12px", borderRadius: "10px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, outline: "none", fontSize: "0.9rem", fontWeight: "700", boxSizing: "border-box" }} />
+                          <input type="text" value={pcJob} onChange={e => setPcJob(e.target.value)} placeholder="상태메시지 / 직업" style={{ width: "100%", padding: "8px 12px", borderRadius: "10px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, outline: "none", fontSize: "0.8rem", boxSizing: "border-box" }} />
+                        </div>
+                      </div>
+                      <textarea rows={2} value={pcBackground} onChange={e => setPcBackground(e.target.value)} placeholder="상세 백스토리 및 성격..." style={{ width: "100%", padding: "10px 12px", borderRadius: "10px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, outline: "none", resize: "vertical", fontSize: "0.85rem", boxSizing: "border-box" }} />
+                    </div>
+
+                    <hr style={{ border: "none", borderTop: `1px solid ${theme.border}`, margin: 0 }} />
+
+                    {/* 공략 대상 세팅 */}
+                    <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <span style={{ fontSize: "0.8rem", fontWeight: "800", color: theme.textMuted }}>교류 인물 ({suspects.length})</span>
+                        <button type="button" onClick={handleAddSuspect} style={{ background: "none", border: "none", color: theme.accent, fontWeight: "800", fontSize: "0.85rem", cursor: "pointer", display: "flex", alignItems: "center", gap: "4px", padding: 0 }}><Plus size={16} strokeWidth={3} />추가</button>
+                      </div>
+                      
+                      <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+                        {suspects.map((s, idx) => (
+                          <div key={s.id} style={{ display: "flex", flexDirection: "column", gap: "8px", backgroundColor: theme.panel, padding: "14px", borderRadius: "16px", border: `1px solid ${theme.border}`, position: "relative", boxShadow: "0 4px 12px rgba(0,0,0,0.02)" }}>
+                            {suspects.length > 1 && (
+                              <button type="button" onClick={(e) => handleDeleteSuspect(e, s.id)} style={{ position: "absolute", top: "-8px", right: "-8px", width: "24px", height: "24px", borderRadius: "50%", backgroundColor: theme.danger, color: "#fff", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.8rem", zIndex: 10, boxShadow: "0 2px 6px rgba(0,0,0,0.2)" }}>✕</button>
+                            )}
+                            <div style={{ display: "flex", gap: "12px", alignItems: "flex-start" }}>
+                              <div onClick={(e) => { e.stopPropagation(); setActivePortraitSuspectId(s.id); setShowPortraitModal(true); }} style={{ width: "60px", height: "60px", borderRadius: "50%", backgroundColor: theme.inputBg, border: `1px solid ${theme.borderHighlight}`, overflow: "hidden", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                                {s.portraitUrl ? <img src={s.portraitUrl} alt="상대" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <UserRound size={24} color={theme.textMuted} />}
+                              </div>
+                              <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "6px", minWidth: 0 }}>
+                                <div style={{ display: "flex", gap: "6px" }}>
+                                  <input type="text" value={s.name} onChange={e => handleUpdateSuspect(s.id, "name", e.target.value)} placeholder="이름" style={{ flex: 1, padding: "8px", borderRadius: "8px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, outline: "none", fontSize: "0.85rem", width: "100%", minWidth: 0, fontWeight: "700", boxSizing: "border-box" }} />
+                                  <input type="text" value={s.job} onChange={e => handleUpdateSuspect(s.id, "job", e.target.value)} placeholder="직업/접점" style={{ flex: 1, padding: "8px", borderRadius: "8px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, outline: "none", fontSize: "0.85rem", width: "100%", minWidth: 0, boxSizing: "border-box" }} />
+                                </div>
+                                <textarea rows={2} value={s.behavior} onChange={e => handleUpdateSuspect(s.id, "behavior", e.target.value)} placeholder="상태메시지, 외모 및 성격..." style={{ width: "100%", padding: "8px", borderRadius: "8px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, outline: "none", resize: "vertical", fontSize: "0.8rem", boxSizing: "border-box" }} />
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                  </div>
+                </div>
 
 {/* 🌟 2. 이벤트 CG 갤러리 */}
                 <section style={{ ...GLASS_STYLE, padding: isMobile ? "16px" : "20px", backgroundColor: theme.panel, borderRadius: "18px", border: `1px solid ${theme.border}`, display: "flex", flexDirection: "column", gap: "12px" }}>
