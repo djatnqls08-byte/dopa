@@ -19,8 +19,7 @@ import {
   ArrowUp, Smartphone, BookOpen, Dices, ChevronLeft, ChevronRight, UploadCloud, AlertTriangle, CheckCircle2,
   Brain, Skull, Eye, Activity, ShieldAlert, ToggleLeft, ToggleRight, Plus, Minus, Ghost, Gift, Video, CreditCard, Headphones,
   Trash2, Clock, Tag, Droplet, MessageCircle, MessageSquare, Bandage, Clapperboard, Lightbulb, 
-  Fingerprint, Flower2, Tentacle, Compass, Globe, Key, Phone, Download,
-Settings, Database, Upload, FileText, CheckSquare, Square, DownloadCloud
+  Fingerprint, Flower2, Tentacle, Compass, Globe, Key, Phone, Download, Upload, FileText, CheckSquare, Square, DownloadCloud
 } from "lucide-react";
 
 const THEME_PALETTES = {
