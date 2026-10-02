@@ -1507,11 +1507,32 @@ if (erosionMatch) {
   rawText = rawText.replace(erosionMatch[0], "");
 }
 
-// ⏱️ 3. 서사 시간대 갱신 태그 낚아채기
+// ⏱️️ 3. 서사 시간대 갱신 태그 낚아채기
 const timeMatch = rawText.match(/<!--\s*TIME_SET:\s*["']?([^"'>\n]+)["']?\s*-->/i);
 if (timeMatch) {
   setInGameTime(timeMatch[1].trim());
   rawText = rawText.replace(timeMatch[0], "");
+}
+
+// 📡 4. 단말기 통신/자원 동적 갱신 태그 낚아채기 (산소 충전, 통신 복구 등)
+const commMatch = rawText.match(/<!--\s*COMM_SET:\s*(\{[\s\S]*?\})\s*-->/i);
+if (commMatch) {
+  try {
+    const commData = JSON.parse(commMatch[1]);
+    setSessions(prev => prev.map(s => {
+      if (s.id !== activeSessionId) return s;
+      return {
+        ...s,
+        sheet: {
+          ...s.sheet,
+          commSignal: commData.signal || s.sheet?.commSignal,
+          commResource: commData.resource || s.sheet?.commResource
+        }
+      };
+    }));
+    triggerToast("단말기 상태 갱신", "통신 상태 또는 잔여 자원이 변동되었습니다.", "📶");
+  } catch(e) {}
+  rawText = rawText.replace(commMatch[0], "");
 }
       
       // 🌟 [핵심] 스마트폰 톡 & 사진 완벽 낚아채기 파서
@@ -4434,13 +4455,15 @@ color: "#fff", border: "none", cursor: "pointer",
     onClose={() => setIsPhoneDrawerOpen(false)}
     theme={theme}
     inGameTime={inGameTime}
-    genre={activeSession?.preference || activeSession?.data?.playPreference || "modern"} // 🌟 장르 태그 주입
+    genre={activeSession?.preference || activeSession?.data?.playPreference || "modern"}
     isHorror={true}
     characterSheet={activeSession.sheet}
     contacts={activeSession.sheet?.npcs || []}
     activeContactId={activePhoneContactId}
     onSelectContact={(id) => setActivePhoneContactId(id)}
     messages={((activeSession.sheet?.phoneChats || {})[activePhoneContactId || activeSession.sheet?.npcs?.[0]?.id || 1]) || []}
+    dynamicSignal={activeSession.sheet?.commSignal}      // 🌟 동적 통신 상태 주입
+    dynamicResource={activeSession.sheet?.commResource}  // 🌟 동적 잔여 자원 주입
     onSendMessage={(text, targetContact) => {
       const cName = targetContact?.name || "상대방";
       executeMessage(`[메신저 전송 - ${cName}] ${text}`);
