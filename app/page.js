@@ -3231,140 +3231,123 @@ color: "#fff", border: "none", cursor: "pointer", 
                 </section>
 
                 {/* 2. 탐색자 프로필 및 스탯 */}
-                <section style={{ ...GLASS_STYLE, padding: isMobile ? "16px" : "20px", backgroundColor: theme.panel, borderRadius: "18px", border: `1px solid ${theme.border}`, display: "flex", flexDirection: "column", gap: "16px" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                    <Skull size={22} strokeWidth={2} color={theme.accent} />
-                    <span style={{ fontWeight: "700", fontSize: "0.95rem", color: theme.text }}>탐색자 프로필 및 스탯</span>
-                  </div>
+                <section style={{ ...GLASS_STYLE, padding: isMobile ? "16px" : "20px", backgroundColor: theme.panel, borderRadius: "18px", border: `1px solid ${theme.border}`, display: "flex", flexDirection: "column", gap: "16px" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                    <Skull size={22} strokeWidth={2} color={theme.accent} />
+                    <span style={{ fontWeight: "700", fontSize: "0.95rem", color: theme.text }}>탐색자 프로필 및 스탯</span>
+                  </div>
 
-                  {/* 🌟 튀어나옴 방지를 위해 alignItems를 flex-start로 조정하고, 초상화 width를 줄임 */}
-                  <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", gap: "16px", width: "100%", alignItems: "flex-start" }}>
-                    
-                    {/* 탐색자 초상화 */}
-                    <div
-                      onClick={(e) => { e.stopPropagation(); setActivePortraitSuspectId("pc"); setShowPortraitModal(true); }}
-                      style={{
-                        flex: isMobile ? "none" : "0 0 120px", width: isMobile ? "100%" : "120px", maxWidth: isMobile ? "140px" : "120px",
-                        margin: isMobile ? "0 auto" : "0", backgroundColor: theme.polaroidBg || "#ded7cb", borderRadius: "6px", padding: "8px 8px 12px 8px", color: theme.polaroidText || "#292524",
-                        boxShadow: "0 3px 10px rgba(0,0,0,0.18)", display: "flex", flexDirection: "column", alignItems: "center", cursor: "pointer", flexShrink: 0
-                      }}
-                    >
-                      <div style={{ width: "100%", aspectRatio: "1/1", backgroundColor: isDarkMode ? "#332d2a" : "#eae4db", borderRadius: "3px", overflow: "hidden", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
-                        {pcPortraitUrl ? <img src={pcPortraitUrl} alt="탐색자" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <ImageIcon size={24} strokeWidth={1} color={theme.textMuted} />}
-                      </div>
-                      <div style={{ marginTop: "6px", textAlign: "center", width: "100%" }}>
-                        <div style={{ fontWeight: "700", fontSize: "0.82rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{pcName || "이름 미상"}</div>
-                      </div>
-                    </div>
+                  {/* 🌟 튀어나옴 방지를 위해 alignItems를 flex-start로 조정하고, 초상화 width를 줄임 */}
+                  <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", gap: "16px", width: "100%", alignItems: "flex-start" }}>
+                    
+                    {/* 탐색자 초상화 */}
+                    <div
+                      onClick={(e) => { e.stopPropagation(); setActivePortraitSuspectId("pc"); setShowPortraitModal(true); }}
+                      style={{
+                        flex: isMobile ? "none" : "0 0 120px", width: isMobile ? "100%" : "120px", maxWidth: isMobile ? "140px" : "120px",
+                        margin: isMobile ? "0 auto" : "0", backgroundColor: theme.polaroidBg || "#ded7cb", borderRadius: "6px", padding: "8px 8px 12px 8px", color: theme.polaroidText || "#292524",
+                        boxShadow: "0 3px 10px rgba(0,0,0,0.18)", display: "flex", flexDirection: "column", alignItems: "center", cursor: "pointer", flexShrink: 0
+                      }}
+                    >
+                      <div style={{ width: "100%", aspectRatio: "1/1", backgroundColor: isDarkMode ? "#332d2a" : "#eae4db", borderRadius: "3px", overflow: "hidden", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+                        {pcPortraitUrl ? <img src={pcPortraitUrl} alt="탐색자" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <ImageIcon size={24} strokeWidth={1} color={theme.textMuted} />}
+                      </div>
+                      <div style={{ marginTop: "6px", textAlign: "center", width: "100%" }}>
+                        <div style={{ fontWeight: "700", fontSize: "0.82rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{pcName || "이름 미상"}</div>
+                      </div>
+                    </div>
 
-                    {/* 우측 데이터 입력란 (flex: 1 및 minWidth: 0으로 튀어나옴 완벽 방지) */}
-                    <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: "12px", width: "100%" }}>
-                      
-                      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1.2fr 1fr 1fr", gap: "8px" }}>
-                        <input type="text" autoComplete="off" value={pcName} onChange={e => setPcName(e.target.value)} placeholder="이름" style={{ width: "100%", boxSizing: "border-box", padding: "8px 10px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.82rem", outline: "none" }} />
-                        <input type="text" autoComplete="off" value={pcAgeGender} onChange={e => setPcAgeGender(e.target.value)} placeholder="나이/성별" style={{ padding: "8px 10px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.82rem", outline: "none", width: "100%", boxSizing: "border-box" }} />
-                        <input type="text" autoComplete="off" value={pcJob} onChange={e => setPcJob(e.target.value)} placeholder="직업/역할" style={{ padding: "8px 10px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.82rem", outline: "none", width: "100%", boxSizing: "border-box" }} />
-                      </div>
+                    {/* 우측 데이터 입력란 */}
+                    <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: "12px", width: "100%" }}>
+                      
+                      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1.2fr 1fr 1fr", gap: "8px" }}>
+                        <input type="text" autoComplete="off" value={pcName} onChange={e => setPcName(e.target.value)} placeholder="이름" style={{ width: "100%", boxSizing: "border-box", padding: "8px 10px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.82rem", outline: "none" }} />
+                        <input type="text" autoComplete="off" value={pcAgeGender} onChange={e => setPcAgeGender(e.target.value)} placeholder="나이/성별" style={{ padding: "8px 10px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.82rem", outline: "none", width: "100%", boxSizing: "border-box" }} />
+                        <input type="text" autoComplete="off" value={pcJob} onChange={e => setPcJob(e.target.value)} placeholder="직업/역할" style={{ padding: "8px 10px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.82rem", outline: "none", width: "100%", boxSizing: "border-box" }} />
+                      </div>
 
-                      {/* ✅ 탐색자 배경 및 특징 복구 */}
-                      <div>
-                        <label style={{ fontSize: "0.7rem", color: theme.textMuted, fontWeight: "700", display: "block", marginBottom: "3px" }}>탐색자의 배경 및 특징 (성격, 약점 등)</label>
-                        <textarea rows={2} value={pcBackground} onChange={e => setPcBackground(e.target.value)} placeholder="사건에 휘말리게 된 계기나 평소 성격..." style={{ width: "100%", boxSizing: "border-box", padding: "8px 10px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.82rem", outline: "none", resize: "vertical" }} />
-                      </div>
+                      {/* ✅ 탐색자 배경 및 특징 복구 */}
+                      <div>
+                        <label style={{ fontSize: "0.7rem", color: theme.textMuted, fontWeight: "700", display: "block", marginBottom: "3px" }}>탐색자의 배경 및 특징 (성격, 약점 등)</label>
+                        <textarea rows={2} value={pcBackground} onChange={e => setPcBackground(e.target.value)} placeholder="사건에 휘말리게 된 계기나 평소 성격..." style={{ width: "100%", boxSizing: "border-box", padding: "8px 10px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.82rem", outline: "none", resize: "vertical" }} />
+                      </div>
 
-                      {/* 🌟 괴담 모드 주인공 비밀 추가 */}
-                      <div style={{ backgroundColor: isDarkMode ? "rgba(0,0,0,0.2)" : "rgba(255,255,255,0.6)", borderRadius: "8px", border: `1px solid ${theme.danger}`, padding: "10px 12px", marginTop: "4px", marginBottom: "8px" }}>
-                        <button type="button" onClick={() => setShowPcSecret(!showPcSecret)} style={{ width: "100%", textAlign: "left", background: "none", border: "none", fontSize: "0.76rem", color: theme.danger, cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center", padding: 0 }}>
-                          <span style={{ fontWeight: "600", display: "flex", alignItems: "center", gap: "6px" }}>
-                            <Lock size={15} strokeWidth={2.5} /> 탐색자의 숨겨진 비밀 / 약점
-                          </span>
-                          <span style={{ display: "flex", alignItems: "center" }}>
-                            {showPcSecret ? <ChevronUp size={18} strokeWidth={2} /> : <ChevronDown size={18} strokeWidth={2} />}
-                          </span>
-                        </button>
-                        {showPcSecret && (
-                          <input type="text" autoComplete="off" value={pcSecret} onChange={e => setPcSecret(e.target.value)} placeholder="예: 사실 과거의 사건과 깊은 연관이 있다..." style={{ width: "100%", boxSizing: "border-box", padding: "8px 10px", marginTop: "8px", borderRadius: "6px", border: `1px solid ${theme.danger}`, backgroundColor: theme.inputBg, color: theme.danger, fontSize: "0.82rem", outline: "none" }} />
-                        )}
-                      </div>
+                      {/* 🌟 괴담 모드 주인공 비밀 추가 */}
+                      <div style={{ backgroundColor: isDarkMode ? "rgba(0,0,0,0.2)" : "rgba(255,255,255,0.6)", borderRadius: "8px", border: `1px solid ${theme.danger}`, padding: "10px 12px", marginTop: "4px", marginBottom: "8px" }}>
+                        <button type="button" onClick={() => setShowPcSecret(!showPcSecret)} style={{ width: "100%", textAlign: "left", background: "none", border: "none", fontSize: "0.76rem", color: theme.danger, cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center", padding: 0 }}>
+                          <span style={{ fontWeight: "600", display: "flex", alignItems: "center", gap: "6px" }}>
+                            <Lock size={15} strokeWidth={2.5} /> 탐색자의 숨겨진 비밀 / 약점
+                          </span>
+                          <span style={{ display: "flex", alignItems: "center" }}>
+                            {showPcSecret ? <ChevronUp size={18} strokeWidth={2} /> : <ChevronDown size={18} strokeWidth={2} />}
+                          </span>
+                        </button>
+                        {showPcSecret && (
+                          <input type="text" autoComplete="off" value={pcSecret} onChange={e => setPcSecret(e.target.value)} placeholder="예: 사실 과거의 사건과 깊은 연관이 있다..." style={{ width: "100%", boxSizing: "border-box", padding: "8px 10px", marginTop: "8px", borderRadius: "6px", border: `1px solid ${theme.danger}`, backgroundColor: theme.inputBg, color: theme.danger, fontSize: "0.82rem", outline: "none" }} />
+                        )}
+                      </div>
 
-                      {/* 특성 및 트라우마 버튼 복구 */}
-                      <button type="button" onClick={() => setShowTraitModal(true)} style={{ width: "100%", padding: "10px", backgroundColor: theme.panelAlt, border: `1.5px dashed ${theme.borderHighlight}`, borderRadius: "8px", color: theme.accent, fontSize: "0.82rem", fontWeight: "700", cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                        <span style={{ display: "flex", alignItems: "center", gap: "6px" }}><Tag size={16} strokeWidth={2.5}/> 특성 및 트라우마</span>
-                        <span style={{ fontSize: "0.75rem", color: theme.textMuted }}>선택 완료: 특성 {horrorTraits.length} | 트라우마 {horrorTraumas.length}</span>
-                      </button>
+                      {/* 특성 및 트라우마 버튼 */}
+                      <button type="button" onClick={() => setShowTraitModal(true)} style={{ width: "100%", padding: "10px", backgroundColor: theme.panelAlt, border: `1.5px dashed ${theme.borderHighlight}`, borderRadius: "8px", color: theme.accent, fontSize: "0.82rem", fontWeight: "700", cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <span style={{ display: "flex", alignItems: "center", gap: "6px" }}><Tag size={16} strokeWidth={2.5}/> 특성 및 트라우마</span>
+                        <span style={{ fontSize: "0.75rem", color: theme.textMuted }}>선택 완료: 특성 {horrorTraits.length} | 트라우마 {horrorTraumas.length}</span>
+                      </button>
 
-                      <div style={{ backgroundColor: theme.panelAlt, borderRadius: "10px", padding: "12px", border: `1px solid ${theme.borderHighlight || theme.border}` }}>
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
-                          <span style={{ fontSize: "0.82rem", fontWeight: "700", color: theme.text }}>탐색자 스탯 분배</span>
-                          <span style={{ fontSize: "0.75rem", fontWeight: "700", color: availableStatPoints === 0 ? theme.success : theme.danger }}>잔여: {availableStatPoints} pt</span>
-                        </div>
-                        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr 1fr" : "repeat(6, 1fr)", gap: "6px" }}>
-                          {Object.entries(horrorStats).map(([key, val]) => (
-                            <div key={key} style={{ display: "flex", flexDirection: "column", alignItems: "center", backgroundColor: theme.inputBg, padding: "6px 2px", borderRadius: "6px", border: `1px solid ${theme.border}` }}>
-                              <span style={{ fontSize: "0.7rem", fontWeight: "600", color: theme.textMuted, marginBottom: "2px" }}>{key}</span>
-                              <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-                                <button onClick={() => setHorrorStats({...horrorStats, [key]: Math.max(1, val - 1)})} style={{ background:"none", border:"none", color: val > 1 ? theme.text : theme.textMuted, cursor: "pointer", padding: 0 }}><Minus size={14}/></button>
-                                <span style={{ fontSize: "0.85rem", fontWeight: "800", color: theme.text, width: "16px", textAlign: "center" }}>{val}</span>
-                                <button onClick={() => { if(availableStatPoints > 0 && val < 9) setHorrorStats({...horrorStats, [key]: val + 1}) }} style={{ background:"none", border:"none", color: availableStatPoints > 0 && val < 9 ? theme.accent : theme.textMuted, cursor: "pointer", padding: 0 }}><Plus size={14}/></button>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
+                      <div style={{ backgroundColor: theme.panelAlt, borderRadius: "10px", padding: "12px", border: `1px solid ${theme.borderHighlight || theme.border}` }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
+                          <span style={{ fontSize: "0.82rem", fontWeight: "700", color: theme.text }}>탐색자 스탯 분배</span>
+                          <span style={{ fontSize: "0.75rem", fontWeight: "700", color: availableStatPoints === 0 ? theme.success : theme.danger }}>잔여: {availableStatPoints} pt</span>
+                        </div>
+                        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr 1fr" : "repeat(6, 1fr)", gap: "6px" }}>
+                          {Object.entries(horrorStats).map(([key, val]) => (
+                            <div key={key} style={{ display: "flex", flexDirection: "column", alignItems: "center", backgroundColor: theme.inputBg, padding: "6px 2px", borderRadius: "6px", border: `1px solid ${theme.border}` }}>
+                              <span style={{ fontSize: "0.7rem", fontWeight: "600", color: theme.textMuted, marginBottom: "2px" }}>{key}</span>
+                              <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+                                <button onClick={() => setHorrorStats({...horrorStats, [key]: Math.max(1, val - 1)})} style={{ background:"none", border:"none", color: val > 1 ? theme.text : theme.textMuted, cursor: "pointer", padding: 0 }}><Minus size={14}/></button>
+                                <span style={{ fontSize: "0.85rem", fontWeight: "800", color: theme.text, width: "16px", textAlign: "center" }}>{val}</span>
+                                <button onClick={() => { if(availableStatPoints > 0 && val < 9) setHorrorStats({...horrorStats, [key]: val + 1}) }} style={{ background:"none", border:"none", color: availableStatPoints > 0 && val < 9 ? theme.accent : theme.textMuted, cursor: "pointer", padding: 0 }}><Plus size={14}/></button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
 
-                      <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                        <span style={{ fontSize: "0.75rem", fontWeight: "700", color: theme.textMuted }}>시작 소지품 세팅</span>
-                        {horrorInventory.map((item, idx) => (
-                          <div key={item.id} style={{ display: "flex", gap: "8px" }}>
-                            <select value={item.type} onChange={e => setHorrorInventory(horrorInventory.map((inv, i) => i === idx ? { ...inv, type: e.target.value } : inv))} style={{ flex: 1, padding: "8px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.78rem", outline: "none", cursor: "pointer", minWidth: 0 }}>
-                              <option value="멘탈 회복">멘탈 회복</option>
-                              <option value="특수 기믹 패스">특수 기믹 패스</option>
-                              <option value="재굴림">재굴림</option>
-                            </select>
-                            <input type="text" autoComplete="off" value={item.name} onChange={e => setHorrorInventory(horrorInventory.map((inv, i) => i === idx ? { ...inv, name: e.target.value } : inv))} placeholder="아이템명" style={{ flex: 2, padding: "8px 10px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.78rem", outline: "none", minWidth: 0 }} />
-                          </div>
-                        ))}
-                      </div>
+                      <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                        <span style={{ fontSize: "0.75rem", fontWeight: "700", color: theme.textMuted }}>시작 소지품 세팅</span>
+                        {horrorInventory.map((item, idx) => (
+                          <div key={item.id} style={{ display: "flex", gap: "8px" }}>
+                            <select value={item.type} onChange={e => setHorrorInventory(horrorInventory.map((inv, i) => i === idx ? { ...inv, type: e.target.value } : inv))} style={{ flex: 1, padding: "8px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.78rem", outline: "none", cursor: "pointer", minWidth: 0 }}>
+                              <option value="멘탈 회복">멘탈 회복</option>
+                              <option value="특수 기믹 패스">특수 기믹 패스</option>
+                              <option value="재굴림">재굴림</option>
+                            </select>
+                            <input type="text" autoComplete="off" value={item.name} onChange={e => setHorrorInventory(horrorInventory.map((inv, i) => i === idx ? { ...inv, name: e.target.value } : inv))} placeholder="아이템명" style={{ flex: 2, padding: "8px 10px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.78rem", outline: "none", minWidth: 0 }} />
+                          </div>
+                        ))}
+                      </div>
 
-                    </div>
+                    </div>
+                  </div>
 
-                      <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                        <span style={{ fontSize: "0.75rem", fontWeight: "700", color: theme.textMuted }}>시작 소지품 세팅</span>
-                        {horrorInventory.map((item, idx) => (
-                          <div key={item.id} style={{ display: "flex", gap: "8px" }}>
-                            {/* 명확한 명칭으로 변경된 드롭다운 */}
-                            <select value={item.type} onChange={e => setHorrorInventory(horrorInventory.map((inv, i) => i === idx ? { ...inv, type: e.target.value } : inv))} style={{ flex: 1, padding: "8px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.78rem", outline: "none", cursor: "pointer", minWidth: 0 }}>
-                              <option value="멘탈 회복">멘탈 회복</option>
-                              <option value="특수 기믹 패스">특수 기믹 패스</option>
-                              <option value="재굴림">재굴림</option>
-                            </select>
-                            <input type="text" autoComplete="off" value={item.name} onChange={e => setHorrorInventory(horrorInventory.map((inv, i) => i === idx ? { ...inv, name: e.target.value } : inv))} placeholder="아이템명" style={{ flex: 2, padding: "8px 10px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.78rem", outline: "none", minWidth: 0 }} />
-                          </div>
-                        ))}
-                      </div>
-
-                    </div>
-                  </div>
-
-                  {/* 이상 충동 발현 */}
-                  <div style={{ backgroundColor: isDarkMode ? "rgba(0,0,0,0.2)" : "rgba(255,255,255,0.6)", borderRadius: "8px", border: `1px solid ${theme.danger}`, padding: "10px 12px" }}>
-                    <button type="button" onClick={() => setShowAbyss(!showAbyss)} style={{ width: "100%", textAlign: "left", background: "none", border: "none", fontSize: "0.8rem", color: theme.danger, cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center", padding: 0 }}>
-                      <span style={{ fontWeight: "700", display: "flex", alignItems: "center", gap: "6px" }}>
-                        <Activity size={16} strokeWidth={2.5} /> 이상 충동 발현
-                      </span>
-                      <span style={{ display: "flex", alignItems: "center" }}>
-                        {showAbyss ? <ChevronUp size={18} strokeWidth={2} /> : <ChevronDown size={18} strokeWidth={2} />}
-                      </span>
-                    </button>
-                    {showAbyss && (
-                      <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginTop: "12px" }}>
-                        <input type="text" autoComplete="off" value={abyssTriggers[30]} onChange={e => setAbyssTriggers({...abyssTriggers, 30: e.target.value})} placeholder="침식도 30% 발현 지문" style={{ padding: "8px 10px", borderRadius: "6px", border: `1px solid ${theme.danger}`, backgroundColor: theme.inputBg, color: theme.danger, fontSize: "0.82rem", outline: "none" }} />
-                        <input type="text" autoComplete="off" value={abyssTriggers[60]} onChange={e => setAbyssTriggers({...abyssTriggers, 60: e.target.value})} placeholder="침식도 60% 발현 지문" style={{ padding: "8px 10px", borderRadius: "6px", border: `1px solid ${theme.danger}`, backgroundColor: theme.inputBg, color: theme.danger, fontSize: "0.82rem", outline: "none" }} />
-                        <input type="text" autoComplete="off" value={abyssTriggers[90]} onChange={e => setAbyssTriggers({...abyssTriggers, 90: e.target.value})} placeholder="침식도 90% 발현 지문" style={{ padding: "8px 10px", borderRadius: "6px", border: `1px solid ${theme.danger}`, backgroundColor: theme.inputBg, color: theme.danger, fontSize: "0.82rem", outline: "none" }} />
-                      </div>
-                    )}
-                  </div>
-                </section>
+                  {/* 이상 충동 발현 */}
+                  <div style={{ backgroundColor: isDarkMode ? "rgba(0,0,0,0.2)" : "rgba(255,255,255,0.6)", borderRadius: "8px", border: `1px solid ${theme.danger}`, padding: "10px 12px" }}>
+                    <button type="button" onClick={() => setShowAbyss(!showAbyss)} style={{ width: "100%", textAlign: "left", background: "none", border: "none", fontSize: "0.8rem", color: theme.danger, cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center", padding: 0 }}>
+                      <span style={{ fontWeight: "700", display: "flex", alignItems: "center", gap: "6px" }}>
+                        <Activity size={16} strokeWidth={2.5} /> 이상 충동 발현
+                      </span>
+                      <span style={{ display: "flex", alignItems: "center" }}>
+                        {showAbyss ? <ChevronUp size={18} strokeWidth={2} /> : <ChevronDown size={18} strokeWidth={2} />}
+                      </span>
+                    </button>
+                    {showAbyss && (
+                      <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginTop: "12px" }}>
+                        <input type="text" autoComplete="off" value={abyssTriggers[30]} onChange={e => setAbyssTriggers({...abyssTriggers, 30: e.target.value})} placeholder="침식도 30% 발현 지문" style={{ padding: "8px 10px", borderRadius: "6px", border: `1px solid ${theme.danger}`, backgroundColor: theme.inputBg, color: theme.danger, fontSize: "0.82rem", outline: "none" }} />
+                        <input type="text" autoComplete="off" value={abyssTriggers[60]} onChange={e => setAbyssTriggers({...abyssTriggers, 60: e.target.value})} placeholder="침식도 60% 발현 지문" style={{ padding: "8px 10px", borderRadius: "6px", border: `1px solid ${theme.danger}`, backgroundColor: theme.inputBg, color: theme.danger, fontSize: "0.82rem", outline: "none" }} />
+                        <input type="text" autoComplete="off" value={abyssTriggers[90]} onChange={e => setAbyssTriggers({...abyssTriggers, 90: e.target.value})} placeholder="침식도 90% 발현 지문" style={{ padding: "8px 10px", borderRadius: "6px", border: `1px solid ${theme.danger}`, backgroundColor: theme.inputBg, color: theme.danger, fontSize: "0.82rem", outline: "none" }} />
+                      </div>
+                    )}
+                  </div>
+                </section>
 
                 {/* 3. 메인 파트너 설정 (5명 제한 & 삭제 버튼 위치 수정) */}
                 <section style={{ ...GLASS_STYLE, padding: isMobile ? "16px" : "20px", backgroundColor: theme.panel, borderRadius: "18px", border: `1px solid ${theme.border}`, display: "flex", flexDirection: "column", gap: "16px" }}>
