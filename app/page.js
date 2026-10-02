@@ -1783,7 +1783,7 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
             </button>
 
             <div style={{ display: "flex", justifyContent: "center", marginTop: "12px" }}>
-              <span 
+             <span 
                 onClick={() => triggerToast("안내", "비밀번호 초기화 기능은 준비 중입니다. 고객센터(support@secretnovel.com)로 문의해주세요.", "💌")}
                 style={{ fontSize: "0.8rem", color: theme.textMuted, cursor: "pointer", borderBottom: `1px solid ${theme.textMuted}`, paddingBottom: "2px", transition: "color 0.2s" }}
                 onMouseEnter={e => e.currentTarget.style.color = theme.text}
@@ -1798,7 +1798,11 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
     );
   }
   
-<style>{`
+  // 🌟 (여기에 사라졌던 뼈대 2줄 복구!)
+  return (
+    <div style={{ display: "flex", height: "100dvh", width: "100vw", backgroundColor: theme.bg, color: theme.text, overflow: "hidden", position: "relative" }}>
+
+      <style>{`
         @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
         @font-face { font-family: 'RIDIBatang'; src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_twelve@1.0/RIDIBatang.woff') format('woff'); font-weight: 400; font-style: normal; }
         
