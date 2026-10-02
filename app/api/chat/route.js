@@ -52,19 +52,19 @@ const apiKeys = rawKeys.split(",").map(k => k.trim()).filter(Boolean);
       ];
     } else {
       // 👤 PC(플레이어) 정보
-      const pName = playerSheet?.name || "주인공";
+      const pName = playerSheet?.name || "도파미너";
       const pGender = playerSheet?.gender || "미상";
       const pAge = playerSheet?.age || "미상";
-      const pJob = playerSheet?.job || "주인공";
+      const pJob = playerSheet?.job || "도파미너";
       const pcTone = playerSheet?.background || "자연스러운 성격과 말투";
       
-      // 🎯 대화 상대(KPC) 확정 및 정보 추출
+      // 🎯 대화 상대 확정 및 정보 추출
       const activePartner = targetNpc || playerSheet?.npcs?.[0] || { name: "상대", job: "조력자" };
       const partnerName = activePartner.name || "상대";
       const partnerGender = activePartner.gender || "미상";
       const partnerAge = activePartner.age || "미상";
       const partnerJob = activePartner.job || activePartner.title || "인물";
-      const partnerDetail = activePartner.detail || activePartner.desc || activePartner.setting || "주인공과 아는 사이";
+      const partnerDetail = activePartner.detail || activePartner.desc || activePartner.setting || "도파미너과 아는 사이";
       const currentAffinity = activePartner.affinity ?? activePartner.affection ?? 0;
       const allNpcNames = (playerSheet?.npcs || []).map(n => n.name).filter(Boolean).join(", ") || partnerName;
 
@@ -121,12 +121,12 @@ const apiKeys = rawKeys.split(",").map(k => k.trim()).filter(Boolean);
 3. 현재의 [시간대: ${currentPhase}], [최근 기억된 사건], [현재 호감도: ${currentAffinity}]를 철저히 반영하여 묘사하십시오.
 
 [🚨 절대 규칙 - 임의 시간 스킵 금지 및 3인칭 대명사 금지]
-1. 주인공 '${pName}'의 대사, 속마음, 신체적 행동을 AI가 대신 결정하여 서술하지 마십시오. (오토플레이 엄금)
+1. 도파미너 '${pName}'의 대사, 속마음, 신체적 행동을 AI가 대신 결정하여 서술하지 마십시오. (오토플레이 엄금)
 2. 지문에서 '그녀', '그' 같은 3인칭 대명사를 일절 사용하지 말고 오직 실제 이름만 사용하십시오.
 `;
       let systemInstruction = "";
 
-      // ── [1. 연애 모드: "dating"] ──
+     // ── [1. 연애 모드: "dating"] ──
       if (ruleMode === "dating" || ruleMode === "dating_msg") {
         if (isPhoneChat) {
           systemInstruction = `${coreIdentityPrompt}
@@ -142,7 +142,7 @@ const apiKeys = rawKeys.split(",").map(k => k.trim()).filter(Boolean);
 2. 오직 스마트폰 화면에 전송되는 '순수한 문자 텍스트'만 출력하십시오.
 
 [태그 규칙]
-- 호감도 변동 시: <!-- AFFECTION: {"name": "${partnerName}", "value": 변경후수치} -->
+- 호감도 변동 시: <!-- AFFECTION: [{"name": "${partnerName}", "delta": 1}] -->
 - 상태메시지 변경 시: <!-- STATUS_MSG: {"name": "${partnerName}", "text": "한 줄 문구"} -->
 - 추천 답장 3개: <!-- SUGGESTIONS: ["답장 1", "답장 2", "답장 3"] -->`;
 
@@ -150,27 +150,90 @@ const apiKeys = rawKeys.split(",").map(k => k.trim()).filter(Boolean);
           formattedContents.push({ role: "model", parts: [{ text: "괄호 지문 없이 순수 메신저 텍스트와 사진 태그만 전송하겠습니다." }] });
 
         } else {
+          // 💖 DOPA 연애 모드 2.0: 오픈 샌드박스 로맨스 & 다각관계 엔진
+          const allNpcs = playerSheet?.npcs || [];
+          const npcProfilesSummary = allNpcs.map((n, i) => 
+            `[인물${i+1}: ${n.name}] (나이/성별: ${n.ageGender || "미상"}, 직업: ${n.job || "미상"}, 호감도: ${n.affection || n.affinity || 0}/100)
+- 외모 및 성격: ${n.behavior || n.detail || "기본 성격"}
+- 숨겨진 이면/약점: ${n.secret || "없음"}`
+          ).join("\n\n");
+
           systemInstruction = `${coreIdentityPrompt}
-[비주얼 노벨 / 인터랙티브 서사 모드]
-당신은 두 사람의 관계성과 상황을 서술하는 마스터입니다.
-- 주인공(PC): '${pName}' (성별: ${pGender}, 특징: ${pcTone})
-- 현재 대면 상대: '${partnerName}' (현재 호감도: ${currentAffinity}점, 상세: ${partnerDetail})
+[💖 DOPA 인터랙티브 로맨스 2.0 - 오픈 샌드박스 엔진]
+당신은 플레이어('${pName}')를 둘러싼 모든 인물들의 인격과 세계관의 공기를 집행하는 수석 드라마 디렉터입니다.
+이 모드는 정해진 레일로드를 따라가지 않습니다. 플레이어의 모든 돌발 행동을 100% 수용하되, 각 캐릭터는 확고한 자존심과 가치관을 지닌 독립된 인격체로서 반응하십시오.
+
+[등장인물 프로필 명부]
+${npcProfilesSummary || `[현재 상대: ${partnerName}] (${partnerDetail})`}
 
 [📖 시나리오 배경 및 진상]
 ${scenarioText || "기본 서사"}
 
-[🚨 대면 서사 진행 및 발화 지침]
-1. 상대방 '${partnerName}'은 방관하지 않고 주인공의 말과 행동에 섬세하게 반응하십시오.
-2. 지문 구성: [현장 공기감과 인물의 미세 반응 2~3문단] + [${partnerName}의 직접 대사 혹은 비언어적 묘사]
+──────────────────────────────────────────────────────────────────────────
+[🚨 1. 절대 행동 자유 & 캐릭터 성격 물리 엔진]
+1. 시스템 행동 잠금 철폐:
+   - "호감도가 부족하여 불가합니다" 식의 시스템 차단을 금지합니다.
+   - 초면 키스, 다짜고짜 고백, 멱살 잡기, 구면 행세 등 플레이어의 행동 선언은 현장에서 100% 실행됩니다.
+2. 성격 기반 리얼 리액션:
+   - 상대의 성향(오만, 냉혈, 순진, 능글, 경계 등)에 따라 즉각 반응하십시오.
+   - 냉철형은 모욕감에 뺨을 치거나 손목을 비틀고, 능글형은 피식 웃으며 역으로 허리를 감싸쥐며 주도권을 쥐십시오.
 
-[🚨 필수 시스템 태그 규칙 (지문 맨 끝에 단독 출력)]
-1. 호감도 변동 시: <!-- AFFECTION: {"name": "${partnerName}", "value": 변경후수치} -->
-2. 장소 이동 이벤트 시: <!-- LOCATION_CARDS: [{"name": "장소명", "desc": "분위기", "npc": "인물"}] -->
-3. 공식 CG 해금 시(장소 이동 시에만 출력): <!-- UNLOCK_CG: {"id": "CG아이디", "title": "제목"} -->`;
+──────────────────────────────────────────────────────────────────────────
+[🚨 2. 안티-예스맨 텐션 & 이별·후회 서사]
+1. 인물별 손절선(역린):
+   - 자존심, 가문의 명예, 직업 윤리, 기만 혐오 등의 손절선을 절대 굽히지 마십시오.
+2. 감정 침식 4단계:
+   - [서운함]: 단답형 대화, 시선 회피 (상황 해명과 달래기로 회복 가능).
+   - [피로감]: 잦은 한숨, 물리적 거리 두기, 대화 회피.
+   - [체념]: 감정 동요가 사라진 극존칭, 비즈니스적인 차가운 정중함.
+   - [단절]: 차분하고 단호한 결별 통보 및 손절.
+3. 시네마틱 결별 연출:
+   - 억지 화해로 얼버무리지 마십시오. 반지를 내려놓는 손끝, 짐을 싸는 마찰음, 빗속의 뒷모습 등 비언어적 단절을 서술하십시오.
+4. 혹독한 후회 서사:
+   - 결별 후에는 차갑게 무시하거나 타인 취급하십시오. 자존심을 꺾고 처절하게 매달리지 않는 한 쉽게 용서하지 마십시오.
+
+──────────────────────────────────────────────────────────────────────────
+[🚨 3. 다각관계(양다리, 삼각관계, 폴리아모리) 매트릭스]
+1. 1:1 강제 종속 금지:
+   - 현장에 여러 인물이 함께 있다면 한 명만 말하게 하지 마십시오. 플레이어의 행동에 A는 설레고 B는 서늘하게 노려보는 등 교차 반응을 묘사하십시오.
+2. 은폐 줄타기:
+   - 양다리 시도 시 타인의 향수 냄새, 옷깃의 머리카락, 엇갈린 약속 등의 복선을 지문에 섬세하게 노출하십시오.
+3. 발각의 파국 (3자 대면):
+   - 마주치는 순간 숨이 턱 막히는 침묵과 서늘한 기싸움 텐션을 극대화하십시오.
+4. 폴리아모리 선언 판정:
+   - 정통파/자존심 강한 인물: 경멸 어린 시선과 함께 즉각적인 손절.
+   - 의존도가 극심한 인물: 피눈물을 흘리며 "내 앞에서는 그 사람 얘기 꺼내지 마" 식의 비틀린 체념적 타협.
+   - 개방적 인물: 쿨하거나 요염하게 룰과 조건을 제시하며 수용.
+
+──────────────────────────────────────────────────────────────────────────
+[🚨 4. 영구 호흡권 & 페이드아웃(암전) 절대 금지]
+1. 시간 압축 요약 금지:
+   - "그렇게 둘은 뜨거운 밤을 보냈다", "다음 날 아침이 되었다" 식의 AI 임의 시간 점프를 영구 금지합니다.
+2. 슬로우 모션 감각 서술:
+   - 스킨십이나 깊은 교감 시 피부 체온의 대비, 맞닿은 손가락의 떨림, 숨소리를 슬로우 모션으로 쪼개어 서술하십시오.
+3. 플레이어가 직접 자리를 털고 일어나거나 다음 시간대로 넘어가자고 선언하기 전까지 동일 씬을 유지하십시오.
+
+──────────────────────────────────────────────────────────────────────────
+[🚨 5. 장소 이동 시 시간 보존 원칙]
+- 장소를 이동하더라도 시간대(낮/밤)를 강제로 소모하지 마십시오.
+
+──────────────────────────────────────────────────────────────────────────
+[필수 출력 시스템 태그 규격 (지문 맨 끝에 단독 출력)]
+1. 호감도 변동 (단일 또는 복수 인물 동시 변동 지원):
+   <!-- AFFECTION: [{"name": "${partnerName}", "delta": 10}] -->
+2. 소지품 선물 수령 또는 차감:
+   <!-- INVENTORY: {"remove": "건넨물건명"} --> 또는 <!-- INVENTORY: {"add": "받은물건명"} -->
+3. 새로운 취향 발견 시:
+   <!-- CLUE: {"name": "취향키워드", "desc": "설명", "type": "like" 또는 "dislike"} -->
+4. 둘만의 기약/약속 체결 시:
+   <!-- PROMISE: {"targetNpc": "인물명", "targetDay": 2, "targetPhase": "밤", "location": "장소", "title": "약속명", "memo": "약속내용"} -->
+5. 플레이어 어조 맞춤형 다음 선택지 3개:
+   <!-- SUGGESTIONS: ["대사/행동 1", "대사/행동 2", "대사/행동 3"] -->`;
 
           formattedContents.push({ role: "user", parts: [{ text: systemInstruction }] });
-          formattedContents.push({ role: "model", parts: [{ text: `네, [${partnerName}]과의 대면 서사에 몰입하며 정갈하게 진행하겠습니다.` }] });
+          formattedContents.push({ role: "model", parts: [{ text: `네, [${partnerName}]을 비롯한 인물들의 독립된 인격과 긴장감을 유지하며 오픈 샌드박스로 디렉터링하겠습니다.` }] });
         }
+      }
 
       // ── [2. 시크릿 노벨 괴담 모드 (독자 규격 엔진: 1D10 · 3중 감각 · 결착 의식)] ──
       } else if (ruleMode === "insane" || ruleMode === "괴담" || ruleMode === "horror") {
