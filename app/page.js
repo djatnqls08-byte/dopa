@@ -260,8 +260,6 @@ export default function GamePlatform() {
 
   // ── [2. 시스템 토스트 알림] ──
   const [toast, setToast] = useState(null);
-  const toastTimerRef = useRef(null); // 🌟 (핵심) 이전 타이머를 기억할 빈 상자 추가!
-
   const triggerToast = (title, message = "", icon = null) => {
     // 🌟 사반님 절대 규칙: 텍스트 이모지가 들어오면 강제로 Lucide 아이콘으로 정화!
     let finalIcon = icon;
@@ -274,14 +272,8 @@ export default function GamePlatform() {
       else if (icon.includes("📂") || icon.includes("📋") || icon.includes("💾")) finalIcon = <FolderOpen size={18} color={theme.accent} />;
       else finalIcon = <CheckCircle2 size={18} color={theme.accent} />;
     }
-    
     setToast({ title, message, icon: finalIcon });
-    
-    // 🌟 (버그 픽스) 예전 타이머가 아직 돌고 있다면 강제로 멈추고 새 타이머만 깔끔하게 작동시킵니다!
-    if (toastTimerRef.current) {
-      clearTimeout(toastTimerRef.current);
-    }
-    toastTimerRef.current = setTimeout(() => setToast(null), 2500);
+    setTimeout(() => setToast(null), 2500);
   };
 
 // ── [3. 상태 관리] ──
@@ -1669,9 +1661,9 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
     }
   }, [currentUser?.uid]); // 🌟 계정이 바뀔 때만 작동하게 최적화
 
-  // 2. 게임 중 데이터가 변하면 2초 뒤 클라우드에 조용히 자동 백업! (서버 과부하 방지)
+ // 2. 게임 중 데이터가 변하면 2초 뒤 클라우드에 조용히 자동 백업! (서버 과부하 방지)
   useEffect(() => {
-    // 🌟 핵심 방어막: 로그인 직후 내 데이터를 클라우드에서 안전하게 다 내려받기 전에는 절대 자동 저장을 켜지 않음! (PC 데이터 날아감 완벽 방지)
+    // 🌟 핵심 방어막: 클라우드 데이터를 완전히 내려받기 전에 모바일의 텅 빈 데이터가 역주행해서 덮어씌우는 대참사 차단!
     if (!currentUser?.uid || !isCloudLoaded) return; 
     if (savedLibrary.length === 0 && sessions.length === 0 && likedScenarios.length === 0) return;
 
@@ -1874,7 +1866,7 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
         .font-ridi, .font-ridi * { font-family: 'RIDIBatang', serif !important; line-height: 1.95; word-break: keep-all; letter-spacing: -0.01em; }
         .font-gothic, .font-gothic * { font-family: 'Pretendard', sans-serif !important; line-height: 1.95; word-break: keep-all; letter-spacing: -0.01em; }
         
-        /* 🌟 앱 전체 스크롤바 숨기기 (스크롤 기능은 정상 작동) */
+       /* 🌟 앱 전체 스크롤바 숨기기 (스크롤 기능은 정상 작동) */
         ::-webkit-scrollbar { display: none; }
         * { -ms-overflow-style: none; scrollbar-width: none; }
         .glass-card { background: ${theme.panel}; backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border: 1px solid ${theme.border}; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05); border-radius: 18px; }
@@ -2425,6 +2417,10 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
                               <div style={{ display: "flex", alignItems: "center", gap: "6px", color: theme.textMuted, fontSize: "0.75rem", fontWeight: "500" }}>
                                 <Clock size={14} strokeWidth={2} /> {scen.date}
                               </div>
+                              <div style={{ display: "flex", gap: "8px" }}>
+                                <button title="로비로 불러와서 세팅/시작하기" onClick={() => handleLoadFromLibrary(scen)} style={{ background: "none", border: "none", color: theme.accent, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: "4px" }}>
+                                  <FolderOpen size={18} strokeWidth={2.5} />
+                                </button>
                                 
                                 {/* 유저 창작 시나리오 라운지 공개/비공개 토글 */}
                                 {!scen.isDownloaded && (
@@ -2941,70 +2937,70 @@ color: "#fff", border: "none", cursor: "pointer",
                 </section>
 
                 {/* 📱 1. 스마트폰 모양의 프로필 & 인물 세팅 UI (원본 리스트형 100% 복구) */}
-                <div style={{
-                  width: "100%", boxSizing: "border-box", backgroundColor: theme.panelAlt, // 🌟 하얀색 고정 제거! 테마 배경색 적용
-                  border: isDarkMode ? "12px solid #3f3f46" : "12px solid #e2e8f0", 
-                  borderRadius: "40px", overflow: "hidden", display: "flex", flexDirection: "column",
-                  boxShadow: "0 25px 50px -12px rgba(0,0,0,0.25)", position: "relative",
-                  height: "700px", flexShrink: 0
-                }}>
-                  {/* 핸드폰 상단바 */}
-                  <div style={{ height: "24px", backgroundColor: isDarkMode ? "#3f3f46" : "#e2e8f0", display: "flex", justifyContent: "center", alignItems: "center", flexShrink: 0 }}>
-                    <div style={{ width: "60px", height: "6px", backgroundColor: isDarkMode ? "#52525b" : "#cbd5e1", borderRadius: "10px" }} />
-                  </div>
-                  
-                  {!showPhoneDetail ? (
-                    /* 📱 화면 A: 심플 텍스트 리스트 뷰 */
-                    <div style={{ flex: 1, overflowY: "auto", padding: "24px", display: "flex", flexDirection: "column", gap: "32px", backgroundColor: "transparent" }}>
-                      
-                      {/* 내 프로필 */}
-                      <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-                        <span style={{ fontSize: "0.85rem", fontWeight: "900", color: theme.textMuted }}>내 프로필</span>
-                        <div 
-                          onClick={() => { setSelectedSuspectId("pc"); setShowPhoneDetail(true); }}
-                          style={{ display: "flex", flexDirection: "column", gap: "6px", paddingLeft: "12px", borderLeft: `3px solid ${theme.borderHighlight}`, cursor: "pointer", transition: "opacity 0.2s" }}
-                          onMouseEnter={e => e.currentTarget.style.opacity = 0.7}
-                          onMouseLeave={e => e.currentTarget.style.opacity = 1}
-                        >
-                          <span style={{ fontWeight: "900", fontSize: "1.1rem", color: theme.text }}>{pcName || "이름 미상"}</span>
-                          <span style={{ fontSize: "0.8rem", color: theme.textMuted, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                            {pcBackground || "상태 메시지가 없습니다."}
-                          </span>
-                        </div>
+                    <div style={{
+                      width: "100%", boxSizing: "border-box", backgroundColor: "#f9f6f3",
+                      border: isDarkMode ? "12px solid #3f3f46" : "12px solid #e2e8f0", 
+                      borderRadius: "40px", overflow: "hidden", display: "flex", flexDirection: "column",
+                      boxShadow: "0 25px 50px -12px rgba(0,0,0,0.25)", position: "relative",
+                      height: "700px", flexShrink: 0
+                    }}>
+                      {/* 핸드폰 상단바 */}
+                      <div style={{ height: "24px", backgroundColor: isDarkMode ? "#3f3f46" : "#e2e8f0", display: "flex", justifyContent: "center", alignItems: "center", flexShrink: 0 }}>
+                        <div style={{ width: "60px", height: "6px", backgroundColor: isDarkMode ? "#52525b" : "#cbd5e1", borderRadius: "10px" }} />
                       </div>
-
-                      <hr style={{ border: "none", borderTop: `1px solid ${theme.border}`, margin: 0 }} />
-
-                      {/* 공략 대상 리스트 */}
-                      <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                          <span style={{ fontSize: "0.85rem", fontWeight: "900", color: theme.textMuted }}>공략 대상 ({suspects.length})</span>
-                          <button type="button" onClick={handleAddSuspect} style={{ background: "none", border: "none", color: theme.accent, fontWeight: "800", fontSize: "0.85rem", cursor: "pointer" }}>＋ 추가</button>
-                        </div>
-                        
-                        <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-                          {suspects.map(s => (
+                      
+                      {!showPhoneDetail ? (
+                        /* 📱 화면 A: 심플 텍스트 리스트 뷰 (사진 싹 뺌!) */
+                        <div style={{ flex: 1, overflowY: "auto", padding: "24px", display: "flex", flexDirection: "column", gap: "32px", backgroundColor: "#f9f6f3" }}>
+                          
+                          {/* 내 프로필 */}
+                          <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                            <span style={{ fontSize: "0.85rem", fontWeight: "900", color: "#8A8179" }}>내 프로필</span>
                             <div 
-                              key={s.id} 
-                              onClick={() => { setSelectedSuspectId(s.id); setShowPhoneDetail(true); }}
-                              style={{ display: "flex", flexDirection: "column", gap: "6px", paddingLeft: "12px", borderLeft: `3px solid ${theme.borderHighlight}`, cursor: "pointer", position: "relative", transition: "opacity 0.2s" }}
+                              onClick={() => { setSelectedSuspectId("pc"); setShowPhoneDetail(true); }}
+                              style={{ display: "flex", flexDirection: "column", gap: "6px", paddingLeft: "12px", borderLeft: "3px solid #d9d0c1", cursor: "pointer", transition: "opacity 0.2s" }}
                               onMouseEnter={e => e.currentTarget.style.opacity = 0.7}
                               onMouseLeave={e => e.currentTarget.style.opacity = 1}
                             >
-                              {suspects.length > 1 && (
-                                <button type="button" onClick={(e) => handleDeleteSuspect(e, s.id)} style={{ position: "absolute", top: "0", right: "0", background: "none", color: theme.danger, border: "none", cursor: "pointer", fontSize: "0.75rem", fontWeight: "800", padding: "4px" }}>삭제</button>
-                              )}
-                              
-                              <span style={{ fontWeight: "900", fontSize: "1.1rem", color: theme.text }}>{s.name || "이름 미상"}</span>
-                              <span style={{ fontSize: "0.8rem", color: theme.textMuted, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                                {s.behavior || "상태 메시지가 없습니다."}
-                              </span>
+<span style={{ fontWeight: "900", fontSize: "1.1rem", color: "#36312E" }}>{pcName || "이름 미상"}</span>
+<span style={{ fontSize: "0.8rem", color: "#78716c", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+  {pcBackground || "상태 메시지가 없습니다."}
+</span>
                             </div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
+                          </div>
 
+                          <hr style={{ border: "none", borderTop: "1px solid rgba(0,0,0,0.06)", margin: 0 }} />
+
+                          {/* 공략 대상 리스트 */}
+                          <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                              <span style={{ fontSize: "0.85rem", fontWeight: "900", color: "#8A8179" }}>공략 대상 ({suspects.length})</span>
+                              <button type="button" onClick={handleAddSuspect} style={{ background: "none", border: "none", color: "#ec4899", fontWeight: "800", fontSize: "0.85rem", cursor: "pointer" }}>＋ 추가</button>
+                            </div>
+                            
+                            <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+                              {suspects.map(s => (
+                                <div 
+                                  key={s.id} 
+                                  onClick={() => { setSelectedSuspectId(s.id); setShowPhoneDetail(true); }}
+                                  style={{ display: "flex", flexDirection: "column", gap: "6px", paddingLeft: "12px", borderLeft: "3px solid #d9d0c1", cursor: "pointer", position: "relative", transition: "opacity 0.2s" }}
+                                  onMouseEnter={e => e.currentTarget.style.opacity = 0.7}
+                                  onMouseLeave={e => e.currentTarget.style.opacity = 1}
+                                >
+                                  {/* 오른쪽 위에 슬쩍 뜨는 삭제 버튼 */}
+                                  {suspects.length > 1 && (
+                                    <button type="button" onClick={(e) => handleDeleteSuspect(e, s.id)} style={{ position: "absolute", top: "0", right: "0", background: "none", color: "#f43f5e", border: "none", cursor: "pointer", fontSize: "0.75rem", fontWeight: "800", padding: "4px" }}>삭제</button>
+                                  )}
+                                  
+<span style={{ fontWeight: "900", fontSize: "1.1rem", color: "#36312E" }}>{s.name || "이름 미상"}</span>
+<span style={{ fontSize: "0.8rem", color: "#78716c", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+  {s.behavior || "상태 메시지가 없습니다."}
+</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
                       ) : (
                         /* 📱 화면 B: 상세 프로필 및 수정 뷰 */
                         (() => {
