@@ -4445,11 +4445,10 @@ color: "#fff", border: "none", cursor: "pointer",
 ) : null}
 
         
-      {/* 📱 3. 하단 팝업 메신저 서랍 (괴담 모드가 아닐 때만 렌더링!) */}
+     {/* 📱 3. 하단 팝업 메신저 서랍 (괴담 모드가 아닐 때만 렌더링!) */}
       {isPhoneDrawerOpen && activeSession && activeSession.ruleMode !== "horror" && (
-        <div onClick={() => { setIsPhoneDrawerOpen(false); setIsMyProfileOpen(false);
-          <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: "460px", height: "82vh", maxHeight: "740px", backgroundColor: activePhoneSkin.bg, color: activePhoneSkin.text, borderRadius: "24px 24px 0 0", display: "flex", flexDirection: "column", overflow: "hidden", border: `1px solid ${activePhoneSkin.border}`, borderBottom: "none", boxShadow: "0 -8px 36px rgba(0,0,0,0.38)", animation: "slideUp 0.3s cubic-bezier(0.2, 0.8, 0.2, 1)" }}>
-            
+        <div onClick={() => { setIsPhoneDrawerOpen(false); setIsMyProfileOpen(false); setSelectedProfileNpc(null); setActivePhoneContactId(null); }} style={{ position: "fixed", inset: 0, zIndex: 125, display: "flex", justifyContent: "center", alignItems: "flex-end", backgroundColor: "rgba(0,0,0,0.65)" }}>
+          <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: "460px", height: "82vh", maxHeight: "740px",
             {/* 🔹 스마트폰 상단 헤더 바 */}
             <div style={{ height: "54px", padding: "0 16px", backgroundColor: activePhoneSkin.headerBg, display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0, borderBottom: `1px solid ${activePhoneSkin.border}` }}>
               <div style={{ width: "60px" }}>
@@ -4516,8 +4515,6 @@ color: "#fff", border: "none", cursor: "pointer",
                     </div>
                   </div>
                 </div>
-
-              /* 👥 [화면 B: 상대방 프로필 상세 - 네모난 확대 기능 적용] */
               ) : selectedProfileNpc ? (
                 <div style={{ padding: "24px 20px", display: "flex", flexDirection: "column", alignItems: "center", gap: "20px" }}>
                   <span style={{ fontSize: "0.85rem", color: activePhoneSkin.textMuted, fontWeight: "600" }}>{selectedProfileNpc.job || "정보 없음"}</span>
@@ -4559,9 +4556,7 @@ color: "#fff", border: "none", cursor: "pointer",
                       {selectedProfileNpc.behavior || "기록된 메모가 없습니다."}
                     </div>
                   </div>
-                </div>
-
-              /* 💬 [화면 C: 1:1 대화방 - 전송 기능 완벽 연결!] */
+</div>
               ) : activePhoneContactId !== null ? (
                 <div style={{ flex: 1, display: "flex", flexDirection: "column", backgroundColor: activePhoneSkin.bg }}>
                   <div style={{ flex: 1, padding: "20px", display: "flex", flexDirection: "column", gap: "16px", overflowY: "auto" }}>
@@ -4617,9 +4612,7 @@ color: "#fff", border: "none", cursor: "pointer",
                       style={{ padding: "10px 18px", backgroundColor: activePhoneSkin.accent, color: "#fff", border: "none", borderRadius: "20px", fontWeight: "800", cursor: "pointer" }}
                     >전송</button>
                   </div>
-                </div>
-
-              /* 📋 [화면 D: 메신저 메인 탭들] */
+</div>
               ) : (
                 <>
                   {phoneNavTab === "contacts" && (
