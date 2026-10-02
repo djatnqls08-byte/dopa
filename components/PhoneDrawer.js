@@ -28,11 +28,11 @@ function extractStatusMsg(npcOrText) {
   return "상태 메시지 없음";
 }
 
-// 🌐 시나리오 배경/태그 자동 변환 엔진 (현대 우선순위 보장)
+// 🌐 시나리오 배경/태그 자동 변환 엔진
 function detectGenreConfig(genreInput = "") {
   const g = String(genreInput).toLowerCase();
   
-  // 🌟 1. 현대 / 도시 / 오피스 / 현대판타지 ➔ 스마트폰 최우선 확정!
+  // 1. 현대 / 도시 / 오피스 / 괴담 ➔ 스마트폰
   if (/현대|도시|오피스|직장|학교|스타트업|모던|modern|괴담/i.test(g) && !/정통판타지|중세|무협/i.test(g)) {
     return {
       type: "modern",
@@ -141,7 +141,8 @@ export default function PhoneDrawer({
   dynamicSignal = null,     // 🌟 서사 중 변동된 통신 상태
   dynamicResource = null,   // 🌟 서사 중 변동된 자원(배터리/산소/마나)
   onSendMessage,
-  onStartVoiceCall = null
+  onStartVoiceCall = null,
+  isMobile = false
 }) {
   const [viewMode, setViewMode] = useState("list"); // "list" | "profile" | "chat" | "myProfile"
   const [selectedId, setSelectedId] = useState(activeContactId || contacts[0]?.id || 1);
@@ -150,9 +151,12 @@ export default function PhoneDrawer({
 
   if (!isOpen) return null;
 
+  // 🌟 모바일 / PC 반응형 화면 폭 자동 감지
+  const isMobileView = isMobile || (typeof window !== "undefined" && window.innerWidth < 768);
+
   const cfg = detectGenreConfig(genre);
 
-  // 🌟 동적 상태값 계산
+  // 동적 상태값 계산
   const currentSignal = dynamicSignal || cfg.defaultSignal;
   const currentResource = dynamicResource || cfg.defaultResource;
   const isSignalRestored = dynamicSignal && !/끊김|두절|불안|재밍|차단|오류/i.test(dynamicSignal);
@@ -182,59 +186,61 @@ export default function PhoneDrawer({
         position: "fixed", inset: 0, zIndex: 99990,
         backgroundColor: "rgba(0,0,0,0.75)", backdropFilter: "blur(6px)",
         display: "flex", alignItems: "center", justifyContent: "center",
-        padding: "16px", animation: "fadeIn 0.2s ease-out"
+        padding: isMobileView ? "10px" : "20px", animation: "fadeIn 0.2s ease-out"
       }}
     >
+      {/* 🌟 PC 가로폭을 420px ➔ 480px로 시원하게 확장 */}
       <div 
         onClick={e => e.stopPropagation()}
         style={{
-          width: "100%", maxWidth: "420px", height: "82vh", maxHeight: "720px",
+          width: "100%", maxWidth: isMobileView ? "100%" : "480px", 
+          height: isMobileView ? "85vh" : "750px", maxHeight: "88vh",
           backgroundColor: "#0d0b0a",
           border: `1.5px solid ${cfg.themeBorder}`,
           borderRadius: "32px", overflow: "hidden", display: "flex", flexDirection: "column",
-          boxShadow: `0 25px 50px rgba(0,0,0,0.8), 0 0 25px ${cfg.glowColor}`,
+          boxShadow: `0 25px 60px rgba(0,0,0,0.85), 0 0 30px ${cfg.glowColor}`,
           color: "#fff", position: "relative"
         }}
       >
         {/* 🚨 긴급 재난 / 결계 경보 팝업 */}
         {emergencyAlert && (
           <div style={{
-            position: "absolute", top: "45px", left: "16px", right: "16px", zIndex: 20,
+            position: "absolute", top: "50px", left: "16px", right: "16px", zIndex: 20,
             backgroundColor: "rgba(220, 38, 38, 0.95)", backdropFilter: "blur(8px)",
-            borderRadius: "16px", padding: "14px", border: "1px solid #f87171",
+            borderRadius: "16px", padding: "16px", border: "1px solid #f87171",
             boxShadow: "0 10px 25px rgba(220, 38, 38, 0.5)", animation: "shake 0.5s ease"
           }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "6px", fontWeight: "900", fontSize: "0.85rem", color: "#fff", marginBottom: "4px" }}>
-              <ShieldAlert size={16} /> [{cfg.alertDefaultTitle}] {emergencyAlert.title}
+            <div style={{ display: "flex", alignItems: "center", gap: "8px", fontWeight: "900", fontSize: isMobileView ? "0.88rem" : "0.98rem", color: "#fff", marginBottom: "6px" }}>
+              <ShieldAlert size={18} /> [{cfg.alertDefaultTitle}] {emergencyAlert.title}
             </div>
-            <div style={{ fontSize: "0.78rem", color: "#fee2e2", lineHeight: "1.4" }}>
+            <div style={{ fontSize: isMobileView ? "0.82rem" : "0.88rem", color: "#fee2e2", lineHeight: "1.5" }}>
               {emergencyAlert.text}
             </div>
           </div>
         )}
 
-        {/* 1. 상단 장르 맞춤형 3대 인디케이터 바 */}
+        {/* 1. 상단 인디케이터 바 (시간, 신호, 배터리 폰트 확대) */}
         <div style={{
-          padding: "12px 18px 8px",
+          padding: isMobileView ? "12px 18px 8px" : "14px 22px 10px",
           display: "flex", justifyContent: "space-between", alignItems: "center",
-          fontSize: "0.74rem", fontWeight: "800", color: cfg.accentColor,
+          fontSize: isMobileView ? "0.8rem" : "0.88rem", fontWeight: "800", color: cfg.accentColor,
           borderBottom: "1px dashed rgba(255,255,255,0.08)",
           backgroundColor: "rgba(0,0,0,0.4)", flexShrink: 0
         }}>
           <span>⏱️ {inGameTime}</span>
-          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-            <span style={{ display: "flex", alignItems: "center", gap: "3px", color: isSignalRestored ? "#10b981" : "#ef4444" }}>
-              <SignalIcon size={13} /> {currentSignal}
+          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+            <span style={{ display: "flex", alignItems: "center", gap: "4px", color: isSignalRestored ? "#10b981" : "#ef4444" }}>
+              <SignalIcon size={15} /> {currentSignal}
             </span>
-            <span style={{ display: "flex", alignItems: "center", gap: "3px", color: "#fb923c" }}>
-              <ResourceIcon size={13} /> {currentResource}
+            <span style={{ display: "flex", alignItems: "center", gap: "4px", color: "#fb923c" }}>
+              <ResourceIcon size={15} /> {currentResource}
             </span>
           </div>
         </div>
 
         {/* 2. 상단 헤더 바 */}
         <div style={{
-          height: "52px", padding: "0 16px",
+          height: isMobileView ? "54px" : "58px", padding: "0 20px",
           backgroundColor: "rgba(25, 20, 17, 0.95)",
           display: "flex", alignItems: "center", justifyContent: "space-between",
           borderBottom: "1px solid rgba(255,255,255,0.08)", flexShrink: 0
@@ -247,18 +253,18 @@ export default function PhoneDrawer({
                   if (viewMode === "chat") setViewMode("profile");
                   else setViewMode("list");
                 }} 
-                style={{ background: "none", border: "none", color: cfg.accentColor, fontSize: "0.85rem", cursor: "pointer", fontWeight: "800", display: "flex", alignItems: "center", gap: "2px" }}
+                style={{ background: "none", border: "none", color: cfg.accentColor, fontSize: isMobileView ? "0.85rem" : "0.92rem", cursor: "pointer", fontWeight: "800", display: "flex", alignItems: "center", gap: "2px" }}
               >
-                <ChevronLeft size={20} /> 뒤로
+                <ChevronLeft size={22} /> 뒤로
               </button>
             )}
           </div>
-          <span style={{ fontSize: "0.95rem", fontWeight: "900", color: "#fff" }}>
+          <span style={{ fontSize: isMobileView ? "1.05rem" : "1.18rem", fontWeight: "900", color: "#fff" }}>
             {viewMode === "myProfile" ? "내 프로필" : viewMode === "profile" ? "생존자 정보" : viewMode === "chat" ? currentContact.name : cfg.deviceLabel}
           </span>
           <div style={{ width: "60px", display: "flex", justifyContent: "flex-end" }}>
             <button onClick={onClose} style={{ background: "none", border: "none", color: "#a8a29e", cursor: "pointer", padding: "4px" }}>
-              <X size={22} />
+              <X size={24} />
             </button>
           </div>
         </div>
@@ -266,37 +272,40 @@ export default function PhoneDrawer({
         {/* 3. 본문 스위칭 뷰 */}
         <div style={{ flex: 1, minHeight: 0, overflowY: "auto", display: "flex", flexDirection: "column" }}>
           
-          {/* 👥 [화면 1: 인연 목록] */}
+          {/* 👥 [화면 1: 인연 목록 - 글씨 및 아바타 스케일업] */}
           {viewMode === "list" && (
-            <div style={{ display: "flex", flexDirection: "column", padding: "16px" }}>
-              <span style={{ fontSize: "0.75rem", fontWeight: "800", color: "#a8a29e", marginLeft: "4px", marginBottom: "6px" }}>내 프로필</span>
+            <div style={{ display: "flex", flexDirection: "column", padding: isMobileView ? "16px" : "20px" }}>
+              <span style={{ fontSize: isMobileView ? "0.8rem" : "0.88rem", fontWeight: "800", color: "#a8a29e", marginLeft: "4px", marginBottom: "8px" }}>
+                내 프로필
+              </span>
               <div 
                 onClick={() => setViewMode("myProfile")}
                 style={{
-                  display: "flex", alignItems: "center", gap: "12px", padding: "12px",
-                  borderRadius: "14px", backgroundColor: "rgba(35, 28, 24, 0.7)",
-                  border: "1px solid rgba(255,255,255,0.08)", cursor: "pointer", marginBottom: "16px"
+                  display: "flex", alignItems: "center", gap: "14px", padding: isMobileView ? "14px" : "16px",
+                  borderRadius: "16px", backgroundColor: "rgba(35, 28, 24, 0.75)",
+                  border: "1.5px solid rgba(255,255,255,0.08)", cursor: "pointer", marginBottom: "20px",
+                  transition: "all 0.15s ease"
                 }}
               >
-                <div style={{ width: "48px", height: "48px", borderRadius: "50%", overflow: "hidden", backgroundColor: "rgba(0,0,0,0.3)", flexShrink: 0 }}>
-                  {characterSheet?.portrait ? <img src={characterSheet.portrait} alt="나" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <UserRound size={26} color="#78716c" style={{ margin: "11px" }} />}
+                <div style={{ width: isMobileView ? "52px" : "58px", height: isMobileView ? "52px" : "58px", borderRadius: "18px", overflow: "hidden", backgroundColor: "rgba(0,0,0,0.3)", flexShrink: 0 }}>
+                  {characterSheet?.portrait ? <img src={characterSheet.portrait} alt="나" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <UserRound size={30} color="#78716c" style={{ margin: "13px" }} />}
                 </div>
-                <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "2px" }}>
-                  <span style={{ fontSize: "1rem", fontWeight: "900", color: "#fff" }}>{myName}</span>
-                  <span style={{ fontSize: "0.75rem", color: cfg.accentColor, fontWeight: "700" }}>"{myStatusMsg}"</span>
+                <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "3px" }}>
+                  <span style={{ fontSize: isMobileView ? "1.05rem" : "1.18rem", fontWeight: "900", color: "#fff" }}>{myName}</span>
+                  <span style={{ fontSize: isMobileView ? "0.8rem" : "0.88rem", color: cfg.accentColor, fontWeight: "800" }}>"{myStatusMsg}"</span>
                 </div>
               </div>
 
-              <span style={{ fontSize: "0.75rem", fontWeight: "800", color: "#a8a29e", marginLeft: "4px", marginBottom: "6px" }}>
+              <span style={{ fontSize: isMobileView ? "0.8rem" : "0.88rem", fontWeight: "800", color: "#a8a29e", marginLeft: "4px", marginBottom: "8px" }}>
                 동행자 및 생존자 ({contacts.length}명)
               </span>
               
               {contacts.length === 0 ? (
-                <div style={{ padding: "30px", textAlign: "center", color: "#78716c", fontSize: "0.82rem" }}>
+                <div style={{ padding: "36px", textAlign: "center", color: "#78716c", fontSize: "0.9rem" }}>
                   연락 가능한 생존자가 없습니다.
                 </div>
               ) : (
-                <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
                   {contacts.map((npc) => (
                     <div 
                       key={npc.id}
@@ -306,30 +315,30 @@ export default function PhoneDrawer({
                         setViewMode("profile");
                       }}
                       style={{
-                        display: "flex", alignItems: "center", gap: "12px", padding: "12px",
-                        borderRadius: "14px", backgroundColor: npc.isPartner ? "rgba(234, 88, 12, 0.12)" : "rgba(25, 20, 17, 0.6)",
-                        border: `1px solid ${npc.isPartner ? cfg.themeBorder : "rgba(255,255,255,0.06)"}`,
-                        cursor: "pointer", transition: "background 0.15s"
+                        display: "flex", alignItems: "center", gap: "14px", padding: isMobileView ? "14px" : "16px",
+                        borderRadius: "16px", backgroundColor: npc.isPartner ? "rgba(234, 88, 12, 0.15)" : "rgba(25, 20, 17, 0.65)",
+                        border: `1.5px solid ${npc.isPartner ? cfg.themeBorder : "rgba(255,255,255,0.06)"}`,
+                        cursor: "pointer", transition: "all 0.15s ease"
                       }}
                     >
-                      <div style={{ width: "46px", height: "46px", borderRadius: "50%", overflow: "hidden", backgroundColor: "rgba(0,0,0,0.3)", flexShrink: 0 }}>
-                        {npc.portraitUrl ? <img src={npc.portraitUrl} alt={npc.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <UserRound size={24} color="#78716c" style={{ margin: "11px" }} />}
+                      <div style={{ width: isMobileView ? "50px" : "56px", height: isMobileView ? "50px" : "56px", borderRadius: "18px", overflow: "hidden", backgroundColor: "rgba(0,0,0,0.3)", flexShrink: 0 }}>
+                        {npc.portraitUrl ? <img src={npc.portraitUrl} alt={npc.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <UserRound size={28} color="#78716c" style={{ margin: "13px" }} />}
                       </div>
-                      <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "2px" }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                          <span style={{ fontSize: "0.95rem", fontWeight: "900", color: "#fff" }}>{npc.name}</span>
+                      <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "3px" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                          <span style={{ fontSize: isMobileView ? "1.05rem" : "1.16rem", fontWeight: "900", color: "#fff" }}>{npc.name}</span>
                           {npc.isPartner && (
-                            <span style={{ fontSize: "0.62rem", padding: "1px 5px", borderRadius: "4px", backgroundColor: cfg.accentColor, color: "#fff", fontWeight: "900" }}>
+                            <span style={{ fontSize: "0.72rem", padding: "2px 7px", borderRadius: "6px", backgroundColor: cfg.accentColor, color: "#fff", fontWeight: "900" }}>
                               파트너
                             </span>
                           )}
                         </div>
-                        <span style={{ fontSize: "0.72rem", color: "#a8a29e" }}>
+                        <span style={{ fontSize: isMobileView ? "0.8rem" : "0.88rem", color: "#d6d3d1", lineHeight: "1.4" }}>
                           "{extractStatusMsg(npc)}"
                         </span>
                       </div>
-                      <div style={{ display: "flex", alignItems: "center", gap: "4px", color: cfg.accentColor, fontSize: "0.82rem", fontWeight: "800" }}>
-                        <Heart size={13} fill={cfg.accentColor} /> {npc.affection || 0}
+                      <div style={{ display: "flex", alignItems: "center", gap: "5px", color: cfg.accentColor, fontSize: isMobileView ? "0.9rem" : "1rem", fontWeight: "900" }}>
+                        <Heart size={16} fill={cfg.accentColor} /> {npc.affection || 0}
                       </div>
                     </div>
                   ))}
@@ -340,62 +349,63 @@ export default function PhoneDrawer({
 
           {/* 👤 [화면 2: 상대방 프로필 상세] */}
           {viewMode === "profile" && (
-            <div style={{ padding: "24px 20px", display: "flex", flexDirection: "column", alignItems: "center", gap: "16px" }}>
-              <span style={{ fontSize: "0.8rem", color: cfg.accentColor, fontWeight: "800" }}>{currentContact.job || "정보 없음"}</span>
+            <div style={{ padding: isMobileView ? "24px 20px" : "28px 24px", display: "flex", flexDirection: "column", alignItems: "center", gap: "18px" }}>
+              <span style={{ fontSize: isMobileView ? "0.82rem" : "0.9rem", color: cfg.accentColor, fontWeight: "800" }}>{currentContact.job || "정보 없음"}</span>
               <div 
                 onClick={() => { if (currentContact.portraitUrl) setZoomedPhoto(currentContact.portraitUrl); }}
-                style={{ width: "96px", height: "96px", borderRadius: "50%", overflow: "hidden", border: `2px solid ${cfg.accentColor}`, boxShadow: "0 8px 20px rgba(0,0,0,0.5)", cursor: currentContact.portraitUrl ? "pointer" : "default" }}
+                style={{ width: isMobileView ? "100px" : "120px", height: isMobileView ? "100px" : "120px", borderRadius: "50%", overflow: "hidden", border: `2.5px solid ${cfg.accentColor}`, boxShadow: "0 8px 25px rgba(0,0,0,0.6)", cursor: currentContact.portraitUrl ? "pointer" : "default" }}
               >
-                {currentContact.portraitUrl ? <img src={currentContact.portraitUrl} alt="상대" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <UserRound size={50} color="#78716c" style={{ margin: "23px" }} />}
+                {currentContact.portraitUrl ? <img src={currentContact.portraitUrl} alt="상대" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <UserRound size={56} color="#78716c" style={{ margin: "26px" }} />}
               </div>
               <div style={{ textAlign: "center" }}>
-                <h2 style={{ margin: 0, fontSize: "1.35rem", fontWeight: "900", color: "#fff" }}>{currentContact.name}</h2>
-                <span style={{ fontSize: "0.82rem", color: cfg.accentColor, fontWeight: "700", marginTop: "4px", display: "block" }}>
+                <h2 style={{ margin: 0, fontSize: isMobileView ? "1.45rem" : "1.65rem", fontWeight: "900", color: "#fff" }}>{currentContact.name}</h2>
+                <span style={{ fontSize: isMobileView ? "0.86rem" : "0.95rem", color: cfg.accentColor, fontWeight: "800", marginTop: "6px", display: "block" }}>
                   "{extractStatusMsg(currentContact)}"
                 </span>
               </div>
 
               {/* 액션 버튼: [1:1 메시지] + [무전/통화] */}
-              <div style={{ display: "flex", gap: "10px", width: "100%" }}>
+              <div style={{ display: "flex", gap: "12px", width: "100%", marginTop: "6px" }}>
                 <button 
-                  type="button"
+                  type="button" 
                   onClick={() => setViewMode("chat")}
                   style={{
-                    flex: 2, padding: "13px", borderRadius: "14px",
+                    flex: 2, padding: isMobileView ? "14px" : "16px", borderRadius: "16px",
                     backgroundColor: cfg.accentColor, color: "#fff", border: "none",
-                    fontWeight: "900", fontSize: "0.9rem", cursor: "pointer",
-                    display: "flex", alignItems: "center", justifyContent: "center", gap: "6px"
+                    fontWeight: "900", fontSize: isMobileView ? "0.92rem" : "1rem", cursor: "pointer",
+                    display: "flex", alignItems: "center", justifyContent: "center", gap: "8px",
+                    boxShadow: `0 4px 16px ${cfg.glowColor}`
                   }}
                 >
-                  <MessageSquare size={17} /> 1:1 {cfg.type === "scifi" ? "채널" : cfg.type === "fantasy" ? "전음" : "대화"}
+                  <MessageSquare size={18} /> 1:1 {cfg.type === "scifi" ? "채널" : cfg.type === "fantasy" ? "전음" : "대화"}
                 </button>
                 <button 
-                  type="button"
+                  type="button" 
                   onClick={() => {
                     if (onStartVoiceCall) onStartVoiceCall(currentContact);
                   }}
                   style={{
-                    flex: 1.2, padding: "13px", borderRadius: "14px",
+                    flex: 1.2, padding: isMobileView ? "14px" : "16px", borderRadius: "16px",
                     backgroundColor: "rgba(255,255,255,0.08)", color: "#10b981", border: "1px solid rgba(16, 185, 129, 0.4)",
-                    fontWeight: "900", fontSize: "0.82rem", cursor: "pointer",
-                    display: "flex", alignItems: "center", justifyContent: "center", gap: "4px", whiteSpace: "nowrap"
+                    fontWeight: "900", fontSize: isMobileView ? "0.85rem" : "0.92rem", cursor: "pointer",
+                    display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", whiteSpace: "nowrap"
                   }}
                 >
-                  <Phone size={15} /> {cfg.callLabel}
+                  <Phone size={16} /> {cfg.callLabel}
                 </button>
               </div>
 
               {/* 유대감 및 상세 메모 */}
-              <div style={{ width: "100%", backgroundColor: "rgba(25, 20, 17, 0.7)", borderRadius: "16px", padding: "16px", border: "1px solid rgba(255,255,255,0.08)", display: "flex", flexDirection: "column", gap: "10px" }}>
+              <div style={{ width: "100%", backgroundColor: "rgba(25, 20, 17, 0.8)", borderRadius: "18px", padding: "18px", border: "1px solid rgba(255,255,255,0.08)", display: "flex", flexDirection: "column", gap: "12px" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <span style={{ fontSize: "0.85rem", fontWeight: "800", color: cfg.accentColor, display: "flex", alignItems: "center", gap: "6px" }}>
-                    <Heart size={15} fill={cfg.accentColor} /> 정서적 유대감
+                  <span style={{ fontSize: isMobileView ? "0.88rem" : "0.96rem", fontWeight: "800", color: cfg.accentColor, display: "flex", alignItems: "center", gap: "6px" }}>
+                    <Heart size={16} fill={cfg.accentColor} /> 정서적 유대감
                   </span>
-                  <span style={{ fontSize: "0.95rem", fontWeight: "900", color: cfg.accentColor }}>{currentContact.affection || 0} / 100</span>
+                  <span style={{ fontSize: isMobileView ? "1rem" : "1.15rem", fontWeight: "900", color: cfg.accentColor }}>{currentContact.affection || 0} / 100</span>
                 </div>
-                <div style={{ borderTop: "1px dashed rgba(255,255,255,0.1)", paddingTop: "8px" }}>
-                  <span style={{ fontSize: "0.75rem", color: "#a8a29e", fontWeight: "700", display: "block", marginBottom: "4px" }}>특징 및 인물 기록</span>
-                  <div style={{ fontSize: "0.82rem", color: "#d6d3d1", lineHeight: "1.5", whiteSpace: "pre-wrap" }}>
+                <div style={{ borderTop: "1px dashed rgba(255,255,255,0.12)", paddingTop: "10px" }}>
+                  <span style={{ fontSize: isMobileView ? "0.78rem" : "0.86rem", color: "#a8a29e", fontWeight: "800", display: "block", marginBottom: "4px" }}>특징 및 인물 기록</span>
+                  <div style={{ fontSize: isMobileView ? "0.85rem" : "0.92rem", color: "#e2e8f0", lineHeight: "1.65", whiteSpace: "pre-wrap" }}>
                     {currentContact.behavior || "기록된 메모가 없습니다."}
                   </div>
                 </div>
@@ -404,90 +414,88 @@ export default function PhoneDrawer({
           )}
 
           {/* 💬 [화면 3: 1:1 대화방] */}
-          {viewMode === "chat" && (
-            <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
-              <div style={{ flex: 1, overflowY: "auto", padding: "16px", display: "flex", flexDirection: "column", gap: "10px" }}>
-                {messages.length === 0 ? (
-                  <div style={{ margin: "auto", textAlign: "center", color: "#78716c", fontSize: "0.82rem" }}>
-                    주고받은 내역이 없습니다.
-                  </div>
-                ) : (
-                  messages.map((m, idx) => {
-                    const isUser = m.sender === "user" || m.role === "user";
-                    return (
-                      <div key={idx} style={{ alignSelf: isUser ? "flex-end" : "flex-start", maxWidth: "80%", display: "flex", flexDirection: "column", gap: "4px", alignItems: isUser ? "flex-end" : "flex-start" }}>
-                        {m.photo && (
-                          <img 
-                            src={m.photo} 
-                            alt="첨부" 
-                            onClick={() => setZoomedPhoto(m.photo)}
-                            style={{ width: "180px", borderRadius: "12px", border: "1px solid rgba(255,255,255,0.2)", cursor: "pointer", marginBottom: "2px" }}
-                          />
-                        )}
-                        <div style={{
-                          padding: "10px 14px", borderRadius: isUser ? "16px 4px 16px 16px" : "4px 16px 16px 16px",
-                          backgroundColor: isUser ? cfg.accentColor : "#241e1a",
-                          color: "#fff", fontSize: "0.85rem", lineHeight: "1.5",
-                          border: isUser ? "none" : "1px solid rgba(255,255,255,0.08)"
-                        }}>
-                          {m.text}
-                        </div>
-                        <span style={{ fontSize: "0.65rem", color: "#78716c", padding: "0 2px" }}>{m.time || ""}</span>
+          <div style={{ flex: 1, minHeight: 0, display: viewMode === "chat" ? "flex" : "none", flexDirection: "column" }}>
+            <div style={{ flex: 1, overflowY: "auto", padding: isMobileView ? "16px" : "20px", display: "flex", flexDirection: "column", gap: "12px" }}>
+              {messages.length === 0 ? (
+                <div style={{ margin: "auto", textAlign: "center", color: "#78716c", fontSize: "0.88rem" }}>
+                  주고받은 내역이 없습니다.
+                </div>
+              ) : (
+                messages.map((m, idx) => {
+                  const isUser = m.sender === "user" || m.role === "user";
+                  return (
+                    <div key={idx} style={{ alignSelf: isUser ? "flex-end" : "flex-start", maxWidth: "82%", display: "flex", flexDirection: "column", gap: "4px", alignItems: isUser ? "flex-end" : "flex-start" }}>
+                      {m.photo && (
+                        <img 
+                          src={m.photo} 
+                          alt="첨부" 
+                          onClick={() => setZoomedPhoto(m.photo)}
+                          style={{ width: "220px", borderRadius: "14px", border: "1px solid rgba(255,255,255,0.2)", cursor: "pointer", marginBottom: "4px" }}
+                        />
+                      )}
+                      <div style={{
+                        padding: isMobileView ? "11px 15px" : "13px 18px", borderRadius: isUser ? "18px 4px 18px 18px" : "4px 18px 18px 18px",
+                        backgroundColor: isUser ? cfg.accentColor : "#241e1a",
+                        color: "#fff", fontSize: isMobileView ? "0.9rem" : "0.98rem", lineHeight: "1.6",
+                        border: isUser ? "none" : "1px solid rgba(255,255,255,0.08)"
+                      }}>
+                        {m.text}
                       </div>
-                    );
-                  })
-                )}
-              </div>
-
-              {/* 하단 전송 바 */}
-              <div style={{ padding: "12px 14px", backgroundColor: "rgba(20, 16, 14, 0.95)", borderTop: "1px solid rgba(255,255,255,0.08)", display: "flex", gap: "8px", alignItems: "center", flexShrink: 0 }}>
-                <input
-                  type="text"
-                  value={inputText}
-                  onChange={e => setInputText(e.target.value)}
-                  onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
-                  placeholder={`${currentContact.name}에게 ${cfg.sendLabel}...`}
-                  style={{
-                    flex: 1, padding: "10px 14px", borderRadius: "20px",
-                    backgroundColor: "#181412", border: "1px solid rgba(255,255,255,0.12)",
-                    color: "#fff", fontSize: "0.85rem", outline: "none"
-                  }}
-                />
-                <button
-                  type="button"
-                  onClick={handleSend}
-                  disabled={!inputText.trim()}
-                  style={{
-                    padding: "10px 16px", borderRadius: "20px",
-                    backgroundColor: inputText.trim() ? cfg.accentColor : "#382e27",
-                    color: "#fff", border: "none", fontWeight: "800", fontSize: "0.8rem",
-                    cursor: inputText.trim() ? "pointer" : "default",
-                    display: "flex", alignItems: "center", gap: "4px"
-                  }}
-                >
-                  <Send size={14} /> 전송
-                </button>
-              </div>
+                      <span style={{ fontSize: isMobileView ? "0.7rem" : "0.76rem", color: "#78716c", padding: "0 4px" }}>{m.time || ""}</span>
+                    </div>
+                  );
+                })
+              )}
             </div>
-          )}
+
+            {/* 하단 전송 바 */}
+            <div style={{ padding: isMobileView ? "12px 16px" : "14px 20px", backgroundColor: "rgba(20, 16, 14, 0.95)", borderTop: "1px solid rgba(255,255,255,0.08)", display: "flex", gap: "10px", alignItems: "center", flexShrink: 0 }}>
+              <input
+                type="text"
+                value={inputText}
+                onChange={e => setInputText(e.target.value)}
+                onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
+                placeholder={`${currentContact.name}에게 ${cfg.sendLabel}...`}
+                style={{
+                  flex: 1, padding: isMobileView ? "11px 16px" : "13px 18px", borderRadius: "24px",
+                  backgroundColor: "#181412", border: "1px solid rgba(255,255,255,0.15)",
+                  color: "#fff", fontSize: isMobileView ? "0.88rem" : "0.95rem", outline: "none"
+                }}
+              />
+              <button
+                type="button"
+                onClick={handleSend}
+                disabled={!inputText.trim()}
+                style={{
+                  padding: isMobileView ? "11px 18px" : "13px 22px", borderRadius: "24px",
+                  backgroundColor: inputText.trim() ? cfg.accentColor : "#382e27",
+                  color: "#fff", border: "none", fontWeight: "900", fontSize: isMobileView ? "0.85rem" : "0.92rem",
+                  cursor: inputText.trim() ? "pointer" : "default",
+                  display: "flex", alignItems: "center", gap: "6px"
+                }}
+              >
+                <Send size={15} /> 전송
+              </button>
+            </div>
+          </div>
 
           {/* 👤 [화면 4: 내 프로필 상세] */}
           {viewMode === "myProfile" && (
-            <div style={{ padding: "24px 20px", display: "flex", flexDirection: "column", gap: "16px" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
+            <div style={{ padding: isMobileView ? "24px 20px" : "28px 24px", display: "flex", flexDirection: "column", gap: "18px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
                 <div 
                   onClick={() => { if (characterSheet?.portrait) setZoomedPhoto(characterSheet.portrait); }}
-                  style={{ width: "64px", height: "64px", borderRadius: "50%", overflow: "hidden", border: `2px solid ${cfg.accentColor}`, flexShrink: 0, cursor: characterSheet?.portrait ? "pointer" : "default" }}
+                  style={{ width: isMobileView ? "70px" : "80px", height: isMobileView ? "70px" : "80px", borderRadius: "50%", overflow: "hidden", border: `2.5px solid ${cfg.accentColor}`, flexShrink: 0, cursor: characterSheet?.portrait ? "pointer" : "default" }}
                 >
-                  {characterSheet?.portrait ? <img src={characterSheet.portrait} alt="나" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <UserRound size={32} color="#78716c" style={{ margin: "16px" }} />}
+                  {characterSheet?.portrait ? <img src={characterSheet.portrait} alt="나" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <UserRound size={36} color="#78716c" style={{ margin: "18px" }} />}
                 </div>
                 <div>
-                  <div style={{ fontSize: "1.2rem", fontWeight: "900", color: "#fff" }}>{myName}</div>
-                  <div style={{ fontSize: "0.8rem", color: "#a8a29e" }}>{myJob}</div>
+                  <div style={{ fontSize: isMobileView ? "1.25rem" : "1.45rem", fontWeight: "900", color: "#fff" }}>{myName}</div>
+                  <div style={{ fontSize: isMobileView ? "0.85rem" : "0.92rem", color: "#a8a29e", marginTop: "2px" }}>{myJob}</div>
                 </div>
               </div>
-              <div style={{ padding: "14px", borderRadius: "14px", backgroundColor: "rgba(25, 20, 17, 0.8)", border: "1px solid rgba(255,255,255,0.08)", fontSize: "0.82rem", lineHeight: "1.6", color: "#d6d3d1", whiteSpace: "pre-wrap" }}>
-                <span style={{ fontWeight: "800", color: cfg.accentColor, display: "block", marginBottom: "4px" }}>■ 백스토리 및 상태</span>
+              <div style={{ padding: "16px", borderRadius: "16px", backgroundColor: "rgba(25, 20, 17, 0.8)", border: "1px solid rgba(255,255,255,0.08)", fontSize: isMobileView ? "0.85rem" : "0.94rem", lineHeight: "1.65", color: "#e2e8f0", whiteSpace: "pre-wrap" }}>
+                <span style={{ fontWeight: "800", color: cfg.accentColor, display: "block", marginBottom: "6px" }}>■ 백스토리 및 상태</span>
                 {characterSheet?.background || "설정 없음"}
               </div>
             </div>
