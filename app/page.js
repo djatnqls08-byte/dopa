@@ -102,12 +102,12 @@ function convertRowToPreset(row, index, headers = []) {
 
   const sessionCardImg = getVal(/세션카드|표지|썸네일/i);
 
-  const pcName = getVal(/(pc|주인공|탐색자|수사관)(이름|명칭)|^(이름|명칭)$/i);
-  const pcAgeGender = getVal(/(pc|주인공|탐색자|수사관)?(나이|성별)/i);
-  const pcJob = getVal(/(pc|주인공|탐색자|수사관)?(직업|역할)/i);
-  const pcBackground = getVal(/(pc|주인공|탐색자|수사관)?(성격|배경|설정)/i);
-  const pcSecret = getVal(/(pc|주인공|탐색자|수사관)?(비밀|약점)/i);
-  const pcPortraitUrl = getVal(/(pc|주인공|탐색자|수사관)?(초상화|사진|이미지)/i);
+  const pcName = getVal(/(pc|도파미너|탐색자|수사관)(이름|명칭)|^(이름|명칭)$/i);
+  const pcAgeGender = getVal(/(pc|도파미너|탐색자|수사관)?(나이|성별)/i);
+  const pcJob = getVal(/(pc|도파미너|탐색자|수사관)?(직업|역할)/i);
+  const pcBackground = getVal(/(pc|도파미너|탐색자|수사관)?(성격|배경|설정)/i);
+  const pcSecret = getVal(/(pc|도파미너|탐색자|수사관)?(비밀|약점)/i);
+  const pcPortraitUrl = getVal(/(pc|도파미너|탐색자|수사관)?(초상화|사진|이미지)/i);
 
   const abyssTriggers = {
     30: getVal(/이상충동30/i),
@@ -307,9 +307,9 @@ export default function GamePlatform() {
   const [pcJob, setPcJob] = useState("");
   const [pcBackground, setPcBackground] = useState("");
   const [pcPortraitUrl, setPcPortraitUrl] = useState(""); 
-  const [pcSecret, setPcSecret] = useState(""); // 🌟 주인공 비밀 내용 저장
-  const [originalPcName, setOriginalPcName] = useState(""); // 🌟 (추가!) 주인공 원래 이름 기억 장치
-  const [showPcSecret, setShowPcSecret] = useState(false); // 🌟 주인공 비밀 아코디언 스위치
+  const [pcSecret, setPcSecret] = useState(""); // 🌟 도파미너 비밀 내용 저장
+  const [originalPcName, setOriginalPcName] = useState(""); // 🌟 (추가!) 도파미너 원래 이름 기억 장치
+  const [showPcSecret, setShowPcSecret] = useState(false); // 🌟 도파미너 비밀 아코디언 스위치
 
   const [scenarioTitle, setScenarioTitle] = useState("");
   const [scenarioImageUrl, setScenarioImageUrl] = useState(""); // 🌟 표지 이미지 상태 추가!
@@ -891,7 +891,7 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
         body: JSON.stringify({
           rawText: pastedText,
           ruleMode: selectedMode,
-          pcName: pcName || "주인공",
+          pcName: pcName || "도파미너",
           kpcName: "파트너"
         })
       });
@@ -1011,7 +1011,7 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
       if (exportScope === "storyOnly") {
         msgs = msgs.filter(m => !m.text.includes("[🎲") && !m.text.includes("[⚠️") && !m.text.includes("[시스템"));
       }
-      const pName = s.sheet?.name || "주인공";
+      const pName = s.sheet?.name || "도파미너";
       const kName = s.sheet?.npcs?.[0]?.name || "상대방";
 
       fullOutput += `========== [${s.title}] (${s.ruleMode?.toUpperCase()}) ==========\n\n`;
@@ -1073,7 +1073,7 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
   // 🌟 시작 엔진 에러 완벽 해결판! (wizardMode 제거 완료)
   const startNewSession = async () => {
     const sessionTitle = scenarioTitle || (pcName ? `${pcName}의 이야기` : "새로운 모험");
-    const pName = pcName.trim() || "주인공";
+    const pName = pcName.trim() || "도파미너";
     const modeStr = selectedMode === "연애" ? "dating" : selectedMode === "괴담" ? "horror" : "freeform";
 
     const npcs = (suspects || []).map((k, idx) => ({
@@ -1121,13 +1121,13 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
     setActiveSessionId(newId);
     setIsLoading(true);
 
-    let openingPrompt = `[세션 시작: 서막 지문 요청]\n시나리오의 [초기 배경/서막]을 바탕으로 현장 분위기를 4~5문장으로 묘사하십시오.\n지문 끝에 주인공이 취할 다음 행동 선택지 3개를 <!-- SUGGESTIONS: ["선택지 1", "선택지 2", "선택지 3"] --> 태그로 출력하십시오.`;
+    let openingPrompt = `[세션 시작: 서막 지문 요청]\n시나리오의 [초기 배경/서막]을 바탕으로 현장 분위기를 4~5문장으로 묘사하십시오.\n지문 끝에 도파미너이 취할 다음 행동 선택지 3개를 <!-- SUGGESTIONS: ["선택지 1", "선택지 2", "선택지 3"] --> 태그로 출력하십시오.`;
     
     // 🌟 모드별 첫 프롬프트 맞춤 설정
     if (modeStr === "dating") {
-      openingPrompt = `[세션 시작: 비주얼 노벨 서막 요청]\n시나리오의 [초기 배경/서막]을 바탕으로 주인공 시점에서 현장 분위기를 4~5문장으로 묘사하십시오.\n지문 끝에 주인공이 취할 행동 선택지 3개를 <!-- SUGGESTIONS: ["선택지1", "선택지2", "선택지3"] --> 태그로 출력하십시오.`;
+      openingPrompt = `[세션 시작: 비주얼 노벨 서막 요청]\n시나리오의 [초기 배경/서막]을 바탕으로 도파미너 시점에서 현장 분위기를 4~5문장으로 묘사하십시오.\n지문 끝에 도파미너이 취할 행동 선택지 3개를 <!-- SUGGESTIONS: ["선택지1", "선택지2", "선택지3"] --> 태그로 출력하십시오.`;
     } else if (modeStr === "freeform") {
-      openingPrompt = `[세션 시작: 추리/수사 서막 요청]\n시나리오의 [초기 배경/서막]을 바탕으로, 폭풍전야의 시점에서 현장 분위기를 4~5문장으로 묘사하십시오.\n지문 끝에 주인공이 취할 수사 액션 선택지 3개를 <!-- SUGGESTIONS: ["단서를 찾는다", "인물을 살핀다", "주변을 조사한다"] --> 태그로 출력하십시오.`;
+      openingPrompt = `[세션 시작: 추리/수사 서막 요청]\n시나리오의 [초기 배경/서막]을 바탕으로, 폭풍전야의 시점에서 현장 분위기를 4~5문장으로 묘사하십시오.\n지문 끝에 도파미너이 취할 수사 액션 선택지 3개를 <!-- SUGGESTIONS: ["단서를 찾는다", "인물을 살핀다", "주변을 조사한다"] --> 태그로 출력하십시오.`;
     }
 
     const controller = new AbortController();
@@ -1327,12 +1327,12 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
     }
 
 
-// 🌟 미연시 모드일 때 주인공 말투 맞춤형 답장 후보 생성 수칙
+// 🌟 미연시 모드일 때 도파미너 말투 맞춤형 답장 후보 생성 수칙
     if (isDating) {
       dynamicRules += `\n\n[미연시 대화 분기 수칙]
-- 지문 말미에 반드시 주인공이 보낼 수 있는 다음 답장/선택지 3개를 <!-- SUGGESTIONS: ["대사 1", "대사 2", "대사 3"] --> 태그로 출력하십시오.
-- **주인공 '${activeSession?.sheet?.name || "주인공"}'의 성격/말투 설정: [${pcTone}]**
-- 주인공의 어조(존댓말 여부, 억양, 성격적 거리감)를 엄격히 준수하여 주인공이 직접 입 밖으로 낼 법한 대사로만 3가지 선택지를 제공하십시오.`;
+- 지문 말미에 반드시 도파미너이 보낼 수 있는 다음 답장/선택지 3개를 <!-- SUGGESTIONS: ["대사 1", "대사 2", "대사 3"] --> 태그로 출력하십시오.
+- **도파미너 '${activeSession?.sheet?.name || "도파미너"}'의 성격/말투 설정: [${pcTone}]**
+- 도파미너의 어조(존댓말 여부, 억양, 성격적 거리감)를 엄격히 준수하여 도파미너이 직접 입 밖으로 낼 법한 대사로만 3가지 선택지를 제공하십시오.`;
     }
 
     if (isR19) {
@@ -1346,7 +1346,7 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
 - 목덜미에서 쿵쾅거리는 맥박, 거칠게 억눌린 호흡, 쾌락으로 인해 발끝이나 손가락 끝이 저리듯 오그라드는 근육의 불수의적 떨림을 사실적으로 서술하십시오.
 
 3. [성인 화법과 지배력(Tension)]:
-- 상대방은 순진하거나 수동적인 태도를 취하지 않습니다. 주인공의 시선을 피하지 않고 똑바로 내려다보거나, 귓가에 낮게 잠긴 목소리로 명령하고 통제하며 주도권을 쥐십시오.
+- 상대방은 순진하거나 수동적인 태도를 취하지 않습니다. 도파미너의 시선을 피하지 않고 똑바로 내려다보거나, 귓가에 낮게 잠긴 목소리로 명령하고 통제하며 주도권을 쥐십시오.
 - 감탄사나 단순 신음 대신, 숨이 턱 끝까지 찬 채 내뱉는 낮고 짓궂은 호흡, 명령조의 짧은 귓속말, 쾌감에 무너져 헐떡이는 어조를 살리십시오.
 
 4. [호감도 상승 억제]:
@@ -1393,7 +1393,7 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
     dynamicRules += missedCallNotice; 
 
     if (isDating) {
-      dynamicRules += `\n\n[미연시 대화 분기 수칙]\n- 지문 말미에 주인공이 보낼 수 있는 다음 선택지 3개를 <!-- SUGGESTIONS: ["대사1", "대사2", "대사3"] --> 태그로 출력하십시오. 주인공의 성격 [${pcTone}]에 맞춰 구성하십시오.`;
+      dynamicRules += `\n\n[미연시 대화 분기 수칙]\n- 지문 말미에 도파미너이 보낼 수 있는 다음 선택지 3개를 <!-- SUGGESTIONS: ["대사1", "대사2", "대사3"] --> 태그로 출력하십시오. 도파미너의 성격 [${pcTone}]에 맞춰 구성하십시오.`;
     }
     
     const messagesForApi = updatedMessages.slice(-40).map(m => ({ role: m.role, text: m.text }));
@@ -2594,7 +2594,7 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
                 <section style={{ ...GLASS_STYLE, padding: isMobile ? "16px" : "20px", backgroundColor: theme.panel, borderRadius: "18px", border: `1px solid ${theme.border}`, display: "flex", flexDirection: "column", gap: "16px" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                     <UserRound size={22} strokeWidth={2} color={theme.accent} />
-                    <span style={{ fontWeight: "700", fontSize: "0.95rem", color: theme.text }}>주인공 (수사관) 프로필</span>
+                    <span style={{ fontWeight: "700", fontSize: "0.95rem", color: theme.text }}>도파미너 프로필</span>
                   </div>
 
                   <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", gap: "16px", width: "100%" }}>
@@ -2622,7 +2622,7 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
                         }}
                       >
                         {pcPortraitUrl ? (
-                          <img src={pcPortraitUrl} alt="주인공" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                          <img src={pcPortraitUrl} alt="도파미너" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                         ) : (
                           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "4px", color: isDarkMode ? "#b3aaa0" : "#8c8278", fontSize: "0.68rem" }}>
                             <ImageIcon size={24} strokeWidth={1} />
@@ -2655,7 +2655,7 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
                         <textarea rows={2} value={pcBackground} onChange={e => setPcBackground(e.target.value)} placeholder="사건에 휘말리게 된 계기나 평소 성격..." style={{ width: "100%", boxSizing: "border-box", padding: "8px 10px", borderRadius: "6px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.82rem", outline: "none", resize: "vertical" }} />
                       </div>
 
-                     {/* 🌟 주인공 전용 남모르는 비밀 (추리 모드용 빨간색 테마 적용) */}
+                     {/* 🌟 도파미너 전용 남모르는 비밀 (추리 모드용 빨간색 테마 적용) */}
                       <div style={{ backgroundColor: isDarkMode ? "rgba(0,0,0,0.2)" : "rgba(255,255,255,0.6)", borderRadius: "8px", border: `1px solid ${theme.danger}`, padding: "10px 12px", marginTop: "4px" }}>
                         <button 
                           type="button" 
@@ -4667,7 +4667,7 @@ color: "#fff", border: "none", cursor: "pointer",
           if (isPc) {
             target = {
               id: "pc",
-              name: pcName || "주인공 (수사관)",
+              name: pcName || "도파미너 (수사관)",
               job: pcJob,
               ageGender: pcAgeGender,
               portraitUrl: pcPortraitUrl
