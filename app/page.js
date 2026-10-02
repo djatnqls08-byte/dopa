@@ -1616,14 +1616,14 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
     }
   }, [currentUser?.uid]); // 🌟 계정이 바뀔 때만 작동하게 최적화
 
-  // 2. 게임 중 데이터가 변하면 2초 뒤 클라우드에 조용히 자동 백업!
+  // 2. 게임 중 데이터가 변하면 2초 뒤 클라우드에 조용히 자동 백업! (서버 과부하 방지)
   useEffect(() => {
-    // 🌟 핵심 방어막: 클라우드 다운로드가 끝나기 전에 로컬 데이터가 업로드되는 참사를 완벽하게 차단합니다!
-    if (!isCloudLoaded || !currentUser?.uid) return;
+    if (!currentUser?.uid) return;
     if (savedLibrary.length === 0 && sessions.length === 0 && likedScenarios.length === 0) return;
 
     const syncTimer = setTimeout(async () => {
-      await supabase.from('user_saves').upsert({
+      // 🌟 기존 코드에 const { error } = 부분을 추가합니다.
+      const { error } = await supabase.from('user_saves').upsert({
         user_id: currentUser.uid,
         library_data: savedLibrary,
         session_data: sessions,
@@ -1631,14 +1631,18 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
         updated_at: new Date().toISOString()
       });
       
-      // 로컬(브라우저)에도 이중으로 안전하게 저장해 둡니다.
       localStorage.setItem("secret_novel_library", JSON.stringify(savedLibrary));
       localStorage.setItem("secret_novel_sessions", JSON.stringify(sessions));
       localStorage.setItem("secret_novel_liked", JSON.stringify(likedScenarios));
+
+      // 🚨 방어막: 에러가 나면 화면에 빨간 토스트 알림으로 이유를 보여줍니다!
+      if (error) {
+        triggerToast("동기화 실패", error.message, "🚨");
+      }
     }, 2000); 
 
     return () => clearTimeout(syncTimer);
-  }, [savedLibrary, sessions, likedScenarios, currentUser, isCloudLoaded]);
+  }, [savedLibrary, sessions, likedScenarios, currentUser]);
 
 // 🌟 서버-클라이언트 렌더링 충돌(에러 423) 완벽 방지
   if (!isMounted) {
