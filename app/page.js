@@ -6,6 +6,7 @@ import CharacterSheet from "@/components/CharacterSheet";
 import GhostDiceDock, { playHeartbeatSound, triggerHapticPulse } from "@/components/GhostDiceDock";
 import PhoneDrawer from "@/components/PhoneDrawer";
 import GhostBoard from "@/components/GhostBoard";
+import EvidenceSelectModal from "@/components/EvidenceSelectModal";
 import { createClient } from '@supabase/supabase-js'; 
 
 // 🌟 이제 금고(Vercel 환경 변수)에서 안전하게 꺼내옵니다! (NEXT_PUBLIC_이 붙어야 화면에서 쓸 수 있어요!)
@@ -364,6 +365,21 @@ export default function GamePlatform() {
 const [rollRequest, setRollRequest] = useState(null); // AI 판정 요청 데이터
 const [isVignetteActive, setIsVignetteActive] = useState(false); // 핏빛 비네팅 스위치
 const [inGameTime, setInGameTime] = useState("1일차 새벽 · 03:44 AM"); // 서사 시간
+
+// 👈 [여기부터 아래 7줄 추가!]
+// ⚖️ 추리 모드 2.0 (심문 증언 / 반증 모달 / 모순 컷씬) 상태
+const [activeTestimony, setActiveTestimony] = useState(null); // 용의자의 3대 핵심 진술 목록
+const [testimonyIdx, setTestimonyIdx] = useState(0); // 현재 심문 중인 진술 번호 (0, 1, 2)
+const [showEvidenceSelectModal, setShowEvidenceSelectModal] = useState(false); // 증거품 서랍 모달
+const [targetStatementForRefute, setTargetStatementForRefute] = useState(""); // 반박 대상 진술
+const [isRefuteFlashActive, setIsRefuteFlashActive] = useState(false); // 시안 블루 모순 컷씬
+
+// 💥 모순 포착 시안 플래시 발동 함수
+const triggerRefuteFlash = () => {
+  setIsRefuteFlashActive(true);
+  setTimeout(() => setIsRefuteFlashActive(false), 550);
+};
+
 
 // 🩸 3중 감각(비네팅 + 심장음 + 진동) 원터치 발동 함수
 const triggerSensoryShock = () => {
@@ -1534,6 +1550,34 @@ if (commMatch) {
   } catch(e) {}
   rawText = rawText.replace(commMatch[0], "");
 }
+
+      // ⚖️ 5. [추리 모드] 용의자 심문 증언 태그 낚아채기 (<!-- TESTIMONY: [...] -->)
+const testimonyMatch = rawText.match(/<!--\s*TESTIMONY:\s*(\[[\s\S]*?\])\s*-->/i);
+if (testimonyMatch) {
+  try {
+    const parsed = JSON.parse(testimonyMatch[1]);
+    if (Array.isArray(parsed) && parsed.length > 0) {
+      setActiveTestimony(parsed);
+      setTestimonyIdx(0);
+    }
+  } catch(e) {}
+  rawText = rawText.replace(testimonyMatch[0], "");
+}
+
+// 💔 6. [추리 모드] 신뢰도 삭감 태그 낚아채기 (<!-- DAMAGE: 15 -->)
+const damageMatch = rawText.match(/<!--\s*DAMAGE:\s*(\d+)\s*-->/i);
+if (damageMatch) {
+  try {
+    const dmg = parseInt(damageMatch[1], 10) || 15;
+    setSessions(prev => prev.map(s => {
+      if (s.id !== activeSessionId) return s;
+      const curHp = Number(s.sheet?.hp !== undefined ? s.sheet.hp : 100);
+      const nextHp = Math.max(0, curHp - dmg);
+      return { ...s, sheet: { ...s.sheet, hp: nextHp } };
+    }));
+    triggerToast("신뢰도 실추!", `무리한 추궁이나 엉뚱한 반증으로 신뢰도가 ${damageMatch[1]} 삭감되었습니다.`, "💔");
+  } catch(e) {}
+  rawText = rawText.replace(damageMatch[0]
       
       // 🌟 [핵심] 스마트폰 톡 & 사진 완벽 낚아채기 파서
       let newPhoneMsg = null;
@@ -1985,7 +2029,9 @@ if (commMatch) {
     <div style={{ display: "flex", height: "100dvh", width: "100vw", backgroundColor: theme.bg, color: theme.text, overflow: "hidden", position: "relative" }}>
 {/* 🩸 괴담 모드 핏빛 심장박동 비네팅 오버레이 */}
     <div className={`vignette-overlay ${isVignetteActive ? "active" : ""}`} />
-
+      
+{/* 👈 [추가!] ⚖️ 추리 모드 모순 포착 시안 플래시 오버레이 */}
+<div className={`refute-flash-overlay ${isRefuteFlashActive ? "active" : ""}`} />
     
       <style>{`
         @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
@@ -2006,6 +2052,10 @@ if (commMatch) {
         .anim-dice-rolling { animation: diceTumble 0.35s infinite linear; }
         .vignette-overlay { position: fixed; inset: 0; pointer-events: none; z-index: 99990; opacity: 0; transition: opacity 0.15s ease-out; background: radial-gradient(circle at center, transparent 40%, rgba(185, 28, 28, 0.4) 80%, rgba(50, 5, 5, 0.95) 100%); }
 .vignette-overlay.active { animation: heartbeatVignette 0.65s cubic-bezier(0.2, 0.8, 0.2, 1); }
+/* 👈 [추가!] 모순 포착 푸른 섬광 애니메이션 */
+.refute-flash-overlay { position: fixed; inset: 0; pointer-events: none; z-index: 99995; opacity: 0; background: radial-gradient(circle at center, rgba(56, 189, 248, 0.5) 0%, rgba(2, 132, 199, 0.85) 100%); transition: opacity 0.1s ease-out; }
+.refute-flash-overlay.active { animation: refuteFlashAnim 0.55s ease-out; }
+@keyframes refuteFlashAnim { 0% { opacity: 0; } 15% { opacity: 0.95; } 60% { opacity: 0.7; } 100% { opacity: 0; } }
 @keyframes heartbeatVignette { 0% { opacity: 0; transform: scale(1); } 25% { opacity: 0.85; transform: scale(1.02); } 45% { opacity: 0.35; transform: scale(1); } 60% { opacity: 0.75; transform: scale(1.015); } 100% { opacity: 0; transform: scale(1); } }
         @keyframes typingBounce { 0%, 60%, 100% { transform: translateY(0); opacity: 0.3; } 30% { transform: translateY(-5px); opacity: 1; } }
         .typing-dot { animation: typingBounce 1.3s infinite ease-in-out; }
@@ -2186,20 +2236,20 @@ if (commMatch) {
                   </>
                 )}
 
-{/* 🕵️ 추리 모드 */}
-                {activeSession.ruleMode === "freeform" && (
-                  <>
-                    <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setIsPhoneDrawerOpen(true); setIsSheetOpen(false); }} title="증거품 휴대폰" style={{ background: "none", border: "none", cursor: "pointer", color: theme.text, display: "flex", alignItems: "center" }}>
-                      <Smartphone size={22} strokeWidth={2} />
-                    </button>
-                    <button type="button" onClick={() => setInputMsg("[💡 진상 추리 선언] 지금까지 모은 단서들을 바탕으로 이 사건의 진실을 밝혀낸다! ")} title="진상 추리" style={{ background: "none", border: "none", cursor: "pointer", color: theme.danger, display: "flex", alignItems: "center" }}>
-                      <Lightbulb size={22} strokeWidth={2} />
-                    </button>
-                    <button type="button" onClick={(e) => { e.stopPropagation(); setShowEvidenceBoard(!showEvidenceBoard); }} title="증거 보드" style={{ background: "none", border: "none", cursor: "pointer", color: theme.text, display: "flex", alignItems: "center" }}>
-                      <Pin size={22} strokeWidth={2} style={{ transform: "rotate(45deg)" }} />
-                    </button>
-                  </>
-                )}
+{/* 🕵️ 추리 모드 2.0 (스마트폰 + 증거품 서랍 + 수사 전말 보드) */}
+{activeSession.ruleMode === "freeform" && (
+  <>
+    <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setIsPhoneDrawerOpen(true); setIsSheetOpen(false); }} title="증거품 휴대폰" style={{ background: "none", border: "none", cursor: "pointer", color: theme.text, display: "flex", alignItems: "center" }}>
+      <Smartphone size={22} strokeWidth={2} />
+    </button>
+    <button type="button" onClick={() => { setTargetStatementForRefute(""); setShowEvidenceSelectModal(true); }} title="증거품 서랍 (반증)" style={{ background: "none", border: "none", cursor: "pointer", color: "#38bdf8", display: "flex", alignItems: "center" }}>
+      <Fingerprint size={22} strokeWidth={2} />
+    </button>
+    <button type="button" onClick={(e) => { e.stopPropagation(); setShowEvidenceBoard(!showEvidenceBoard); }} title="사건 수사 전말 보드" style={{ background: "none", border: "none", cursor: "pointer", color: theme.accent, display: "flex", alignItems: "center" }}>
+      <Pin size={22} strokeWidth={2} style={{ transform: "rotate(45deg)" }} />
+    </button>
+  </>
+)}
 
                 {/* 🕯️ 괴담 모드 (무공해 미니멀 헤더: 스마트폰 + 괴이 조사록) */}
 {activeSession.ruleMode === "horror" && (
@@ -3930,6 +3980,104 @@ color: "#fff", border: "none", cursor: "pointer",
       />
     </div>
   )}
+
+{/* 👈 [추가!] ⚖️ 추리 모드 전용 [증언 심문 독] (역전재판 스타일 롤링 + 의혹 추궁 / 반증 제시) */}
+{activeSession?.ruleMode === "freeform" && activeTestimony && activeTestimony.length > 0 && (() => {
+  const currentStatementObj = activeTestimony[testimonyIdx] || activeTestimony[0];
+  const statementText = typeof currentStatementObj === "string" ? currentStatementObj : (currentStatementObj.text || currentStatementObj.statement || "");
+  
+  return (
+    <div style={{
+      width: "100%", maxWidth: "680px", margin: "0 auto 12px",
+      backgroundColor: "rgba(13, 19, 31, 0.95)", backdropFilter: "blur(10px)",
+      border: "1.5px solid rgba(56, 189, 248, 0.4)", borderRadius: "20px",
+      padding: "14px 18px", boxShadow: "0 10px 30px rgba(0,0,0,0.5), 0 0 20px rgba(56, 189, 248, 0.15)",
+      display: "flex", flexDirection: "column", gap: "10px", color: "#fff", animation: "slideUp 0.25s ease-out"
+    }}>
+      {/* 심문 바 상단 헤더 & 페이지 넘김 */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+          <span style={{ fontSize: "0.68rem", fontWeight: "900", padding: "2px 7px", borderRadius: "6px", backgroundColor: "#0284c7", color: "#fff" }}>
+            증언 심문
+          </span>
+          <span style={{ fontSize: "0.78rem", fontWeight: "800", color: "#38bdf8" }}>
+            용의자의 진술 ({testimonyIdx + 1} / {activeTestimony.length})
+          </span>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+          <button
+            type="button"
+            onClick={() => setTestimonyIdx(prev => (prev - 1 + activeTestimony.length) % activeTestimony.length)}
+            style={{ background: "rgba(255,255,255,0.08)", border: "none", color: "#fff", borderRadius: "6px", padding: "4px 8px", cursor: "pointer", display: "flex", alignItems: "center" }}
+          >
+            <ChevronLeft size={16} />
+          </button>
+          <button
+            type="button"
+            onClick={() => setTestimonyIdx(prev => (prev + 1) % activeTestimony.length)}
+            style={{ background: "rgba(255,255,255,0.08)", border: "none", color: "#fff", borderRadius: "6px", padding: "4px 8px", cursor: "pointer", display: "flex", alignItems: "center" }}
+          >
+            <ChevronRight size={16} />
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTestimony(null)}
+            title="심문 바 닫기"
+            style={{ background: "none", border: "none", color: "#94a3b8", cursor: "pointer", padding: "4px", marginLeft: "4px", display: "flex", alignItems: "center" }}
+          >
+            <X size={16} />
+          </button>
+        </div>
+      </div>
+
+      {/* 핵심 의혹 진술 지문 */}
+      <div style={{
+        padding: "10px 14px", backgroundColor: "rgba(2, 132, 199, 0.1)",
+        borderRadius: "12px", border: "1px dashed rgba(56, 189, 248, 0.3)",
+        fontSize: "0.92rem", lineHeight: "1.55", color: "#f1f5f9", fontWeight: "600",
+        fontFamily: fontChoice === "ridi" ? "'RIDIBatang', serif" : "'Pretendard', sans-serif"
+      }}>
+        "{statementText}"
+      </div>
+
+      {/* 2대 인터랙티브 액션 버튼: [🗣️ 의혹 추궁] & [💥 모순 포착 : 반증 제시] */}
+      <div style={{ display: "flex", gap: "8px" }}>
+        <button
+          type="button"
+          onClick={() => {
+            const pressText = `[🗣️ 의혹 추궁]\n"잠깐, 방금 하신 말씀('${statementText}')에 대해 좀 더 구체적으로 설명해 주시겠습니까?"`;
+            executeMessage(pressText);
+          }}
+          style={{
+            flex: 1, padding: "10px 12px", borderRadius: "12px",
+            backgroundColor: "rgba(255, 255, 255, 0.08)", border: "1px solid rgba(255, 255, 255, 0.15)",
+            color: "#e2e8f0", fontSize: "0.82rem", fontWeight: "800", cursor: "pointer",
+            display: "flex", alignItems: "center", justifyContent: "center", gap: "6px"
+          }}
+        >
+          <span>🗣️ 의혹 추궁</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => {
+            setTargetStatementForRefute(statementText);
+            setShowEvidenceSelectModal(true);
+          }}
+          style={{
+            flex: 1.2, padding: "10px 12px", borderRadius: "12px",
+            backgroundColor: "#0284c7", border: "1px solid #38bdf8",
+            color: "#fff", fontSize: "0.84rem", fontWeight: "900", cursor: "pointer",
+            display: "flex", alignItems: "center", justifyContent: "center", gap: "6px",
+            boxShadow: "0 4px 15px rgba(2, 132, 199, 0.4)"
+          }}
+        >
+          <span>💥 모순 포착 : 반증 제시</span>
+        </button>
+      </div>
+    </div>
+  );
+})()}
                   
               <footer style={{
                 position: "absolute", bottom: 0, left: 0, right: 0,
@@ -4017,19 +4165,38 @@ color: "#fff", border: "none", cursor: "pointer",
               </footer>
             </div>
 
-            {/* 🌟 기존 시크릿 보드 등 모달 유지 */}
-            {showEvidenceBoard && activeSession && activeSession.ruleMode === "freeform" && (
-              <SecretBoard
-                activeSession={activeSession}
-                theme={theme}
-                isMobile={isMobile}
-                onClose={() => setShowEvidenceBoard(false)}
-                onDeclareMystery={() => {
-                  setShowEvidenceBoard(false);
-                  setInputMsg(prev => prev.trim() ? prev : "[💡 진상 추리] ");
-                }}
-              />
-            )}
+          {/* ⚖️ 추리 모드 사건 수사 전말 보드 */}
+{showEvidenceBoard && activeSession && activeSession.ruleMode === "freeform" && (
+  <SecretBoard
+    activeSession={activeSession}
+    theme={theme}
+    isMobile={isMobile}
+    onClose={() => setShowEvidenceBoard(false)}
+    onDeclareMystery={(formattedText) => {
+      setShowEvidenceBoard(false);
+      triggerRefuteFlash();
+      setInputMsg(formattedText || "[⚖️ 진상 결착 : 전말 격발]");
+      triggerToast("전말 격발 준비", "최종 진상 고발장이 입력창에 장착되었습니다.", "⚖️");
+    }}
+  />
+)}
+
+{/* 👈 [추가!] 🗃️ 추리 모드 증거품 서랍 모달 (반증 제시) */}
+{showEvidenceSelectModal && activeSession && activeSession.ruleMode === "freeform" && (
+  <EvidenceSelectModal
+    isOpen={showEvidenceSelectModal}
+    onClose={() => setShowEvidenceSelectModal(false)}
+    clues={[...(activeSession.sheet?.clues || []), ...(activeSession.sheet?.items || [])]}
+    characterSheet={activeSession.sheet}
+    targetStatement={targetStatementForRefute}
+    isMobile={isMobile}
+    onPresentEvidence={(formattedText) => {
+      triggerRefuteFlash();
+      setInputMsg(formattedText);
+      triggerToast("반증 준비 완료", "입력창에 반증 진술이 장착되었습니다.", "💥");
+    }}
+  />
+)}
 
 {/* 🕯️ 괴담 모드 괴이 조사록 모달 */}
 {showEvidenceBoard && activeSession && activeSession.ruleMode === "horror" && (
