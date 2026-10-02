@@ -431,7 +431,7 @@ const handleSaveToLibrary = () => {
   }
 
   if (!scenarioTitle.trim()) {
-    triggerToast("저장 불가", "사건 개요서에 사건명(제목)을 입력해주세요.", "⚠️");
+    triggerToast("저장 불가", "사건 개요서에 제목을 입력해주세요.", "⚠️");
     return;
   }
   
@@ -3382,7 +3382,7 @@ color: "#fff", border: "none", cursor: "pointer",
                   
                   {/* 🌟 세션 카드 이미지 삭제 후 텍스트 필드만 깔끔하게 유지 */}
                   <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                    <input type="text" autoComplete="off" value={scenarioTitle} onChange={e => setScenarioTitle(e.target.value)} placeholder="사건명 / 시나리오 제목" style={{ width: "100%", boxSizing: "border-box", padding: "10px 12px", borderRadius: "8px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.85rem", outline: "none" }} />
+                    <input type="text" autoComplete="off" value={scenarioTitle} onChange={e => setScenarioTitle(e.target.value)} placeholder="시나리오 제목" style={{ width: "100%", boxSizing: "border-box", padding: "10px 12px", borderRadius: "8px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.85rem", outline: "none" }} />
                     <input type="text" autoComplete="off" value={victimName} onChange={e => setVictimName(e.target.value)} placeholder="주요 공략 대상 / 사건 목표" style={{ width: "100%", boxSizing: "border-box", padding: "10px 12px", borderRadius: "8px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.85rem", outline: "none" }} />
                   </div>
 
