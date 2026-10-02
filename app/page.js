@@ -1443,12 +1443,12 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
         }
       }
 
-      // 최종 메인 채팅방 세션 업데이트 
+// 🌟 [핵심] AI 응답에도 전화 중 꼬리표를 달아 통화 화면에만 예쁘게 출력되게 합니다!
       setSessions(prev => prev.map(s => {
         if (s.id !== activeSessionId) return s;
         return {
           ...s,
-          messages: [...updatedMessages, { role: "model", text: cleanText }],
+          messages: [...updatedMessages, { role: "model", text: cleanText, isVoiceCall: isVoiceCallActive }],
           suggestedActions: suggActions
         };
       }));
@@ -1506,7 +1506,7 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
         executeMessage(rollFormatted);
       }
       
-    }, animationEnabled ? 600 : 100);
+    }, 600);
   };
 
   const handleSendMessage = () => {
@@ -2557,7 +2557,7 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
                       <div style={{ backgroundColor: isDarkMode ? "rgba(0,0,0,0.2)" : "rgba(255,255,255,0.6)", borderRadius: "8px", border: `1px solid ${theme.danger}`, padding: "10px 12px", marginTop: "4px" }}>
                         <button 
                           type="button" 
-                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowPcSecret(!showPcSecret); }} 
+                          onClick={() => setShowPcSecret(!showPcSecret)} 
                           style={{ width: "100%", textAlign: "left", background: "none", border: "none", fontSize: "0.76rem", color: theme.danger, cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center", padding: 0 }}
                         >
                           <span style={{ fontWeight: "600", display: "flex", alignItems: "center", gap: "6px" }}>
@@ -3685,7 +3685,7 @@ color: "#fff", border: "none", cursor: "pointer",
                             textAlign: m.role === "user" ? "center" : "left",
                             fontStyle: m.role === "user" ? "italic" : "normal",
                             fontWeight: m.role === "user" ? "700" : "400",
-                            fontFamily: isUser ? "'Pretendard', sans-serif" : "inherit"
+                            fontFamily: "inherit"
                           }}>
                             {m.cg && (
                               <div style={{ marginBottom: "14px", borderRadius: "10px", overflow: "hidden", position: "relative", border: "1px solid rgba(245, 158, 11, 0.35)", backgroundColor: "rgba(15, 23, 42, 0.85)" }}>
