@@ -668,8 +668,8 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
   const [chatFontSize, setChatFontSize] = useState(1);
   const [soundVolume, setSoundVolume] = useState(0.6);
 
-// 🌟 사라진 주사위 소리 함수 복구!
-  function playDiceSound() {
+  // 🌟 (복구) 설정창 튕김의 원인이었던 주사위 사운드 함수 부활!
+  const playDiceSound = () => {
     if (soundVolume <= 0) return;
     try {
       const AudioCtx = window.AudioContext || window.webkitAudioContext;
@@ -691,7 +691,7 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
         osc.stop(startTime + 0.05);
       }
     } catch (e) {}
-  }
+  };
 
   // ── [데이터 관리 (내보내기/백업) 상태 관리] ──
   const [showExportModal, setShowExportModal] = useState(false);
@@ -1027,102 +1027,104 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
 
 // ── [10. 코어 엔진: 세션 시작 및 통신] ──
   
-  // 🌟 (복구) 싹 날아가버렸던 세션 시작 함수 완벽 부활!
+  // 🌟 (버그 수정) 추리 모드와 연애/괴담 모드의 State 분리 문제 완벽 해결!
   const startNewSession = async () => {
-    const sessionTitle = scenarioTitle || (pcName ? `${pcName}의 이야기` : "새로운 사건");
-    const pName = pcName.trim() || "주인공";
+    const isFreeform = wizardMode === "freeform" || selectedMode === "추리";
     
-    // 1. 등장인물 데이터 통일
-    const npcs = (suspects || []).map((k, idx) => ({
+    const finalPcName = isFreeform ? pcName : charName;
+    const finalPcJob = isFreeform ? pcJob : charJob;
+    const finalPcAge = isFreeform ? pcAgeGender : charAge;
+    const finalPcBg = isFreeform ? pcBackground : charBackground;
+    const finalPcSecret = isFreeform ? pcSecret : charSecret;
+    const finalPcPortrait = isFreeform ? pcPortraitUrl : charPortraitUrl;
+    
+    const finalNpcList = isFreeform ? suspects : kpcList;
+    const finalHandoutsList = isFreeform ? evidenceList : generatedHandouts;
+
+    const sessionTitle = scenarioTitle || (finalPcName ? `${finalPcName}의 이야기` : "새로운 모험");
+    const pName = finalPcName.trim() || "주인공";
+    const safeRawText = (typeof originalRawText !== "undefined" && originalRawText) ? originalRawText : "";
+
+    const npcs = (finalNpcList || []).map((k, idx) => ({
       id: k.id || Date.now() + idx,
       name: k.name || `인물${idx + 1}`,
       job: k.job || k.title || "등장인물",
       title: k.job || k.title || "등장인물",
-      ageGender: k.ageGender || k.gender || "미상",
+      gender: k.gender || k.ageGender || "여성",
+      age: k.age || "",
       detail: k.behavior || k.detail || "",
       desc: k.behavior || k.detail || "",
       secret: k.secret || "",
       statusMessage: k.statusMessage || "",
-      portraitUrl: k.portraitUrl || k.portrait || "",
-      portrait: k.portraitUrl || k.portrait || "",
+      portrait: k.portraitUrl || (typeof getPortraitUrl === "function" ? getPortraitUrl(k.name || "npc") : ""),
       affection: 0,
       secretRevealed: false
     }));
 
-    // 2. 단서 및 증거품 데이터 통일
-    const initialHandouts = (evidenceList || []).filter(e => e.name).map((ev, idx) => ({
-      id: ev.id || Date.now() + idx,
-      title: ev.name,
-      overview: ev.overview || "발견된 단서입니다.",
-      secret: ev.contradiction ? `[모순점] ${ev.contradiction}\n[비밀] ${ev.secret}` : ev.secret,
-      revealed: ev.showSecret || false
-    }));
+    const startingItems = (generatedItems && generatedItems.length > 0) ? generatedItems : [{ name: "소지품" }];
 
-    // 주인공 기본 사명/비밀 추가
-    initialHandouts.unshift({
-      id: "pc_base",
-      title: `${pName}의 사명과 비밀`,
-      overview: "사건의 진상을 파헤치거나, 원하는 결말에 도달한다.",
-      secret: pcSecret || "숨겨진 진실",
-      revealed: false
-    });
+    const initialHandouts = (finalHandoutsList && finalHandoutsList.length > 0) ? finalHandoutsList : [
+      { id: "pc_base", title: `${pName}의 사명과 비밀`, overview: charMission || "현재 상황을 파악한다.", secret: finalPcSecret || "숨겨진 진실", revealed: false }
+    ];
 
-    const fullScenarioContext = `[시나리오 제목: ${sessionTitle}]\n[공개 시놉시스]\n${publicSynopsis}\n\n[초기 배경/서막]\n${openingScene}\n\n[키퍼 전용 기밀/진상]\n${hiddenTruth}`;
+    let finalSynopsis = publicSynopsis || "";
+    let finalOpening = openingScene || "";
+    let finalTruth = hiddenTruth || "";
+    let finalScenarioCgs = JSON.parse(JSON.stringify(scenarioCgs || []));
 
-    // 3. 현재 룰 모드 영문 파싱
-    let ruleModeStr = "freeform";
-    if (selectedMode === "연애") ruleModeStr = "dating";
-    if (selectedMode === "괴담") ruleModeStr = "horror";
+    const currentNpcName = npcs[0]?.name || "상대방";
+    const mainNpcDetail = npcs[0]?.detail || "외모 설정";
+    let fullScenarioContext = `[시나리오 제목: ${sessionTitle}]\n[주요 등장인물 외모 필수 고정]\n- ${currentNpcName}: ${mainNpcDetail}\n\n[공개 시놉시스]\n${finalSynopsis}\n\n[초기 배경/서막]\n${finalOpening}\n\n[키퍼 전용 기밀/진상]\n${finalTruth}`;
+    if (safeRawText !== "") fullScenarioContext += `\n\n[🚨 시나리오 원본 풀 텍스트 (마스터 전용 열람)]\n${safeRawText}`;
 
-    // 4. 캐릭터 시트 완벽 조립
-    let sessionSheet = {
-      day: 1,
-      currentPhase: "낮",
-      name: pName,
-      job: pcJob || "주인공",
-      ageGender: pcAgeGender || "미상",
-      background: pcBackground || "",
-      secret: pcSecret || "",
-      portrait: pcPortraitUrl || "",
-      hp: 100, maxHp: 100, fatigue: 0,
-      npcs: npcs,
-      items: [],
-      clues: [],
-      handouts: initialHandouts,
-      scenarioCgs: cgList || [],
-      unlockedCgs: [],
-      phoneChats: {},
-      activeContactId: npcs[0]?.id || null
+    let initialDetectedPhase = "낮";
+    if (/자정|밤|심야|어둠|달빛|야간/.test(finalOpening)) initialDetectedPhase = "밤";
+    else if (/새벽|동이\s*트/.test(finalOpening)) initialDetectedPhase = "새벽";
+    else if (/저녁|노을|황혼|해질/.test(finalOpening)) initialDetectedPhase = "저녁";
+    else if (/아침|오전|기상/.test(finalOpening)) initialDetectedPhase = "아침";
+
+    let initialSheet = {
+      day: 1, currentPhase: initialDetectedPhase,
+      name: pName, job: finalPcJob || "조사원", age: finalPcAge || "", gender: charGender || "여성",
+      background: finalPcBg || "", secret: finalPcSecret || "", mission: charMission || "",
+      portrait: finalPcPortrait || "", hp: 20, maxHp: 20, npcs, items: startingItems,
+      madnessStatus: null, handouts: initialHandouts, madnessCards: [], madnessDeck: []
     };
+    
+    if (wizardMode === "insane") {
+      initialSheet = { 
+        ...initialSheet, hp: 6, maxHp: 6, san: 6, maxSan: 6, limit: insaneLimit || 4, cycle: 1, scene: 1, phase: "도입", 
+        mission: charMission || "일상의 온기를 되찾는다.", secret: finalPcSecret || "밝혀지지 않은 과거", insaneSkills, insaneCuriosity, insaneFear, flashbackUsed: false, insaneItems: { painkiller: 2, weapon: 0, talisman: 0 },
+        enemyHp: 6, maxEnemyHp: 6, currentPlot: null, enemyPlot: null,
+      };
+    }
+
+    let sessionSheet = { ...(initialSheet || {}), scenarioCgs: finalScenarioCgs };
+    sessionSheet.phoneChats = {};
 
     const newId = Date.now();
     const newSession = {
-      id: newId,
-      title: sessionTitle,
-      thumbnail: scenarioImageUrl || "",
-      ruleMode: ruleModeStr,
-      preference: playPreference || "",
-      scenarioText: fullScenarioContext,
-      sheet: sessionSheet,
-      messages: [],
-      suggestedActions: []
+      id: newId, title: sessionTitle,
+      thumbnail: scenarioThumbnail || sessionSheet?.thumbnail || "https://cdn.phototourl.com/free/2026-09-13-be3b81ab-c892-4f25-ba89-1bb86ea1518e.jpg",
+      ruleMode: wizardMode, preference: playPreference.trim(),
+      scenarioText: fullScenarioContext, sheet: sessionSheet,
+      messages: [], suggestedActions: [], investigationSpots: [], pendingCheck: null
     };
 
     setSessions([newSession, ...sessions]);
     setActiveSessionId(newId);
     setIsLoading(true);
+    setCurrentPhase(initialDetectedPhase);
+
+    let openingPrompt = `[세션 시작: 서막 지문 요청]\n시나리오의 [초기 배경/서막]을 플레이어가 몰입할 수 있도록 4~5문장으로 서술하십시오.\n지문 끝에 주인공이 취할 다음 행동 선택지 3개를 <!-- SUGGESTIONS: ["선택지 1", "선택지 2", "선택지 3"] --> 태그로 출력하십시오.`;
+    if (wizardMode === "dating") {
+      openingPrompt = `[세션 시작: 비주얼 노벨 서막 요청]\n시나리오의 [초기 배경/서막]을 바탕으로 주인공 시점에서 현장 분위기를 4~5문장으로 묘사하십시오.\n지문 끝에 주인공이 취할 행동 선택지 3개를 <!-- SUGGESTIONS: ["선택지1", "선택지2", "선택지3"] --> 태그로 출력하십시오.`;
+    } else if (wizardMode === "freeform") {
+      openingPrompt = `[세션 시작: 추리/수사 서막 요청]\n시나리오의 [초기 배경/서막]을 바탕으로, 폭풍전야의 시점에서 현장 분위기를 4~5문장으로 묘사하십시오.\n지문 끝에 주인공이 취할 수사 액션 선택지 3개를 <!-- SUGGESTIONS: ["단서를 찾는다", "인물을 살핀다", "주변을 조사한다"] --> 태그로 출력하십시오.`;
+    }
 
     const controller = new AbortController();
     setAbortController(controller);
-
-    // 5. 게임 시작 오프닝 프롬프트
-    let openingPrompt = `[세션 시작: 서막 지문 요청]\n시나리오의 [초기 배경/서막]을 플레이어가 몰입할 수 있도록 4~5문장으로 서술하십시오.\n지문 끝에 주인공이 취할 다음 행동 선택지 3개를 <!-- SUGGESTIONS: ["선택지 1", "선택지 2", "선택지 3"] --> 태그로 출력하십시오.`;
-
-    if (ruleModeStr === "dating") {
-      openingPrompt = `[세션 시작: 비주얼 노벨 서막 요청]\n시나리오의 [초기 배경/서막]을 바탕으로, 주인공 '${sessionSheet.name}'의 시점에서 아름답고 감각적으로 4~5문장 서막을 묘사하십시오.\n지문 끝에 주인공이 취할 다음 행동 선택지 3개를 <!-- SUGGESTIONS: ["대사 1", "대사 2", "대사 3"] --> 태그로 출력하십시오.`;
-    } else if (ruleModeStr === "freeform") {
-      openingPrompt = `[세션 시작: 추리/수사 서막 요청]\n시나리오의 [초기 배경/서막]을 바탕으로, 사건 현장의 음산하고 미스터리한 분위기를 4~5문장으로 묘사하십시오.\n지문 끝에 주인공이 취할 수사 액션 선택지 3개를 <!-- SUGGESTIONS: ["단서를 찾는다", "주변 인물을 살핀다", "시체를 조사한다"] --> 태그로 출력하십시오.`;
-    }
 
     try {
       const res = await fetch("/api/chat", {
@@ -1133,7 +1135,7 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
           messages: [{ role: "user", text: openingPrompt }],
           scenarioText: fullScenarioContext,
           playerSheet: sessionSheet,
-          ruleMode: ruleModeStr,
+          ruleMode: wizardMode,
           playPreference: playPreference
         })
       });
@@ -1162,7 +1164,6 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
       setAbortController(null);
     }
   };
-
 
   // 🌟 (복구) 여기에 사라졌던 executeMessage 함수를 넣습니다!
   const executeMessage = async (textToSend) => {
@@ -2855,9 +2856,9 @@ color: "#fff", border: "none", cursor: "pointer",
                   <textarea rows={2} value={openingScene} onChange={e => setOpeningScene(e.target.value)} placeholder="첫 오프닝 지문..." style={{ width: "100%", boxSizing: "border-box", padding: "10px 12px", borderRadius: "8px", border: `1px solid ${theme.border}`, backgroundColor: theme.inputBg, color: theme.text, fontSize: "0.83rem", resize: "none", outline: "none" }} />
                 </section>
 
-                {/* 📱 1. 스마트폰 메신저 UI (사반님 원본 코드 100% 이식) */}
+                {/* 📱 1. 스마트폰 모양의 프로필 & 인물 세팅 UI (가이드라인 100% 맞춤) */}
                 <div style={{
-                  width: "100%", backgroundColor: theme.panel,
+                  width: "100%", boxSizing: "border-box", backgroundColor: "#f9f6f3",
                   border: isDarkMode ? "12px solid #3f3f46" : "12px solid #e2e8f0", 
                   borderRadius: "40px", overflow: "hidden", display: "flex", flexDirection: "column",
                   boxShadow: "0 25px 50px -12px rgba(0,0,0,0.25)", position: "relative",
@@ -4142,9 +4143,9 @@ color: "#fff", border: "none", cursor: "pointer",
             </span>
           </div>
 
-          {/* 🌟 3. 실시간 현장 중계 (대화 로그 뷰어) - 원본 이미지 완벽 구현! */}
+          {/* 🌟 3. 실시간 현장 중계 (대화 로그 뷰어) - 통화 중 대화만 필터링! */}
           <div 
-            ref={(el) => { if (el) el.scrollTop = el.scrollHeight; }} // 항상 최하단 스크롤 유지
+            ref={(el) => { if (el) el.scrollTop = el.scrollHeight; }}
             style={{
               flex: 1, width: "100%", maxWidth: "460px",
               backgroundColor: "rgba(255, 255, 255, 0.04)",
@@ -4155,9 +4156,8 @@ color: "#fff", border: "none", cursor: "pointer",
               boxShadow: "inset 0 4px 20px rgba(0,0,0,0.2)"
             }}
           >
-            {/* 🌟 [핵심] 통화 중인 메시지만 걸러냅니다 (.filter 부분 추가!) */}
             {activeSession && (activeSession.messages || [])
-              .filter(m => m.isCall || m.isVoiceCall)
+              .filter(m => m.isVoiceCall || m.isCall) // 🌟 [핵심] 여기서 통화 중 대화만 걸러냅니다!
               .slice(-6).map((m, idx) => {
               const isUser = m.role === "user";
               const textContent = m.text;
