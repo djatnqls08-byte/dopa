@@ -4445,10 +4445,11 @@ color: "#fff", border: "none", cursor: "pointer",
 ) : null}
 
         
-     {/* 📱 3. 하단 팝업 메신저 서랍 (괴담 모드가 아닐 때만 렌더링!) */}
+{/* 📱 3. 하단 팝업 메신저 서랍 (괴담 모드가 아닐 때만 렌더링!) */}
       {isPhoneDrawerOpen && activeSession && activeSession.ruleMode !== "horror" && (
         <div onClick={() => { setIsPhoneDrawerOpen(false); setIsMyProfileOpen(false); setSelectedProfileNpc(null); setActivePhoneContactId(null); }} style={{ position: "fixed", inset: 0, zIndex: 125, display: "flex", justifyContent: "center", alignItems: "flex-end", backgroundColor: "rgba(0,0,0,0.65)" }}>
-          <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: "460px", height: "82vh", maxHeight: "740px",
+          <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: "460px", height: "82vh", maxHeight: "740px", backgroundColor: activePhoneSkin.bg, color: activePhoneSkin.text, borderRadius: "24px 24px 0 0", display: "flex", flexDirection: "column", overflow: "hidden", border: `1px solid ${activePhoneSkin.border}`, borderBottom: "none", boxShadow: "0 -8px 36px rgba(0,0,0,0.38)", animation: "slideUp 0.3s cubic-bezier(0.2, 0.8, 0.2, 1)" }}>
+            
             {/* 🔹 스마트폰 상단 헤더 바 */}
             <div style={{ height: "54px", padding: "0 16px", backgroundColor: activePhoneSkin.headerBg, display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0, borderBottom: `1px solid ${activePhoneSkin.border}` }}>
               <div style={{ width: "60px" }}>
