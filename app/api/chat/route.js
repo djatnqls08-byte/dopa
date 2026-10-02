@@ -32,8 +32,8 @@ export async function POST(req) {
       currentPhase = "낮",
     } = body;
 
-    const rawKeys = process.env.GEMINI_API_KEY || process.env.Gemini_API_Key || "";
-    const apiKeys = rawKeys.split(",").map(k => k.trim()).filter(Boolean);
+    const rawKeys = process.env.GEMINI_API_KEY || process.env.Gemini_API_Key || process.env.GEMINI_API || "";
+const apiKeys = rawKeys.split(",").map(k => k.trim()).filter(Boolean);
 
     if (apiKeys.length === 0) {
       return new Response(JSON.stringify({ error: "API 키가 등록되지 않았습니다." }), { status: 400 });
