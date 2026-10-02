@@ -111,8 +111,8 @@ export default function CharacterSheet({
           </button>
         </div>
 
-        {/* 🌟 바디 스크롤 영역 (하단 잘림 방지 paddingBottom: 80px) */}
-        <div style={{ flex: 1, overflowY: "auto", padding: "20px 20px 80px 20px", display: "flex", flexDirection: "column", gap: "18px" }}>
+       {/* 바디 스크롤 영역 */}
+<div style={{ flex: 1, minHeight: 0, overflowY: "auto", padding: "20px 20px 80px 20px", display: "flex", flexDirection: "column", gap: "18px" }}>
           
           {/* 1. 주인공 프로필 카드 */}
           <div style={{ backgroundColor: theme.panel, borderRadius: "16px", padding: "18px", border: `1px solid ${theme.border}`, boxShadow: "0 8px 20px rgba(0,0,0,0.05)", display: "flex", alignItems: "center", gap: "16px" }}>
@@ -139,8 +139,8 @@ export default function CharacterSheet({
             </div>
           </div>
 
-          {/* 🌟 2. 백스토리 & 비밀 아코디언 (화살표 추가 & 잘림 없는 깨끗한 레이아웃) */}
-          <div style={{ backgroundColor: theme.panel, borderRadius: "14px", border: `1px solid ${theme.border}`, overflow: "hidden" }}>
+          {/* 2. 백스토리 & 비밀 아코디언 */}
+<div style={{ backgroundColor: theme.panel, borderRadius: "14px", border: `1px solid ${theme.border}`, overflow: "hidden", flexShrink: 0 }}>
             <button 
               type="button"
               onClick={() => setShowBackstory(!showBackstory)} 
