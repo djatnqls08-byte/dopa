@@ -39,13 +39,13 @@ export default function ScenarioStudioModal({
   const [selectedTags, setSelectedTags] = useState(["#쌍방구원"]);
 
   // 3. 도파미너(주인공) 정보
-  const [pcGenderAge, setPcGenderAge] = useState("20대 여성");
+  const [pcGenderAge, setPcGenderAge] = useState("");
   const [pcJob, setPcJob] = useState("");
   const [pcPersonality, setPcPersonality] = useState("");
   const [pcSecret, setPcSecret] = useState("");
 
   // 4. 등장인물(NPC / KPC) 정보
-  const [npcCount, setNpcCount] = useState("1명 (단독 상대)");
+  const [npcCount, setNpcCount] = useState("");
   const [npcAppearance, setNpcAppearance] = useState("");
   const [additionalIdea, setAdditionalIdea] = useState("");
 
@@ -64,10 +64,10 @@ export default function ScenarioStudioModal({
     let modeSpecificInstructions = "";
     let modeSpecificSchema = "";
 
-    // A. 💖 연애 2.0 모드
+    // A. 💖 연애 모드
     if (selectedRule === "연애") {
       modeSpecificInstructions = `
-[💖 룰 시스템: 연애 2.0 (오픈 샌드박스 로맨스)]
+[💖 룰 시스템: 연애 (오픈 샌드박스 로맨스)]
 - 행동 자유도 100%: 억지 호감도 잠금 없이 도파미너의 돌발 행동(초면 고백, 키스, 멱살 등)에 상대가 성격대로 즉각 반응해야 합니다.
 - 안티-예스맨: 맹목적 동조 금지. 인물별 자존심/역린 및 감정 침식(서운->피로->체념->단절)과 후회 서사를 포함하십시오.
 - 다각관계 지원: 양다리 줄타기 복선, 3자 대면 서스펜스, 폴리아모리 선언 시 3대 반응을 수용하십시오.
@@ -112,10 +112,10 @@ export default function ScenarioStudioModal({
 [소지품 및 선물]
 - (도파미너가 가방에 지니고 시작할 수 있는 선물/소지품 1~2개)`;
 
-    // B. 🕵️️ 추리 2.0 모드
+    // B. 🕵️️ 추리 모드
     } else if (selectedRule === "추리") {
       modeSpecificInstructions = `
-[🕵️ 룰 시스템: 추리 2.0 (본격 수사 & 피카레스크 듀얼 스탠스)]
+[🕵️ 룰 시스템: 추리 (본격 수사 & 피카레스크 듀얼 스탠스)]
 - 페어 플레이: 진범, 트릭, 스모킹 건을 도중에 바꾸지 마십시오.
 - 동조 차단: 엉뚱한 반증이나 억지 추궁 시 용의자가 비웃으며 신뢰도(HP) 데미지를 입히게 하십시오.
 - 거짓말 복선: 용의자의 진술 중 최소 1개는 미세 신체 반응(Tells)과 함께 모순을 품게 하십시오.
@@ -158,10 +158,10 @@ export default function ScenarioStudioModal({
   발견 위치 및 겉모습: (상세 묘사)
   감식 진상 / 모순: (결정적 스모킹 건이 되는 내막 또는 반증 포인트)`;
 
-    // C. 🕯️ 괴담 모드
+    // C. 🕯️ 괴담
     } else {
       modeSpecificInstructions = `
-[🕯️ 룰 시스템: DOPA 괴담 모드 (1D10 서스펜스 & 침식도)]
+[🕯️ 룰 시스템: DOPA 괴담 (1D10 서스펜스 & 침식도)]
 - 1D10 행동 굴림: 체력, 순발, 관찰, 추론, 정신, 사교 6대 스탯 기반 판정 체계.
 - 3중 감각 침식: 공포나 충격 시 침식도(0~100%) 상승 및 30/60/90% 이상 충동 발현.
 - 결착 의식 3단계: 마지막 파훼 의식(진상 직면 ➔ 합동 저지 ➔ 최후 돌파)을 집행할 수 있는 규칙과 기믹을 설계하십시오.
@@ -215,7 +215,7 @@ export default function ScenarioStudioModal({
 
 ──────────────────────────────────────────────────────────
 [기획 설정 요구사항]
-1. 룰 시스템: [${selectedRule === "연애" ? "연애 2.0 (오픈 샌드박스 로맨스)" : selectedRule === "추리" ? "추리 2.0 (본격 수사 & 피카레스크)" : "괴담 (서스펜스 오컬트)"}]
+1. 룰 시스템: [${selectedRule === "연애" ? "연애 (오픈 샌드박스 로맨스)" : selectedRule === "추리" ? "추리 (본격 수사 & 피카레스크)" : "괴담 (서스펜스 오컬트)"}]
 2. 서사 및 관계성 키워드: ${selectedTags.join(" ") || "#자유 서사"}
 3. 주인공(도파미너) 설정:
    - 나이/성별: ${pcGenderAge || "미상"}
@@ -344,9 +344,9 @@ ${modeSpecificSchema}`;
             </span>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "8px" }}>
               {[
-                { id: "연애", name: "💖 연애 2.0", desc: "오픈 샌드박스 로맨스" },
-                { id: "추리", name: "🕵️ 추리 2.0", desc: "수사 및 완전범죄" },
-                { id: "괴담", name: "🕯️ 괴담 모드", desc: "오컬트 서스펜스" }
+                { id: "연애", name: "💖 연애", desc: "오픈 샌드박스 로맨스" },
+                { id: "추리", name: "🕵️ 추리", desc: "수사 및 완전범죄" },
+                { id: "괴담", name: "🕯️ 괴담", desc: "오컬트 서스펜스" }
               ].map(r => (
                 <button
                   key={r.id}
