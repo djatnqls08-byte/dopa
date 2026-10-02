@@ -631,6 +631,10 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
     setShowMainNoticePopup(false);
   };
 
+// 🌟 (복구) 캐릭터 시트 및 인게임 UI 보드 스위치
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [showEvidenceBoard, setShowEvidenceBoard] = useState(false);
+  const [isTabletopOpen, setIsTabletopOpen] = useState(false);
 
 // ── [스마트폰 메신저 & 통화 전용 상태 관리] ──
   const [isPhoneDrawerOpen, setIsPhoneDrawerOpen] = useState(false);
