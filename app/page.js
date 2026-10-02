@@ -1577,25 +1577,33 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
 
 
 // ☁️ [클라우드 서재 & 세션 자동 동기화 엔진]
+  const [isCloudLoaded, setIsCloudLoaded] = useState(false); // 🌟 동기화 덮어쓰기 방어막 자물쇠!
+
   // 1. 로그인 성공 시, 클라우드에서 내 데이터 싹 불러오기!
   useEffect(() => {
     if (currentUser?.uid) {
       const fetchCloudData = async () => {
+        setIsCloudLoaded(false); // 🔒 다운로드 중에는 업로드가 안 되게 자물쇠를 잠급니다.
         const { data, error } = await supabase.from('user_saves').select('*').eq('user_id', currentUser.uid).single();
-        if (data) {
+        
+        if (data && !error) {
           if (data.library_data && data.library_data.length > 0) setSavedLibrary(data.library_data);
           if (data.session_data && data.session_data.length > 0) setSessions(data.session_data);
           if (data.liked_data && data.liked_data.length > 0) setLikedScenarios(data.liked_data);
           triggerToast("동기화 완료", "클라우드에서 서재와 진행 상황을 불러왔습니다.", "☁️");
         }
+        setIsCloudLoaded(true); // 🔓 다운로드 완료! 이제부터 저장(업로드) 허용!
       };
       fetchCloudData();
+    } else {
+      setIsCloudLoaded(true); // 비회원일 때는 락을 풀어줍니다.
     }
-  }, [currentUser]);
+  }, [currentUser?.uid]); // 🌟 계정이 바뀔 때만 작동하게 최적화
 
-  // 2. 게임 중 데이터가 변하면 2초 뒤 클라우드에 조용히 자동 백업! (서버 과부하 방지)
+  // 2. 게임 중 데이터가 변하면 2초 뒤 클라우드에 조용히 자동 백업!
   useEffect(() => {
-    if (!currentUser?.uid) return;
+    // 🌟 핵심 방어막: 클라우드 다운로드가 끝나기 전에 로컬 데이터가 업로드되는 참사를 완벽하게 차단합니다!
+    if (!isCloudLoaded || !currentUser?.uid) return;
     if (savedLibrary.length === 0 && sessions.length === 0 && likedScenarios.length === 0) return;
 
     const syncTimer = setTimeout(async () => {
@@ -1614,7 +1622,7 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
     }, 2000); 
 
     return () => clearTimeout(syncTimer);
-  }, [savedLibrary, sessions, likedScenarios, currentUser]);
+  }, [savedLibrary, sessions, likedScenarios, currentUser, isCloudLoaded]);
 
 // 🌟 서버-클라이언트 렌더링 충돌(에러 423) 완벽 방지
   if (!isMounted) {
@@ -1776,22 +1784,15 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
     );
   }
   
-return (
-    <div style={{ display: "flex", height: "100dvh", width: "100vw", backgroundColor: theme.bg, color: theme.text, overflow: "hidden", position: "relative" }}>
-      
-      {/* 👇 여기에 스타일 태그를 통째로 붙여넣습니다 👇 */}
-      <style>{`
+<style>{`
         @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
-        @font-face { font-family: 'RIDIBatang'; src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_twelve@1.0/RIDIBatang.woff') format('woff'); font-weight: 400; font-style: normal; }
+        @font-face { font-family: 'RIDIBatang'; src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_twelve@1.0/RIDIBatang.woff') format('woff'); font-weight: 400; font-style: normal; }
         
         *, *::before, *::after { box-sizing: border-box; font-family: 'Pretendard', sans-serif; }
         
-        .serif-text, .serif-text * { 
-          font-family: ${(fontChoice === "ridi" || fontChoice === "maru" || fontChoice === "serif") ? "'RIDIBatang', serif" : "'Pretendard', sans-serif"} !important; 
-          line-height: 1.95; 
-          word-break: keep-all; 
-          letter-spacing: -0.01em; 
-        }
+        /* 🌟 폰트 스위칭을 위한 완벽한 클래스 분리 */
+        .font-ridi, .font-ridi * { font-family: 'RIDIBatang', serif !important; line-height: 1.95; word-break: keep-all; letter-spacing: -0.01em; }
+        .font-gothic, .font-gothic * { font-family: 'Pretendard', sans-serif !important; line-height: 1.95; word-break: keep-all; letter-spacing: -0.01em; }
         
         ::-webkit-scrollbar { width: 4px; height: 4px; }
         ::-webkit-scrollbar-thumb { background: rgba(140, 160, 210, 0.2); border-radius: 4px; }
@@ -1802,7 +1803,6 @@ return (
         @keyframes typingBounce { 0%, 60%, 100% { transform: translateY(0); opacity: 0.3; } 30% { transform: translateY(-5px); opacity: 1; } }
         .typing-dot { animation: typingBounce 1.3s infinite ease-in-out; }
       `}</style>
-      {/* 👆 여기까지 👆 */}
 
       {toast && (
         <div onClick={() => setItemToDelete(null)} style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 99999, padding: "20px", animation: "fadeIn 0.2s ease-out" }}>
@@ -3545,8 +3545,8 @@ color: "#fff", border: "none", cursor: "pointer",
             
             <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", position: "relative" }}>
               <div 
-                ref={chatContainerRef} 
-                style={{
+                className={fontChoice === "ridi" ? "font-ridi" : "font-gothic"}
+                ref={chatContainerRef}
                   flex: 1, overflowY: "auto", 
                   padding: isMobile ? "24px 20px 140px 20px" : "50px 60px 160px 60px", 
                   display: "flex", flexDirection: "column", gap: "28px", 
@@ -3575,7 +3575,7 @@ color: "#fff", border: "none", cursor: "pointer",
                           
                           <div style={{ 
                             backgroundColor: m.text.includes("[🎲") || m.text.includes("[⚠️") ? "rgba(229, 169, 60, 0.12)" : "transparent", 
-                            color: isUser ? (theme.accent || "#d97706") : theme.text, 
+                            color: isUser ? (isDarkMode ? "#60a5fa" : "#2563eb") : theme.text,
                             border: m.text.includes("[⚠️") ? `1px solid ${theme.danger}` : m.text.includes("[🎲") ? `1px solid ${theme.warning}` : "none", 
                             padding: m.role === "user" ? "20px 0" : "4px 0", 
                             margin: m.role === "user" ? "16px 0" : "0",
@@ -3598,9 +3598,8 @@ color: "#fff", border: "none", cursor: "pointer",
                               </div>
                             )}
                             
-                            <div style={{ whiteSpace: "pre-wrap", lineHeight: "1.85", wordBreak: "keep-all", color: isUser ? "rgba(255,255,255,0.85)" : "inherit", marginTop: "4px" }}>
-  {m.text}
-</div>
+                           <div style={{ whiteSpace: "pre-wrap", lineHeight: "1.85", wordBreak: "keep-all", color: "inherit", marginTop: "4px" }}>
+                            {m.text}
                           </div>
                         </div>
                       </div>
