@@ -1745,25 +1745,6 @@ let newPhoneMsg = null;
         }
       }
 
-// 🎁 [신규] 인벤토리 변동 태그 파싱 (선물 전달 시 아이템 차감/획득)
-      const invMatch = rawText.match(/<!--\s*INVENTORY:\s*(\{[\s\S]*?\})\s*-->/i);
-      let invUpdate = null;
-      if (invMatch) {
-        try { invUpdate = JSON.parse(invMatch[1]); } catch(e) {}
-        rawText = rawText.replace(invMatch[0], "");
-      }
-
-      // 💖 [신규] 멀티/단일 호감도 변동 태그 파싱
-      const affMatch = rawText.match(/<!--\s*AFFECTION:\s*(\[[\s\S]*?\]|\{[\s\S]*?\})\s*-->/i);
-      let affUpdates = [];
-      if (affMatch) {
-        try {
-          const parsedAff = JSON.parse(affMatch[1]);
-          affUpdates = Array.isArray(parsedAff) ? parsedAff : [parsedAff];
-        } catch(e) {}
-        rawText = rawText.replace(affMatch[0], "");
-      }
-
       // 🌟 [핵심] AI 응답 렌더링 및 시트(인벤토리/호감도) 실시간 동기화
       setSessions(prev => prev.map(s => {
         if (s.id !== activeSessionId) return s;
