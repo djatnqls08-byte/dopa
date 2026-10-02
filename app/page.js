@@ -1027,8 +1027,6 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
     }
   };
 
- riggerToast("통신 오류", "메시지 전송 중 오류가 발생했습니다.", "⚠️");
-
 // 🌟 주사위 굴림 애니메이션 상태
   const [isRolling, setIsRolling] = useState(false);
   const [rollingDisplayNum, setRollingDisplayNum] = useState(1);
