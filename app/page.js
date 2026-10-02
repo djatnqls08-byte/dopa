@@ -3572,8 +3572,9 @@ color: "#fff", border: "none", cursor: "pointer",
               {/* 소지품 리스트 */}
               <div style={{ overflowY: "auto", display: "flex", flexDirection: "column", gap: "8px", maxHeight: "38vh" }}>
                 {(!activeSession?.sheet?.items || activeSession.sheet.items.length === 0) ? (
-                  <div style={{ textAlign: "center", padding: "24px 0", fontSize: "0.78rem", color: theme.textMuted, lineHeight: "1.5" }}>
-                    가방이 비어 있습니다.<br />서사를 진행하며 선물을 입수해 보세요.
+                  <div style={{ textAlign: "center", padding: "30px 20px", fontSize: "0.82rem", color: theme.textMuted, lineHeight: "1.6", backgroundColor: theme.panelAlt, borderRadius: "12px", border: `1px dashed ${theme.borderHighlight}` }}>
+                    <Gift size={32} color={theme.borderHighlight} style={{ marginBottom: "12px" }} />
+                    <div>가방이 비어 있습니다.<br />서사를 진행하며 선물을 입수해 보세요.</div>
                   </div>
                 ) : (
                   activeSession.sheet.items.map((it, idx) => (
@@ -3651,8 +3652,9 @@ color: "#fff", border: "none", cursor: "pointer",
                   );
                   if (npcClues.length === 0) {
                     return (
-                      <div style={{ textAlign: "center", padding: "26px 0", fontSize: "0.78rem", color: theme.textMuted, lineHeight: "1.6" }}>
-                        [{clueModalNpc.name}]의 파악된 취향이 아직 없습니다.<br />대화를 통해 선호하는 것을 파악해 보세요.
+                      <div style={{ textAlign: "center", padding: "30px 20px", fontSize: "0.82rem", color: theme.textMuted, lineHeight: "1.6", backgroundColor: theme.panelAlt, borderRadius: "12px", border: `1px dashed ${theme.borderHighlight}` }}>
+                        <BookOpen size={32} color={theme.borderHighlight} style={{ marginBottom: "12px" }} />
+                        <div>[{clueModalNpc.name}]의 파악된 취향이 아직 없습니다.<br />대화를 통해 선호하는 것을 파악해 보세요.</div>
                       </div>
                     );
                   }
@@ -4104,10 +4106,12 @@ color: "#fff", border: "none", cursor: "pointer",
                   </div>
                   <button
                     type="button"
-                    onClick={() => setShowCgModal(false)}
-                    style={{ background: "none", border: "none", color: theme.textMuted, fontSize: "1.2rem", cursor: "pointer", lineHeight: 1 }}
+                    onClick={(e) => { e.stopPropagation(); setShowCgModal(false); }}
+                    style={{ background: "none", border: "none", color: theme.textMuted, fontSize: "1.2rem", cursor: "pointer", lineHeight: 1, padding: "8px", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "50%", transition: "background 0.2s" }}
+                    onMouseEnter={e => e.currentTarget.style.backgroundColor = theme.panelAlt}
+                    onMouseLeave={e => e.currentTarget.style.backgroundColor = "transparent"}
                   >
-                    ✕
+                    <X size={20} strokeWidth={2.5} />
                   </button>
                 </div>
 
