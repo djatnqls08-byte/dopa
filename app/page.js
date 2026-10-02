@@ -29,7 +29,7 @@ const GLASS_STYLE = { backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(
 // ==========================================
 // 📑 시크릿 노벨 공식 시나리오 파이프라인 (구글 시트 연동)
 // ==========================================
-const GOOGLE_SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQQEA39XlsqHKGn0GPzmVH42jhimki3yJUIbKHkXjgzmLA5bD66WQvXw3-nHy9PJSxwg727wfSGznYa/pub?gid=0&single=true&output=csv";
+const GOOGLE_SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQQEA39XlsqHKGn0GPzmVH42jhimki3yJUIbKHkXjgzmLA5bD66WQvXw3-nHy9PJSxwg727wfSGznYa/pub?gid=1396578012&single=true&output=csv";
 
 function parseCSV(text) {
   let p = '', c = '', r = [];
@@ -55,17 +55,23 @@ function parseCSV(text) {
   return r;
 }
 
-// 🌟 수빈님 구글 시트 1000% 맞춤형 초강력 파서 엔진!
+// 🌟 수빈님 구글 시트 1000% 맞춤형 초강력 파서 엔진! (V2.0 업데이트)
 function convertRowToPreset(row, index, headers = []) {
   if (!row || row.length === 0) return null;
 
-  // 공백, 언더바, 특수문자(/, [, ]) 등을 모두 제거하여 매칭 확률을 극한으로 끌어올림!
+  // 공백, 언더바, 특수문자 등을 모두 제거하여 매칭 확률을 극한으로 끌어올림!
   const cleanHeaders = (headers || []).map(h => (h || "").toString().replace(/[\s_/[\]]/g, "").toLowerCase());
   const findIdx = (regex) => cleanHeaders.findIndex(h => regex.test(h));
 
   const getVal = (regex) => {
     const hIdx = findIdx(regex);
     return hIdx !== -1 && hIdx < row.length ? (row[hIdx] || "").toString().trim() : "";
+  };
+
+  // 🌟 (핵심 픽스!) 화면에 "외모 및 성격 : " 이 중복으로 뜨는 것을 강제로 잘라내는 청소기 함수
+  const cleanDescription = (text) => {
+    if (!text) return "";
+    return text.replace(/^(외모\s*및\s*성격|특징|성격|외모)\s*[:：]?\s*/i, "").trim();
   };
 
   // 1. 상태 및 기본 정보
@@ -95,17 +101,20 @@ function convertRowToPreset(row, index, headers = []) {
   const opening = getVal(/도입부|서막|오프닝/i);
   const truth = getVal(/진상|비밀|진실|사건내막/i);
   
-  // 🌟 [핵심 변경] 깐깐한 제한(^, $)을 풀어서 슬래시(/)나 다른 단어가 섞여도 완벽하게 추출!
+  // 🌟 (복구!) 빠져있던 진범, 트릭, 목표 파싱 추가!
   const culprit = getVal(/진범|흑막|범인/i);
-  const trick = getVal(/트릭|수법/i);
+  const trick = getVal(/트릭|수법|사용트릭/i);
   const victim = getVal(/공략대상|사건목표|서사목표|의뢰인|사건대상|목표/i);
 
   const sessionCardImg = getVal(/세션카드|표지|썸네일/i);
 
-  const pcName = getVal(/(pc|도파미너|탐색자|수사관)(이름|명칭)|^(이름|명칭)$/i);
-  const pcAgeGender = getVal(/(pc|도파미너|탐색자|수사관)?(나이|성별)/i);
-  const pcJob = getVal(/(pc|도파미너|탐색자|수사관)?(직업|역할)/i);
-  const pcBackground = getVal(/(pc|도파미너|탐색자|수사관)?(성격|배경|설정)/i);
+  // 🌟 (업데이트) 도파미너 파싱: 상태메시지를 따로 받아서 자동 결합!
+  const pcName = getVal(/도파미너이름|탐색자이름|수사관이름|이름/i);
+  const pcAgeGender = getVal(/도파미너나이|도파미너나이성별|탐색자나이|나이/i);
+  const pcJob = getVal(/도파미너직업|탐색자직업|직업/i);
+  const pcBackgroundRaw = cleanDescription(getVal(/(pc|도파미너|탐색자|수사관)?(성격|배경|설정)/i));
+  const pcStatusMsg = getVal(/(pc|도파미너|탐색자|수사관)?(상태메시지|상메)/i);
+  const pcBackground = pcStatusMsg ? `${pcBackgroundRaw}\n상태메시지 : "${pcStatusMsg}"` : pcBackgroundRaw;
   const pcSecret = getVal(/(pc|도파미너|탐색자|수사관)?(비밀|약점)/i);
   const pcPortraitUrl = getVal(/(pc|도파미너|탐색자|수사관)?(초상화|사진|이미지)/i);
 
@@ -132,13 +141,26 @@ function convertRowToPreset(row, index, headers = []) {
     return list;
   };
 
-  const mainPartners = extractList(5, "파트너|메인파트너", ["이름", "나이성별|성별나이|나이|성별", "직업|역할", "특징|성격", "비밀|이면", "초상화|사진"], (d, i) => ({
-    id: `partner_${Date.now()}_${i}`, name: d.이름, ageGender: d.나이성별, job: d.직업, behavior: d.특징, secret: d.비밀, portraitUrl: d.초상화, showSecret: false
-  }));
+  // 🌟 (핵심 픽스!) 파트너 및 용의자 파싱: 상태메시지와 호불호를 따로 받아서 완벽하게 자동 조립해 줍니다!
+  const mainPartners = extractList(5, "파트너|메인파트너", ["이름", "나이성별|성별나이|나이|성별", "직업|역할", "특징|성격", "비밀|이면", "초상화|사진", "상태메시지", "좋아하는것|호감", "싫어하는것|비호감"], (d, i) => {
+    let combinedBehavior = cleanDescription(d.특징) || "";
+    if (d.상태메시지) combinedBehavior += `\n상태메시지 : "${d.상태메시지}"`;
+    if (d.좋아하는것 || d.싫어하는것) combinedBehavior += `\n취향 : ${d.좋아하는것 || "없음"} 좋아함 / ${d.싫어하는것 || "없음"} 싫어함`;
 
-  const suspects = extractList(15, "인물|등장인물|공략대상|npc|용의자", ["이름", "나이성별|성별나이|나이|성별", "직업|역할", "특징|성격|행적", "비밀|진심|약점", "초상화|사진"], (d, i) => ({
-    id: `suspect_${Date.now()}_${i}`, name: d.이름, ageGender: d.나이성별, job: d.직업, behavior: d.특징, secret: d.비밀, portraitUrl: d.초상화, showSecret: false
-  }));
+    return {
+      id: `partner_${Date.now()}_${i}`, name: d.이름, ageGender: d.나이성별, job: d.직업, behavior: combinedBehavior, secret: d.비밀, portraitUrl: d.초상화, showSecret: false
+    };
+  });
+
+  const suspects = extractList(15, "인물|등장인물|공략대상|npc|용의자", ["이름", "나이성별|성별나이|나이|성별", "직업|역할", "특징|성격|행적", "비밀|진심|약점", "초상화|사진", "상태메시지", "좋아하는것|호감", "싫어하는것|비호감"], (d, i) => {
+    let combinedBehavior = cleanDescription(d.특징) || "";
+    if (d.상태메시지) combinedBehavior += `\n상태메시지 : "${d.상태메시지}"`;
+    if (d.좋아하는것 || d.싫어하는것) combinedBehavior += `\n취향 : ${d.좋아하는것 || "없음"} 좋아함 / ${d.싫어하는것 || "없음"} 싫어함`;
+
+    return {
+      id: `suspect_${Date.now()}_${i}`, name: d.이름, ageGender: d.나이성별, job: d.직업, behavior: combinedBehavior, secret: d.비밀, portraitUrl: d.초상화, showSecret: false
+    };
+  });
 
   const evidenceList = extractList(15, "단서|증거|물증|핸드아웃", ["이름|명칭", "개요|설명", "비밀|진상|모순"], (d, i) => ({
     id: `evidence_${Date.now()}_${i}`, name: d.이름, overview: d.개요, secret: d.비밀, contradiction: "", showSecret: false
@@ -152,7 +174,7 @@ function convertRowToPreset(row, index, headers = []) {
     id: `route_${Date.now()}_${i}`, routeName: d.이름, targetId: d.대상 || "", affectionChange: d.호감도 || "+10", requiredCG: ""
   }));
 
-  // 👻 괴담 모드 전용 파싱 엔진
+  // 👻 괴담 모드 전용 파싱 엔진 및 소지품 파서 복구
   const hpStat = parseInt(getVal(/체력/i)) || 5;
   const agiStat = parseInt(getVal(/순발|순발력/i)) || 5;
   const obsStat = parseInt(getVal(/관찰|관찰력/i)) || 5;
@@ -167,7 +189,8 @@ function convertRowToPreset(row, index, headers = []) {
   const traumaStr = getVal(/트라우마|패널티/i);
   const horrorTraumas = traumaStr ? traumaStr.split(/[,/]/).map(t => t.trim()).filter(Boolean) : [];
 
-  const invStr = getVal(/소지품|인벤토리/i);
+  // 🌟 (복구!) 소지품 파서 강화 (도파미너소지품 이라는 명칭도 감지)
+  const invStr = getVal(/도파미너소지품|소지품|인벤토리/i);
   let horrorInventory = [
     { id: 1, type: "멘탈 회복", name: "", desc: "" },
     { id: 2, type: "특수 기믹 패스", name: "", desc: "" },
@@ -199,198 +222,6 @@ function convertRowToPreset(row, index, headers = []) {
     }
   };
 }
-
-
-export default function GamePlatform() {
-  // ── [3. 상태 관리] ──
-  const [isMounted, setIsMounted] = useState(false); // 🌟 에러 #423 방어막
-  const chatContainerRef = useRef(null); 
- const [currentUser, setCurrentUser] = useState(null);
-
-  // 🌟 내 계정 전용 프로필 사진 상자 독립!! (이 부분이 빠져서 에러가 났었어요!)
-  const [userAvatar, setUserAvatar] = useState(""); 
-  useEffect(() => {
-    const avatar = localStorage.getItem("secret_novel_avatar");
-    if (avatar) setUserAvatar(avatar);
-  }, []);
-  
-  const [isLoginLoading, setIsLoginLoading] = useState(false);
-  const [loginEmail, setLoginEmail] = useState(""); 
-  const [loginPassword, setLoginPassword] = useState(""); 
-  const [agreeTerms, setAgreeTerms] = useState(false); 
-  const [showTermsModal, setShowTermsModal] = useState(false); 
-  const [isGuestPlay, setIsGuestPlay] = useState(false); 
-
-  // ── [1. 테마 & 반응형 엔진] ──
-  // 🚨 setThemeKey를 추가해 환경 설정에서 테마 변경 시 앱이 튕기던 에러를 고쳤습니다!
-  const [themeKey, setThemeKey] = useState("dopa"); 
-  // 🌟 네온 감성이 100% 발휘되도록 처음 앱을 켰을 때 '다크 모드'로 시작하게 만듭니다.
-  const [isDarkMode, setIsDarkMode] = useState(true);
-  
-  // 🌟 (신규) 새로고침해도 내가 고른 테마와 다크모드를 기억하도록 설정!
-  useEffect(() => {
-    const savedTheme = localStorage.getItem("secret_novel_theme");
-    const savedMode = localStorage.getItem("secret_novel_darkmode");
-    if (savedTheme) setThemeKey(savedTheme);
-    if (savedMode !== null) setIsDarkMode(savedMode === "true");
-  }, []);
-
-  useEffect(() => {
-    localStorage.setItem("secret_novel_theme", themeKey);
-    localStorage.setItem("secret_novel_darkmode", isDarkMode);
-  }, [themeKey, isDarkMode]);
-
-  const currentPalette = THEME_PALETTES[themeKey] || THEME_PALETTES.cloud;
-  const theme = isDarkMode ? currentPalette.dark : currentPalette.light;
-
-  const [deviceType, setDeviceType] = useState("pc");
-  const isMobile = deviceType === "mobile";
-
-  useEffect(() => {
-    const handleResize = () => {
-      const w = window.innerWidth;
-      if (w < 768) setDeviceType("mobile");
-      else if (w <= 1024) setDeviceType("tablet");
-      else setDeviceType("pc");
-    };
-    handleResize();
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
-
-  // ── [2. 시스템 토스트 알림] ──
-  const [toast, setToast] = useState(null);
-  const toastTimerRef = useRef(null); // 🌟 (핵심) 이전 타이머를 기억할 빈 상자 추가!
-
-  const triggerToast = (title, message = "", icon = null) => {
-    // 🌟 사반님 절대 규칙: 텍스트 이모지가 들어오면 강제로 Lucide 아이콘으로 정화!
-    let finalIcon = icon;
-    if (typeof icon === "string") {
-      if (icon.includes("✨") || icon.includes("🎉") || icon.includes("🎊")) finalIcon = <CheckCircle2 size={18} color={theme.success} />;
-      else if (icon.includes("⚠️") || icon.includes("🚨") || icon.includes("⚠")) finalIcon = <AlertTriangle size={18} color={theme.warning} />;
-      else if (icon.includes("🚫") || icon.includes("💔") || icon.includes("🗑️")) finalIcon = <ShieldAlert size={18} color={theme.danger} />;
-      else if (icon.includes("⏳")) finalIcon = <Clock size={18} color={theme.textMuted} />;
-      else if (icon.includes("💡") || icon.includes("📢")) finalIcon = <Lightbulb size={18} color={theme.accent} />;
-      else if (icon.includes("📂") || icon.includes("📋") || icon.includes("💾")) finalIcon = <FolderOpen size={18} color={theme.accent} />;
-      else finalIcon = <CheckCircle2 size={18} color={theme.accent} />;
-    }
-    
-    setToast({ title, message, icon: finalIcon });
-    
-    // 🌟 (버그 픽스) 예전 타이머가 아직 돌고 있다면 강제로 멈추고 새 타이머만 깔끔하게 작동시킵니다!
-    if (toastTimerRef.current) {
-      clearTimeout(toastTimerRef.current);
-    }
-    toastTimerRef.current = setTimeout(() => setToast(null), 2500);
-  };
-
-// ── [3. 상태 관리] ──
-  const [activeTab, setActiveTab] = useState("explore");
-  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const [showPasteModal, setShowPasteModal] = useState(false);
-  const [pastedText, setPastedText] = useState("");
-  const [ruleHelpModal, setRuleHelpModal] = useState(null);
-
-  // ── [4. 룰 모드 & 태그] ──
-  const [selectedMode, setSelectedMode] = useState("추리");
-  const [playPreference, setPlayPreference] = useState("");
-
-  const ALL_TAGS = [
-    "#GL", "#BL", "#HL", "#논로맨스", "#집착", "#혐관", "#쌍방구원", "#우정", "#R19", "#피폐", 
-    "#애증", "#신분차", "#배틀", "#계약", "#착각", "#구원", "#짝사랑", "#달달", "#일상", "#오컬트", 
-    "#이능력", "#현대판타지", "#SF", "#사이버펑크", "#아포칼립스", "#역키잡", "#후회", "#회귀", "#빙의", "#환생"
-  ];
-
-  // ── [6. 추리 모드 로비 데이터] ──
-  const [pcName, setPcName] = useState("");
-  const [pcAgeGender, setPcAgeGender] = useState("");
-  const [pcJob, setPcJob] = useState("");
-  const [pcBackground, setPcBackground] = useState("");
-  const [pcPortraitUrl, setPcPortraitUrl] = useState(""); 
-  const [pcSecret, setPcSecret] = useState(""); // 🌟 도파미너 비밀 내용 저장
-  const [originalPcName, setOriginalPcName] = useState(""); // 🌟 (추가!) 도파미너 원래 이름 기억 장치
-  const [showPcSecret, setShowPcSecret] = useState(false); // 🌟 도파미너 비밀 아코디언 스위치
-
-  const [scenarioTitle, setScenarioTitle] = useState("");
-  const [scenarioImageUrl, setScenarioImageUrl] = useState(""); // 🌟 표지 이미지 상태 추가!
-
-  const [victimName, setVictimName] = useState("");
-  const [publicSynopsis, setPublicSynopsis] = useState("");
-  const [openingScene, setOpeningScene] = useState("");
-
- const [suspects, setSuspects] = useState([
-    { id: 1, name: "", ageGender: "", job: "", behavior: "", secret: "", portraitUrl: "", showSecret: false }
-  ]);
-  const [selectedSuspectId, setSelectedSuspectId] = useState(1);
-  
-  const [showPortraitModal, setShowPortraitModal] = useState(false);
-  const [activePortraitSuspectId, setActivePortraitSuspectId] = useState(null);
-// 🌟 (신규 추가!) 세션 카드 팝업 모달 스위치
-  const [showSessionCardModal, setShowSessionCardModal] = useState(false);
-  const [activeCardSessionId, setActiveCardSessionId] = useState(null);
-
-  const [evidenceList, setEvidenceList] = useState([
-    { id: 1, name: "", overview: "", contradiction: "", secret: "", showSecret: false }
-  ]);
-  const [showEvidence, setShowEvidence] = useState(false);
-  const [culpritName, setCulpritName] = useState("");
-  const [trickDetail, setTrickDetail] = useState("");
-  const [hiddenTruth, setHiddenTruth] = useState("");
-  const [showHiddenTruth, setShowHiddenTruth] = useState(false);
-// ── [괴담 모드 전용 상태] ──
-const [horrorStats, setHorrorStats] = useState({ 체력: 5, 순발: 5, 관찰: 5, 추론: 5, 정신: 5, 사교: 5 });
-const availableStatPoints = 35 - Object.values(horrorStats).reduce((a, b) => a + b, 0);
-
-const [horrorTraits, setHorrorTraits] = useState([]);
-const [horrorTraumas, setHorrorTraumas] = useState([]);
-const [horrorInventory, setHorrorInventory] = useState([
-  { id: 1, type: "멘탈 회복", name: "", desc: "" },
-  { id: 2, type: "특수 기믹 패스", name: "", desc: "" },
-  { id: 3, type: "재굴림", name: "", desc: "" }
-]);
-
-const [abyssTriggers, setAbyssTriggers] = useState({ 30: "", 60: "", 90: "" });
-const [showAbyss, setShowAbyss] = useState(false);
-
-const [usePartner, setUsePartner] = useState(false);
-// 🌟 다수의 메인 파트너를 지원하는 배열 형태
-const [mainPartners, setMainPartners] = useState([
-  { id: 1, name: "", ageGender: "", job: "", behavior: "", secret: "", showSecret: false, portraitUrl: "" }
-]);
-
-// 🌟 특성 및 트라우마 매트릭스 모달 스위치
-const [showTraitModal, setShowTraitModal] = useState(false);
-
-// 🌟 특성 및 트라우마 매트릭스 리스트 (Max 4글자 20/20)
-const TRAIT_LIST = [
-  "위화감지", "이면간파", "사물투영", "절대침착", "감정동화",
-  "가면쓰기", "기척숨김", "시선유도", "맥락추론", "공간기억",
-  "잔상포착", "소문수집", "약점공략", "행동예측", "방어기제",
-  "돌발대응", "사각지대", "흔적추적", "무통각증", "경계태세"
-];
-
-const TRAUMA_LIST = [
-  "시선강박", "거울기피", "접촉혐오", "고립불안", "신뢰결핍",
-  "과잉동정", "자기혐오", "기억공백", "이명현상", "환각시야",
-  "침묵공포", "수면거부", "감정마비", "잔혹충동", "폐허집착",
-  "호흡발작", "빛민감증", "망각강박", "망상장애", "사물집착"
-];
-  
-// ── [서재 및 로컬 스토리지 상태] ──
-const [savedLibrary, setSavedLibrary] = useState([]);
-const [libSearchQuery, setLibSearchQuery] = useState("");
-const [libFilter, setLibFilter] = useState("전체"); // 전체, 추리, 연애, 괴담
-const [showLibEditModal, setShowLibEditModal] = useState(false);
-const [editingLibItem, setEditingLibItem] = useState(null);
-const [itemToDelete, setItemToDelete] = useState(null); // 🌟 추가: 예쁜 삭제 팝업 스위치
-
-// 마운트 시 로컬 스토리지에서 저장된 서재 데이터 불러오기
-useEffect(() => {
-  const stored = localStorage.getItem("secret_novel_library");
-  if (stored) {
-    try { setSavedLibrary(JSON.parse(stored)); } catch(e) {}
-  }
-}, []);
 
 // 💾 로비에서 서재로 저장하는 함수
 const handleSaveToLibrary = () => {
