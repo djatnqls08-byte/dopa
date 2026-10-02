@@ -1286,7 +1286,7 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
     }
   };
 
-// 🎁 [신규] 인벤토리 변동 태그 파싱 (선물 전달 등으로 아이템 차감/획득 시)
+{/* 🎁 [신규] 인벤토리 변동 태그 파싱 (선물 전달 시 아이템) */}
       const invMatch = rawText.match(/<!--\s*INVENTORY:\s*(\{[\s\S]*?\})\s*-->/i);
       let invUpdate = null;
       if (invMatch) {
