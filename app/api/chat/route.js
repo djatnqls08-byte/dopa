@@ -233,7 +233,6 @@ ${scenarioText || "기본 서사"}
           formattedContents.push({ role: "user", parts: [{ text: systemInstruction }] });
           formattedContents.push({ role: "model", parts: [{ text: `네, [${partnerName}]을 비롯한 인물들의 독립된 인격과 긴장감을 유지하며 오픈 샌드박스로 디렉터링하겠습니다.` }] });
         }
-      }
 
       // ── [2. 시크릿 노벨 괴담 모드 (독자 규격 엔진: 1D10 · 3중 감각 · 결착 의식)] ──
       } else if (ruleMode === "insane" || ruleMode === "괴담" || ruleMode === "horror") {
