@@ -1174,6 +1174,25 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
     }
   };
 
+// 🎁 [신규] 인벤토리 변동 태그 파싱 (선물 전달 등으로 아이템 차감/획득 시)
+      const invMatch = rawText.match(/<!--\s*INVENTORY:\s*(\{[\s\S]*?\})\s*-->/i);
+      let invUpdate = null;
+      if (invMatch) {
+        try { invUpdate = JSON.parse(invMatch[1]); } catch(e) {}
+        rawText = rawText.replace(invMatch[0], "");
+      }
+
+      // 💖 [신규] 멀티/단일 호감도 변동 태그 파싱
+      const affMatch = rawText.match(/<!--\s*AFFECTION:\s*(\[[\s\S]*?\]|\{[\s\S]*?\})\s*-->/i);
+      let affUpdates = [];
+      if (affMatch) {
+        try {
+          const parsedAff = JSON.parse(affMatch[1]);
+          affUpdates = Array.isArray(parsedAff) ? parsedAff : [parsedAff];
+        } catch(e) {}
+        rawText = rawText.replace(affMatch[0], "");
+      }
+
   // 🌟 (복구) 여기에 사라졌던 executeMessage 함수를 넣습니다!
   const executeMessage = async (textToSend) => {
     if (!textToSend.trim() || !activeSession) return;
@@ -1511,17 +1530,66 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
         }
       }
 
-// 🌟 [핵심] AI 응답에도 전화 중 꼬리표를 달아 통화 화면에만 예쁘게 출력되게 합니다!
+// 🎁 [신규] 인벤토리 변동 태그 파싱 (선물 전달 시 아이템 차감/획득)
+      const invMatch = rawText.match(/<!--\s*INVENTORY:\s*(\{[\s\S]*?\})\s*-->/i);
+      let invUpdate = null;
+      if (invMatch) {
+        try { invUpdate = JSON.parse(invMatch[1]); } catch(e) {}
+        rawText = rawText.replace(invMatch[0], "");
+      }
+
+      // 💖 [신규] 멀티/단일 호감도 변동 태그 파싱
+      const affMatch = rawText.match(/<!--\s*AFFECTION:\s*(\[[\s\S]*?\]|\{[\s\S]*?\})\s*-->/i);
+      let affUpdates = [];
+      if (affMatch) {
+        try {
+          const parsedAff = JSON.parse(affMatch[1]);
+          affUpdates = Array.isArray(parsedAff) ? parsedAff : [parsedAff];
+        } catch(e) {}
+        rawText = rawText.replace(affMatch[0], "");
+      }
+
+      // 🌟 [핵심] AI 응답 렌더링 및 시트(인벤토리/호감도) 실시간 동기화
       setSessions(prev => prev.map(s => {
         if (s.id !== activeSessionId) return s;
+        let currentSheet = { ...(s.sheet || {}) };
+
+        // 1. 인벤토리 차감 및 획득 반영
+        if (invUpdate) {
+          let updatedItems = [...(currentSheet.items || [])];
+          if (invUpdate.remove) {
+            updatedItems = updatedItems.filter(it => it.name !== invUpdate.remove && !it.name.includes(invUpdate.remove));
+            triggerToast("소지품 사용", `[${invUpdate.remove}]을(를) 건넸습니다.`, "🎁");
+          }
+          if (invUpdate.add) {
+            updatedItems.push(typeof invUpdate.add === "string" ? { name: invUpdate.add } : invUpdate.add);
+            triggerToast("소지품 획득", `[${invUpdate.add.name || invUpdate.add}]을(를) 입수했습니다.`, "✨");
+          }
+          currentSheet.items = updatedItems;
+        }
+
+        // 2. 호감도 변동(AFFECTION) 반영
+        if (affUpdates.length > 0) {
+          const updatedNpcs = (currentSheet.npcs || []).map(npc => {
+            const match = affUpdates.find(u => u.name === npc.name || (npc.name && npc.name.includes(u.name)));
+            if (match && match.delta) {
+              const prevAff = Number(npc.affection || 0);
+              const nextAff = Math.max(0, Math.min(100, prevAff + Number(match.delta)));
+              return { ...npc, affection: nextAff };
+            }
+            return npc;
+          });
+          currentSheet.npcs = updatedNpcs;
+        }
+
         return {
           ...s,
+          sheet: currentSheet,
           messages: [...updatedMessages, { role: "model", text: cleanText, isVoiceCall: isVoiceCallActive }],
           suggestedActions: suggActions
         };
       }));
-
-    } catch (err) {
+      
       if (err.name === "AbortError") return;
       triggerToast("통신 오류", "메시지 전송 중 오류가 발생했습니다.", "⚠️");
     } finally {
@@ -2055,33 +2123,59 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
             {activeSession && (
               <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
                 
-                {/* 🌸 연애 모드 상단 버튼 */}
+               {/* 🌸 연애 모드 상단 버튼 */}
                 {activeSession.ruleMode?.startsWith("dating") && (
                   <>
                     {/* 1. 스마트폰 메신저 */}
-                    <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setIsPhoneDrawerOpen(true); setIsSheetOpen(false); }} title="메신저" style={{ background: "none", border: "none", cursor: "pointer", color: theme.text, display: "flex", alignItems: "center" }}>
+                    <button 
+                      type="button" 
+                      onClick={(e) => { 
+                        e.preventDefault(); e.stopPropagation(); 
+                        setIsPhoneDrawerOpen(true); 
+                        setIsCalendarOpen(false); 
+                        setClueModalNpc(null);
+                        setGiftModalNpc(null);
+                        setIsSheetOpen(false); 
+                      }} 
+                      title="비대면 교감 서랍" 
+                      style={{ background: "none", border: "none", cursor: "pointer", color: theme.text, display: "flex", alignItems: "center" }}
+                    >
                       <Smartphone size={22} strokeWidth={2} />
                     </button>
 
-                    {/* 2. 📅 기약 캘린더 (선물상자 대체 신설) */}
-                    <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setIsCalendarOpen(true); }} title="기약 캘린더" style={{ background: "none", border: "none", cursor: "pointer", color: isCalendarOpen ? theme.accent : theme.text, display: "flex", alignItems: "center" }}>
+                    {/* 2. 📅 기약 캘린더 */}
+                    <button 
+                      type="button" 
+                      onClick={(e) => { 
+                        e.preventDefault(); e.stopPropagation(); 
+                        setIsCalendarOpen(true); 
+                        setIsPhoneDrawerOpen(false); 
+                        setClueModalNpc(null);
+                        setGiftModalNpc(null);
+                        setIsSheetOpen(false); 
+                      }} 
+                      title="기약 수첩" 
+                      style={{ background: "none", border: "none", cursor: "pointer", color: isCalendarOpen ? theme.accent : theme.text, display: "flex", alignItems: "center" }}
+                    >
                       <Calendar size={22} strokeWidth={2} />
                     </button>
 
-                    {/* 3. 📖 취향 수첩 */}
-<button 
-  type="button" 
-  onClick={(e) => { 
-    e.preventDefault(); 
-    e.stopPropagation(); 
-    const currentNpc = (activeSession?.sheet?.npcs || []).find(n => n.id === activeSession?.activeContactId) || activeSession?.sheet?.npcs?.[0]; 
-    if (currentNpc) setClueModalNpc(currentNpc); 
-  }} 
-  title="취향 수첩 & 마음 전달" 
-  style={{ background: "none", border: "none", cursor: "pointer", color: clueModalNpc ? theme.accent : theme.text, display: "flex", alignItems: "center" }}
->
-  <BookOpen size={22} strokeWidth={2} />
-</button>
+                    {/* 3. 📖 취향 수첩 & 선물 */}
+                    <button 
+                      type="button" 
+                      onClick={(e) => { 
+                        e.preventDefault(); e.stopPropagation(); 
+                        const currentNpc = (activeSession?.sheet?.npcs || []).find(n => n.id === activeSession?.activeContactId) || activeSession?.sheet?.npcs?.[0]; 
+                        if (currentNpc) setClueModalNpc(currentNpc); 
+                        setIsCalendarOpen(false); 
+                        setIsPhoneDrawerOpen(false); 
+                        setIsSheetOpen(false); 
+                      }} 
+                      title="취향 수첩 & 마음 전달" 
+                      style={{ background: "none", border: "none", cursor: "pointer", color: clueModalNpc ? theme.accent : theme.text, display: "flex", alignItems: "center" }}
+                    >
+                      <BookOpen size={22} strokeWidth={2} />
+                    </button>
                   </>
                 )}
 
