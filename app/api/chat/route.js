@@ -58,7 +58,7 @@ export async function POST(req) {
       const pJob = playerSheet?.job || "주인공";
       const pcTone = playerSheet?.background || "자연스러운 성격과 말투";
       
-      // 🎯 대화 상대(KPC) 확정 및 정보 추출
+      // 🎯 대화 상대 확정 및 정보 추출
       const activePartner = targetNpc || playerSheet?.npcs?.[0] || { name: "상대", job: "조력자" };
       const partnerName = activePartner.name || "상대";
       const partnerGender = activePartner.gender || "미상";
@@ -126,7 +126,7 @@ export async function POST(req) {
         } else {
           systemInstruction = `${coreIdentityPrompt}
 [비주얼 노벨 / 인터랙티브 서사 모드]
-당신은 두 사람의 관계성과 상황을 서술하는 마스터입니다.
+당신은 두 사람의 관계성과 상황을 서술하는 AI 디렉터입니다.
 - 주인공(PC): '${pName}' (성별: ${pGender}, 특징: ${pcTone})
 - 현재 대면 상대: '${partnerName}' (현재 호감도: ${currentAffinity}점, 상세: ${partnerDetail})
 
@@ -146,15 +146,15 @@ ${scenarioText || "기본 서사"}
           formattedContents.push({ role: "model", parts: [{ text: `네, [${partnerName}]과의 대면 서사에 몰입하며 정갈하게 진행하겠습니다.` }] });
         }
 
-      // ── [2. 시크릿 노벨 괴담 모드 (독자 규격 엔진 적용)] ──
+      // ── [2. 도파 괴담 모드 (독자 규격 엔진 적용)] ──
       } else if (ruleMode === "insane" || ruleMode === "괴담") {
         const hStats = playerSheet?.horrorStats ? JSON.stringify(playerSheet.horrorStats) : "미설정";
         const hTraits = playerSheet?.horrorTraits ? playerSheet.horrorTraits.join(", ") : "없음";
         const hTraumas = playerSheet?.horrorTraumas ? playerSheet.horrorTraumas.join(", ") : "없음";
         const hAbyss = playerSheet?.abyssTriggers ? JSON.stringify(playerSheet.abyssTriggers) : "미설정";
 
-        const horrorPrompt = `[👻 시크릿 노벨: 서스펜스/괴담 마스터링 수칙]
-현재 탐색자('${pName}')의 스탯 및 특성 상태:
+        const horrorPrompt = `[👻 도파: 서스펜스/괴담 AI 디렉터링 수칙]
+현재 도파미너('${pName}')의 스탯 및 특성 상태:
 - [보유 스탯]: ${hStats} (1D10 판정용 기준값)
 - [긍정 특성]: ${hTraits}
 - [트라우마]: ${hTraumas}
@@ -180,11 +180,11 @@ ${scenarioText || "기본 서사"}
 
         systemInstruction = `${coreIdentityPrompt}\n${horrorPrompt}\n\n시나리오 본문 및 배후 진상:\n${scenarioText}`;
         formattedContents.push({ role: "user", parts: [{ text: systemInstruction }] });
-        formattedContents.push({ role: "model", parts: [{ text: "독자적인 괴담 엔진 규격을 숙지했습니다. 광기나 이성치 용어를 배제하고 침식도와 1D10 판정 기반으로 섬세하게 마스터링하겠습니다." }] });
+        formattedContents.push({ role: "model", parts: [{ text: "독자적인 괴담 엔진 규격을 숙지했습니다. 광기나 이성치 용어를 배제하고 침식도와 1D10 판정 기반으로 섬세하게 AI 디렉터링하겠습니다." }] });
 
       // ── [3. 본격 추리 / 수사 모드] ──
       } else {
-        const mysteryPrompt = `[🕵️ 본격 추리/수사물 게임마스터 절대 수칙]
+        const mysteryPrompt = `[🕵️ 본격 추리/수사물 게임AI 디렉터 절대 수칙]
 1. [페어 플레이의 원칙]: 시나리오 [기밀/진상]에 적힌 범인, 동기, 트릭은 절대 훼손하거나 도중에 바꾸지 마십시오.
 2. [스포일러 엄금]: 플레이어가 현장 조사나 심문을 통해 정곡을 찌르기 전까지는 절대 먼저 힌트를 주지 마십시오.
 3. [수사 시스템 태그 활용]:
