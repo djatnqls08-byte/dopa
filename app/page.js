@@ -1696,11 +1696,15 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
         <div style={{ ...GLASS_STYLE, backgroundColor: theme.panel, border: `1px solid ${theme.border}`, borderRadius: "24px", padding: "34px 24px", display: "flex", flexDirection: "column", alignItems: "center", gap: "24px", width: "100%", maxWidth: "380px", boxSizing: "border-box", margin: "0 20px", boxShadow: "0 20px 50px rgba(0,0,0,0.1)" }}>
           
           <div style={{ textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center" }}>
-            <div style={{ marginBottom: "16px", padding: "16px", backgroundColor: theme.panelAlt, borderRadius: "50%", border: `1px solid ${theme.borderHighlight}`, boxShadow: "0 4px 12px rgba(0,0,0,0.05)" }}>
-              <Key size={42} strokeWidth={1.5} color={theme.accent} />
+            {/* 🌟 기존 열쇠 아이콘 대신 우리가 만든 힙한 SVG 아이콘을 불러옵니다 */}
+            <div style={{ marginBottom: "16px", width: "80px", height: "80px", borderRadius: "24px", overflow: "hidden", boxShadow: "0 8px 24px rgba(0,0,0,0.2)" }}>
+              <img src="/icon.svg" alt="도파 로고" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
             </div>
-            <h1 style={{ margin: "0 0 8px 0", fontSize: "1.8rem", fontWeight: "900", letterSpacing: "-0.5px" }}>Secret Novel</h1>
-            <p style={{ margin: 0, fontSize: "0.85rem", color: theme.textMuted }}>당신만의 은밀한 서사가 시작되는 곳</p>
+            {/* 🌟 플랫폼 이름과 슬로건을 도파에 맞게 변경! */}
+            <h1 style={{ margin: "0 0 8px 0", fontSize: "2.2rem", fontWeight: "900", letterSpacing: "-1px", color: theme.text }}>
+              도파 <span style={{ color: theme.accent, fontSize: "1.2rem", verticalAlign: "middle" }}>DOPA</span>
+            </h1>
+            <p style={{ margin: 0, fontSize: "0.85rem", color: theme.textMuted, fontWeight: "600" }}>잉크 한 방울로 터지는 도파민 AI 롤플레잉</p>
           </div>
 
           <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: "10px", marginTop: "10px" }}>
@@ -1753,7 +1757,7 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
                   const userObj = { uid: data.user.id, email: data.user.email, name: data.user.email.split('@')[0] };
                   setCurrentUser(userObj);
                   localStorage.setItem("secret_novel_user", JSON.stringify(userObj));
-                  triggerToast("환영합니다!", "시크릿 노벨에 접속했습니다.", "✨");
+                  triggerToast("환영합니다!", "도파에 접속했습니다.", "😈");
                 }
               }}
               style={{ width: "100%", padding: "14px", backgroundColor: theme.accent, color: "#fff", border: "none", borderRadius: "12px", fontSize: "0.95rem", fontWeight: "800", cursor: "pointer", transition: "all 0.2s", opacity: (isLoginLoading || !loginEmail || !loginPassword || !agreeTerms) ? 0.5 : 1 }}
@@ -1784,7 +1788,7 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
 
             <div style={{ display: "flex", justifyContent: "center", marginTop: "12px" }}>
              <span 
-                onClick={() => triggerToast("안내", "비밀번호 초기화 기능은 준비 중입니다. 고객센터(support@secretnovel.com)로 문의해주세요.", "💌")}
+                onClick={() => triggerToast("안내", "비밀번호 초기화 기능은 준비 중입니다. 고객센터(support@dopa.com)로 문의해주세요.", "💌")}
                 style={{ fontSize: "0.8rem", color: theme.textMuted, cursor: "pointer", borderBottom: `1px solid ${theme.textMuted}`, paddingBottom: "2px", transition: "color 0.2s" }}
                 onMouseEnter={e => e.currentTarget.style.color = theme.text}
                 onMouseLeave={e => e.currentTarget.style.color = theme.textMuted}
@@ -2082,9 +2086,10 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
                         style={{ flex: 1, height: "100%", border: "none", backgroundColor: "transparent", color: theme.text, fontSize: "0.9rem", outline: "none", paddingLeft: "10px" }} 
                       />
                     </div>
-                    <div onClick={() => setShowInkModal(true)} style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: "6px", backgroundColor: theme.panelAlt, padding: "0 14px", height: "48px", borderRadius: "16px", fontWeight: "800", fontSize: "0.9rem", color: theme.text }}>
-                      <Droplet size={18} strokeWidth={2.5} color={theme.accent} /> {userInk.toLocaleString()}
-                    </div>
+                    <div onClick={() => setShowInkModal(true)} style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: "6px", backgroundColor: theme.panelAlt, padding: "0 14px", height: "48px", borderRadius: "16px", fontWeight: "800", fontSize: "0.9rem", color: theme.text, flexShrink: 0 }}>
+            <Droplet size={18} strokeWidth={2.5} color={theme.accent} /> 
+            {userInk >= 10000 ? `${Math.floor(userInk / 10000)}만` : userInk.toLocaleString()}
+          </div>
                   </div>
 
                   {/* 2. 카테고리 필터 탭 (전체 추가!) */}
