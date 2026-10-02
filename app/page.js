@@ -1822,7 +1822,8 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
         .typing-dot { animation: typingBounce 1.3s infinite ease-in-out; }
       `}</style>
 
-      {toast && (
+      {/* 🌟 toast -> itemToDelete 로 이름 변경! */}
+      {itemToDelete && (
         <div onClick={() => setItemToDelete(null)} style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 99999, padding: "20px", animation: "fadeIn 0.2s ease-out" }}>
           <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: "340px", backgroundColor: theme.panel, border: `1px solid ${theme.border}`, borderRadius: "24px", padding: "28px 24px", display: "flex", flexDirection: "column", gap: "24px", boxShadow: "0 20px 50px rgba(0,0,0,0.5)" }}>
             
@@ -3799,7 +3800,7 @@ color: "#fff", border: "none", cursor: "pointer",
             style={{
               position: "fixed", bottom: "16px", left: "50%", transform: "translateX(-50%)",
               width: "calc(100% - 32px)", maxWidth: "440px", height: "62px",
-              backgroundColor: isDarkMode ? "rgba(35, 30, 28, 0.75)" : "rgba(240, 236, 228, 0.85)",
+              backgroundColor: theme.panel, /* 🌟 테마 색상을 완벽하게 따라가도록 변경! */
               backdropFilter: "blur(18px)", WebkitBackdropFilter: "blur(18px)",
               border: `1px solid ${theme.border}`, borderRadius: "20px",
               display: "flex", overflow: "hidden", zIndex: 50,
