@@ -144,13 +144,20 @@ export default function SecretBoard({ activeSession, theme, isMobile, onClose, o
                   }}
                 >
                   <div style={{ position: "absolute", top: "-6px", left: "50%", transform: "translateX(-50%)", fontSize: "0.9rem" }}>📍</div>
-                  <div style={{ width: "100%", aspectRatio: "1/1", backgroundColor: "#e7e5e4", borderRadius: "2px", overflow: "hidden", border: "1px solid #d6d3d1" }}>
-                    {npc.portrait ? (
-                      <img src={npc.portrait} alt={npc.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                    ) : (
-                      <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.6rem" }}>👤</div>
-                    )}
-                  </div>
+                  // SecretBoard.js 코드 내부입니다!
+                <div style={{
+                  width: "100%", aspectRatio: "1/1",
+                  backgroundColor: "rgba(0,0,0,0.05)",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  overflow: "hidden"
+                }}>
+                  {/* 🌟 [수정] npc.portraitUrl 이 있으면 사진을 띄워줍니다! */}
+                  {suspect.portraitUrl || suspect.portrait ? (
+                    <img src={suspect.portraitUrl || suspect.portrait} alt="용의자" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                  ) : (
+                    <UserRound size={32} color="#4c1d95" />
+                  )}
+                </div>
                   <div style={{ textAlign: "center", marginTop: "2px" }}>
                     <div style={{ fontWeight: "900", fontSize: "0.85rem", color: "#1c1917" }}>{npc.name}</div>
                     <div style={{ fontSize: "0.68rem", color: "#78716c" }}>{npc.title || npc.job || "관계자"}</div>
