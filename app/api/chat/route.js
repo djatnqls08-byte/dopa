@@ -228,14 +228,54 @@ ${scenarioText || "기본 서사"}
         formattedContents.push({ role: "user", parts: [{ text: systemInstruction }] });
         formattedContents.push({ role: "model", parts: [{ text: "괴담 엔진 규격을 완벽히 숙지했습니다. 무공해 서사를 준수하며 1D10 위기 굴림 태그와 침식도 충격, 결착 단계 시퀀스를 정밀하게 집행하겠습니다." }] });
 
-      // ── [3. DOPA 본격 추리 2.0 (Zero-RNG · 4중 환각 방어벽 · 3단계 반박 공방)] ──
+      // ── [3. DOPA 본격 추리 2.0 (Zero-RNG · 4중 환각 방어벽 · 듀얼 스탠스)] ──
       } else {
-        // 🛡️ [방어벽 1 & 3]: JSON 단서 원장(Ledger) 동적 추출 (AI 망각 원천 차단)
+        // 🛡️ 단서 원장(Ledger) 동적 추출
         const currentItemsList = (playerSheet?.items || []).map(i => `[${i.name}] (${i.desc || "현장 물증"})`).join(", ") || "확보된 물증 없음";
         const currentCluesList = (playerSheet?.clues || []).map(c => `[${c.name}] (${c.desc || c.overview || "증언/정황"})`).join(", ") || "확인된 단서 없음";
         const currentSuspectsList = (playerSheet?.npcs || []).map(n => `${n.name}(${n.job || "신분 미상"})`).join(", ") || "용의자 없음";
 
-        const mysteryPrompt = `[🕵️ DOPA 추리 2.0 엔진: 본격 수사 & 클라이맥스 전말 격발 절대 헌법]
+        // 🎭 [듀얼 스탠스] 플레이어가 범인인지 감지 (완전범죄 은폐 모드)
+        const scenarioContextStr = ((scenarioText || "") + " " + (playPreference || "")).toLowerCase();
+        const isCulpritPC = scenarioContextStr.includes(`진범: ${pName.toLowerCase()}`) || 
+                            scenarioContextStr.includes(`흑막: ${pName.toLowerCase()}`) || 
+                            scenarioContextStr.includes(`범인: ${pName.toLowerCase()}`);
+
+        let mysteryPrompt = "";
+
+        if (isCulpritPC) {
+          // 🩸 A. 피카레스크 완전범죄 은폐 모드 (PC가 진범인 경우)
+          mysteryPrompt = `[🎭 DOPA 추리 2.0: 완전범죄 은폐 & 위장 공작 절대 헌법]
+공작 주모자(진범 PC): '${pName}' (${pJob}, 성격: ${pcTone})
+현재 조작 대상 희생양 후보들: ${currentSuspectsList}
+현재 소지 및 식립 가능한 물증: ${currentItemsList}
+현재 파악된 현장 정황 및 알리바이: ${currentCluesList}
+
+[🚨 1. 스탠스 전면 반전: PC는 진범입니다]
+- 주인공 '${pName}'은 사건의 진짜 범인(흑막)입니다!
+- AI는 절대로 플레이어에게 자백을 유도하거나 정의로운 수사관 취급을 하지 마십시오.
+- 현장의 탐정, 형사, 협력자 NPC들은 플레이어를 예리하게 관찰하며 알리바이와 행적의 허점을 파고드는 공격적인 질문을 던지십시오.
+
+[🚨 2. 위장 공작 및 누명 씌우기 룰]
+- 플레이어가 특정 희생양에게 혐의를 덮어씌우기 위해 증거를 심거나(식립), 거짓 정황을 유도할 때 상대의 반박과 의심을 거쳐 치밀하게 판정하십시오.
+- 식립 성공 시 태그: <!-- ITEM: {"name": "식립된 증거명", "desc": "희생양에게 조작된 증거"} -->
+- 희생양의 알리바이 공백 발견 시: <!-- CLUE: {"name": "희생양 의혹", "desc": "정황 내용"} -->
+
+[🚨 3. [🎭 위장 결착 : 희생양 매장 및 누명 격발] 3단계 공작 판정]
+- 플레이어가 '[🎭 위장 결착 : 희생양 매장 및 누명 격발]'을 선언하면 3단계 검증 공방을 진행하십시오:
+  ① [1단계: 조작 정황 제시] - 희생양이 범행 시간에 현장에 있었음을 주장하며 탐정의 시선을 유도.
+  ② [2단계: 위조 물증 식립 확인] - 미리 심어둔 결정적 물증을 현장에서 '발견된 척' 폭로.
+  ③ [3단계: 누명 격발 판정]
+     • 조작과 가짜 전말이 치밀한 경우: 탐정이 완전히 속아 넘어가 무고한 희생양을 긴급 체포하고 플레이어가 미소 짓는 [완전범죄 성공 엔딩].
+     • 모순이 있거나 조작이 허술한 경우: 탐정이 조작 흔적을 간파하고 "진짜 범인은 바로 당신이야!"라며 체포망을 좁혀오고 <!-- DAMAGE: 30 --> 태그를 출력.
+
+[🚨 4. 시스템 태그 안내]
+- 엉뚱하거나 무리한 거짓말 발각 시: <!-- DAMAGE: 15 --> / 결정적 조작 실패 시: <!-- DAMAGE: 30 -->
+- 추천 선택지 3개: <!-- SUGGESTIONS: ["선택지 1", "선택지 2", "선택지 3"] -->`;
+
+        } else {
+          // ⚖️ B. 정통 수사 모드 (PC가 수사관인 경우 - 기존 규칙 100% 보존)
+          mysteryPrompt = `[🕵️ DOPA 추리 2.0 엔진: 본격 수사 & 클라이맥스 전말 격발 절대 헌법]
 담당 수사관(PC): '${pName}' (${pJob}, 성격: ${pcTone})
 현재 등록된 용의자 수사망: ${currentSuspectsList}
 현재 공식 검증된 소지 물증: ${currentItemsList}
@@ -279,10 +319,18 @@ ${scenarioText || "기본 서사"}
 - 신규 정황/단서 발견 시: <!-- CLUE: {"name": "단서명", "desc": "알리바이 모순 또는 감식 메모"} -->
 - 신뢰도 삭감 시: <!-- DAMAGE: 15 --> (엉뚱한 반증) / <!-- DAMAGE: 30 --> (틀린 전말 격발)
 - 추천 선택지 3개: <!-- SUGGESTIONS: ["선택지 1", "선택지 2", "선택지 3"] -->`;
+        }
 
         systemInstruction = `${coreIdentityPrompt}\n${mysteryPrompt}\n\n[🚨 시나리오 원본 및 배후 진상 (불변의 팩트)]:\n${scenarioText}`;
         formattedContents.push({ role: "user", parts: [{ text: systemInstruction }] });
-        formattedContents.push({ role: "model", parts: [{ text: "DOPA 추리 2.0 엔진 헌법을 완벽히 숙지했습니다. 4중 환각 방어벽과 페어플레이 원칙을 지키며, 엉뚱한 반증에는 가차 없는 신뢰도 데미지(DAMAGE)를, 올바른 전말 격발에는 박진감 넘치는 3단계 자백 공방 시퀀스를 집행하겠습니다." }] });
+        formattedContents.push({ 
+          role: "model", 
+          parts: [{ 
+            text: isCulpritPC 
+              ? "완전범죄 은폐 모드를 숙지했습니다. 플레이어를 압박하는 수사망과 누명 씌우기 공작을 긴장감 넘치게 집행하겠습니다." 
+              : "DOPA 추리 2.0 엔진 헌법을 완벽히 숙지했습니다. 4중 환각 방어벽과 페어플레이 원칙을 지키며, 엉뚱한 반증에는 가차 없는 신뢰도 데미지(DAMAGE)를, 올바른 전말 격발에는 박진감 넘치는 3단계 자백 공방 시퀀스를 집행하겠습니다." 
+          }] 
+        });
       }
 
       // 🌟 최근 40턴 히스토리 병합
