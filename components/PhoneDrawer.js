@@ -4,8 +4,8 @@
 import { useState } from "react";
 import { GLASS_STYLE } from "@/lib/themes";
 import { 
-  Wifi, WifiOff, Battery, BatteryWarning, 
-  Send, X, MessageSquare, Feather, Sparkles, Flame, Moon
+  WifiOff, Battery, BatteryWarning, 
+  Send, X, MessageSquare, Feather, Sparkles, Flame, Moon, AlertTriangle
 } from "lucide-react";
 
 export default function PhoneDrawer({ 
@@ -17,7 +17,7 @@ export default function PhoneDrawer({
   affection = 20, 
   messages = [], 
   onSendMessage,
-  inGameTime,        // 예: "1일차 새벽", "자시(子時)", "2일차 정오" 등
+  inGameTime,        // 예: "1일차 새벽", "자시(子時)", "2일차 정오"
   genre = "modern",  // "modern"(현대), "wuxia"(무협), "fantasy"(판타지), "classic"(서신)
   isHorror = false
 }) {
@@ -31,10 +31,10 @@ export default function PhoneDrawer({
     setInputText("");
   };
 
-  // 🌟 1. 장르별 미니멀 인디케이터 라벨 & 아이콘 매핑
+  // 🌟 1. 장르별 미니멀 인디케이터
   const getIndicatorData = () => {
     switch (genre) {
-      case "wuxia": // 무협
+      case "wuxia":
         return {
           time: inGameTime || "1일차 자시(子時)",
           timeIcon: Moon,
@@ -43,7 +43,7 @@ export default function PhoneDrawer({
           resIcon: Flame,
           placeholder: `${contactName}에게 전음 보내기...`
         };
-      case "fantasy": // 판타지 / 로판
+      case "fantasy":
         return {
           time: inGameTime || "1일차 자정",
           timeIcon: Sparkles,
@@ -52,7 +52,7 @@ export default function PhoneDrawer({
           resIcon: Sparkles,
           placeholder: `${contactName}에게 전언 보내기...`
         };
-      case "classic": // 고전 서신
+      case "classic":
         return {
           time: inGameTime || "1일차 밤",
           timeIcon: Moon,
@@ -61,7 +61,7 @@ export default function PhoneDrawer({
           resIcon: Feather,
           placeholder: `${contactName}에게 서신 작성...`
         };
-      case "modern": // 현대 / 오피스 괴담
+      case "modern":
       default:
         return {
           time: inGameTime || (isHorror ? "1일차 새벽 · 03:44" : "1일차 오후 · 02:15"),
@@ -101,7 +101,7 @@ export default function PhoneDrawer({
           boxShadow: isHorror ? "0 -10px 40px rgba(220, 38, 38, 0.2)" : "0 -10px 40px rgba(0,0,0,0.25)"
         }}
       >
-        {/* 🧭 상단 초간결 인디케이터 (시간 · 연결 · 잔량) */}
+        {/* 상단 초간결 인디케이터 (시간 · 연결 · 잔량) */}
         <div style={{
           padding: "8px 20px 6px",
           display: "flex", justifyContent: "space-between", alignItems: "center",
@@ -110,12 +110,9 @@ export default function PhoneDrawer({
           borderBottom: `1px solid ${isHorror ? "rgba(255,255,255,0.06)" : theme.border}`,
           backgroundColor: isHorror ? "rgba(0,0,0,0.25)" : "rgba(255,255,255,0.03)"
         }}>
-          {/* 1. 시간 */}
           <span style={{ display: "flex", alignItems: "center", gap: "4px", color: isHorror ? "#fca5a5" : theme.accent }}>
             <TimeIcon size={12} /> {current.time}
           </span>
-
-          {/* 2. 연결 & 3. 잔량 */}
           <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
             <span style={{ display: "flex", alignItems: "center", gap: "3px", color: isHorror ? "#f87171" : theme.textMuted }}>
               {isHorror && genre === "modern" ? <WifiOff size={12} /> : null}
@@ -127,7 +124,7 @@ export default function PhoneDrawer({
           </div>
         </div>
 
-        {/* 대화 상대방 헤더 */}
+        {/* 상대방 프로필 헤더 */}
         <div style={{ 
           padding: "12px 20px", 
           display: "flex", justifyContent: "space-between", alignItems: "center", 
@@ -166,6 +163,34 @@ export default function PhoneDrawer({
           ) : (
             messages.map((m, idx) => {
               const isUser = m.sender === "user";
+              const isEmergency = m.type === "emergency" || m.isEmergency || (isHorror && m.sender === "system");
+
+              // 🚨 [복원 완료!] 긴급 재난 문자 / 시스템 경고 스타일
+              if (isEmergency) {
+                return (
+                  <div 
+                    key={idx} 
+                    style={{
+                      alignSelf: "center", width: "95%",
+                      backgroundColor: "rgba(220, 38, 38, 0.15)",
+                      border: "1px solid rgba(220, 38, 38, 0.45)",
+                      borderRadius: "14px", padding: "12px 14px",
+                      boxShadow: "0 4px 15px rgba(220, 38, 38, 0.2)",
+                      display: "flex", flexDirection: "column", gap: "4px"
+                    }}
+                  >
+                    <div style={{ display: "flex", alignItems: "center", gap: "6px", color: "#ef4444", fontWeight: "900", fontSize: "0.8rem" }}>
+                      <AlertTriangle size={15} /> [긴급 재난 경보]
+                    </div>
+                    <div style={{ fontSize: "0.82rem", color: "#fee2e2", lineHeight: "1.5", whiteSpace: "pre-wrap" }}>
+                      {m.text}
+                    </div>
+                    <span style={{ fontSize: "0.62rem", color: "#fca5a5", alignSelf: "flex-end" }}>{m.time || "방금"}</span>
+                  </div>
+                );
+              }
+
+              // 일반 인물 대화 말풍선
               return (
                 <div 
                   key={idx} 
@@ -196,7 +221,7 @@ export default function PhoneDrawer({
           )}
         </div>
 
-        {/* 하단 입력 바 */}
+        {/* 하단 답장 입력 바 */}
         <div style={{ 
           padding: "12px 16px", 
           borderTop: `1px solid ${theme.border}`, 
