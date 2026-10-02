@@ -3466,12 +3466,18 @@ color: "#fff", border: "none", cursor: "pointer",
 
                           <div style={{ padding: "20px 16px", display: "flex", flexDirection: "column", gap: "16px" }}>
                             
-                            {/* 아바타 캐러셀 선택기 */}
-                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                              <button type="button" onClick={goPrev} style={{ width: "34px", height: "34px", borderRadius: "50%", background: isDarkMode ? "rgba(255,255,255,0.06)" : "#eee7db", border: "none", cursor: "pointer", color: theme.text, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                                <ChevronLeft size={18} />
+                            {/* 🌟 [대형 비주얼 카드] 아바타 캐러셀 선택기 */}
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0" }}>
+                              {/* 이전 인물 버튼 */}
+                              <button 
+                                type="button" 
+                                onClick={goPrev} 
+                                style={{ width: "38px", height: "38px", borderRadius: "50%", background: isDarkMode ? "rgba(255,255,255,0.08)" : "#eee7db", border: "none", cursor: "pointer", color: theme.text, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}
+                              >
+                                <ChevronLeft size={22} />
                               </button>
 
+                              {/* 🖼️ 유저가 체크한 크기대로 시원하게 확장된 인물 포트레이트 카드 */}
                               <div 
                                 onClick={(e) => {
                                   e.stopPropagation();
@@ -3480,21 +3486,51 @@ color: "#fff", border: "none", cursor: "pointer",
                                 }}
                                 title="사진 변경 / 등록"
                                 style={{
-                                  width: "92px", height: "92px", borderRadius: "26px", overflow: "hidden",
-                                  border: `2px solid ${theme.accent}`, cursor: "pointer", position: "relative",
-                                  boxShadow: `0 8px 20px ${theme.accentGlow || "rgba(0,0,0,0.15)"}`,
-                                  display: "flex", alignItems: "center", justifyContent: "center",
-                                  backgroundColor: theme.inputBg
+                                  width: "190px", 
+                                  height: "230px", 
+                                  borderRadius: "22px", 
+                                  overflow: "hidden",
+                                  border: `2px solid ${theme.accent}`, 
+                                  cursor: "pointer", 
+                                  position: "relative",
+                                  boxShadow: `0 12px 32px rgba(0,0,0,0.5), 0 0 25px ${theme.accentGlow || "rgba(236,72,153,0.35)"}`,
+                                  display: "flex", 
+                                  alignItems: "center", 
+                                  justifyContent: "center",
+                                  backgroundColor: theme.inputBg,
+                                  transition: "transform 0.2s ease"
                                 }}
+                                onMouseEnter={e => e.currentTarget.style.transform = "scale(1.02)"}
+                                onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}
                               >
-                                {cur.portraitUrl ? <img src={cur.portraitUrl} alt="프로필" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <UserRound size={32} color={theme.textMuted} />}
-                                <div style={{ position: "absolute", bottom: "4px", right: "4px", width: "22px", height: "22px", borderRadius: "50%", backgroundColor: theme.accent, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff" }}>
-                                  <PenTool size={11} />
+                                {cur.portraitUrl ? (
+                                  <img src={cur.portraitUrl} alt="프로필" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                                ) : (
+                                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "6px", color: theme.textMuted }}>
+                                    <UserRound size={48} strokeWidth={1.5} />
+                                    <span style={{ fontSize: "0.75rem", fontWeight: "700" }}>터치하여 사진 등록</span>
+                                  </div>
+                                )}
+
+                                {/* 사진 수정 펜 뱃지 */}
+                                <div style={{ 
+                                  position: "absolute", bottom: "8px", right: "8px", 
+                                  width: "28px", height: "28px", borderRadius: "50%", 
+                                  backgroundColor: theme.accent, display: "flex", 
+                                  alignItems: "center", justifyContent: "center", color: "#fff",
+                                  boxShadow: "0 2px 8px rgba(0,0,0,0.4)"
+                                }}>
+                                  <PenTool size={14} />
                                 </div>
                               </div>
 
-                              <button type="button" onClick={goNext} style={{ width: "34px", height: "34px", borderRadius: "50%", background: isDarkMode ? "rgba(255,255,255,0.06)" : "#eee7db", border: "none", cursor: "pointer", color: theme.text, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                                <ChevronRight size={18} />
+                              {/* 다음 인물 버튼 */}
+                              <button 
+                                type="button" 
+                                onClick={goNext} 
+                                style={{ width: "38px", height: "38px", borderRadius: "50%", background: isDarkMode ? "rgba(255,255,255,0.08)" : "#eee7db", border: "none", cursor: "pointer", color: theme.text, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}
+                              >
+                                <ChevronRight size={22} />
                               </button>
                             </div>
 
