@@ -196,11 +196,11 @@ export default function SecretBoard({
             </div>
             <div>
               <div style={{ fontSize: isMobile ? "1.08rem" : "1.25rem", fontWeight: "900", color: accentColor, letterSpacing: "-0.3px" }}>
-                {isCulpritPC ? "🎭 완전범죄 공작보드 (FRAME-UP DOSSIER)" : "수사 본부 증거보드 (EVIDENCE DOSSIER)"}
+                {isCulpritPC ? "🎭 완전범죄 공작보드" : "수사 본부 증거보드"}
               </div>
               <div style={{ fontSize: isMobile ? "0.78rem" : "0.85rem", color: "#a8a29e", fontWeight: "600", marginTop: "2px" }}>
                 {isCulpritPC 
-                  ? `[흑막: ${pcName}] · 위장 공작 대상 물색 및 탐정 유도용 알리바이 조작`
+                  ? `[흑막: ${pcName}] · 위장 공작 대상 물색 및 알리바이 조작`
                   : `사건: 《${activeSession.title || "사건명 미상"}》 · 확보 단서 ${clues.length}건 · 용의자 ${npcs.length}명`}
               </div>
             </div>
@@ -232,7 +232,7 @@ export default function SecretBoard({
           backgroundImage: "radial-gradient(#2b241e 1.2px, transparent 1.2px)", backgroundSize: "20px 20px"
         }}>
           
-          {/* 👥 1섹션: 용의자 / 희생양 후보 카드 덱 */}
+          {/* 👥 1섹션: 용의자 / 희생양 카드 덱 */}
           <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
               <span style={{ fontSize: isMobile ? "0.92rem" : "1rem", fontWeight: "900", color: accentColor, display: "flex", alignItems: "center", gap: "8px" }}>
@@ -396,11 +396,11 @@ export default function SecretBoard({
               <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                 <Scale size={20} color={accentColor} />
                 <span style={{ fontSize: isMobile ? "0.95rem" : "1.08rem", fontWeight: "900", color: accentColor }}>
-                  {isCulpritPC ? "완전범죄 위장 공작 수립 (상단 터치 및 자유 타이핑)" : "사건 전말 가설 수립 (상단 터치 주입 및 자유로운 작성)"}
+                  {isCulpritPC ? "완전범죄 위장 공작 수립" : "사건 전말 가설 수립"}
                 </span>
               </div>
               <span style={{ fontSize: "0.76rem", color: "#a8a29e" }}>
-                ※ Enter로 자유롭게 줄바꿈하며 칸이 자동 확장됩니다.
+                ※ Enter로 자유롭게 줄바꿈
               </span>
             </div>
 
@@ -417,7 +417,7 @@ export default function SecretBoard({
                   rows={1}
                   value={culprit}
                   onChange={handleInputChange(setCulprit, culpritRef)}
-                  placeholder={isCulpritPC ? "예: 백수진 (의심을 사기 가장 쉬운 인물)" : "예: 백수진, 지하 4층 관리자"}
+                  placeholder={isCulpritPC ? "예: 의심을 사기 가장 쉬운 인물" : "예: 이름, 직업"}
                   style={textareaBaseStyle(lastInsertedSlot === 1)}
                 />
               </div>
@@ -432,7 +432,7 @@ export default function SecretBoard({
                   rows={1}
                   value={trick}
                   onChange={handleInputChange(setTrick, trickRef)}
-                  placeholder={isCulpritPC ? "희생양이 범인으로 몰릴 수밖에 없는 조작된 행적과 시간대..." : "예: 배전반을 차단해 시차를 조작하고 비상구로 도주함 (줄바꿈 가능)"}
+                  placeholder={isCulpritPC ? "희생양이 범인으로 몰릴 수밖에 없는 조작된 행적과 시간대..." : "예: 알리바이 작성"}
                   style={textareaBaseStyle(lastInsertedSlot === 2)}
                 />
               </div>
@@ -442,14 +442,14 @@ export default function SecretBoard({
             {/* 슬롯 3: 결정적 물증 OR 위조 식립 물증 */}
             <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
               <label style={{ fontSize: isMobile ? "0.82rem" : "0.88rem", fontWeight: "800", color: accentColor }}>
-                {isCulpritPC ? "3. 식립한 위조 물증 (Planted Evidence)" : "3. 결정적 물증 (스모킹 건 / 핵심 증거물)"}
+                {isCulpritPC ? "3. 식립한 위조 물증" : "3. 결정적 물증 (스모킹 건 / 핵심 증거물)"}
               </label>
               <textarea
                 ref={smokingGunRef}
                 rows={1}
                 value={smokingGun}
                 onChange={handleInputChange(setSmokingGun, smokingGunRef)}
-                placeholder={isCulpritPC ? "희생양의 락커나 주머니에 몰래 심어둔 피 묻은 장갑, 위조 흉기 등..." : "범인이 절대 반박할 수 없는 단 하나의 결정적 물증 (상단 단서 터치 또는 직접 입력)"}
+                placeholder={isCulpritPC ? "희생양의 락커나 주머니에 몰래 심어둔 피 묻은 장갑, 위조 흉기 등..." : "범인이 절대 반박할 수 없는 단 하나의 결정적 물증"}
                 style={textareaBaseStyle(lastInsertedSlot === 3)}
               />
             </div>
@@ -457,14 +457,14 @@ export default function SecretBoard({
             {/* 슬롯 4: 전말 추리 해설 OR 탐정 유도용 가짜 전말 */}
             <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
               <label style={{ fontSize: isMobile ? "0.82rem" : "0.88rem", fontWeight: "800", color: accentColor }}>
-                {isCulpritPC ? "4. 탐정 유도용 가짜 전말 (Framing Story)" : "4. 탐정의 사건 전말 추리 해설 (범행 동기 및 종합 타임라인)"}
+                {isCulpritPC ? "4. 탐정 유도용 가짜 전말" : "4. 탐정의 사건 전말 추리 해설 (범행 동기 및 타임라인)"}
               </label>
               <textarea
                 ref={narrativeRef}
                 rows={2}
                 value={narrative}
                 onChange={handleInputChange(setNarrative, narrativeRef)}
-                placeholder={isCulpritPC ? "탐정이 완전히 속아 넘어가 희생양을 체포하게 만들 정교한 가짜 추리 시나리오..." : "이 사건은 처음부터 피해자의 유산을 노린 계획 범행이었습니다... 자유롭게 타이핑하십시오."}
+                placeholder={isCulpritPC ? "탐정이 완전히 속아 넘어가 희생양을 체포하게 만들 정교한 가짜 추리 시나리오..." : "이 사건은 처음부터 피해자의 유산을 노린 계획 범행이었습니다..."}
                 style={textareaBaseStyle(lastInsertedSlot === 4)}
               />
             </div>
@@ -510,7 +510,7 @@ export default function SecretBoard({
             onMouseLeave={e => { if (isReady) e.currentTarget.style.transform = "scale(1)"; }}
           >
             <Scale size={18} />
-            <span>{isCulpritPC ? "🎭 위장 결착 : 희생양 매장 및 누명 격발 ➔" : "⚖️ 결착 선언 : 전말 격발 ➔"}</span>
+            <span>{isCulpritPC ? "🎭 위장 결착 : 희생양 매장 및 누명 ➔" : "⚖️ 결착 선언 : 전말 격발 ➔"}</span>
           </button>
         </div>
 
