@@ -255,7 +255,7 @@ export default function PhoneDrawer({
                 }} 
                 style={{ background: "none", border: "none", color: cfg.accentColor, fontSize: isMobileView ? "0.85rem" : "0.92rem", cursor: "pointer", fontWeight: "800", display: "flex", alignItems: "center", gap: "2px" }}
               >
-                <ChevronLeft size={22} /> 뒤로
+                <ChevronLeft size={22} />
               </button>
             )}
           </div>
