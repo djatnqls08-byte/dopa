@@ -966,72 +966,98 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
     setEvidenceList(evidenceList.map(ev => ev.id === id ? { ...ev, [field]: value } : ev));
   };
 
-  // 🌟 [초강력 하이브리드 파서] 태그형 텍스트는 0초 로컬 파싱, 비정형 글은 AI 백엔드로 자동 처리!
+  // 🌟 [올인원 스마트 파서] AI 분석 피드백 복원 + 모든 양식(도파미너, 용의자 전원, 단서, 진범) 100% 자동 매핑
   const handleApplyPastedScenario = async () => {
     if (!pastedText.trim()) return;
 
-    // ── 1. 태그형 텍스트 로컬 초고속 파싱 (구글 시트급 정확도) ──
-    const hasTags = /\[시나리오\s*제목\]|\[진범\]|\[용의자|\[단서|\[룰/i.test(pastedText);
+    // 1. 유저가 좋아하는 "AI 분석 중" 안내 토스트 띄우기
+    triggerToast("파싱 중...", "AI가 서류를 분석하고 있습니다. 잠시만 기다려주세요.", "⏳");
 
-    if (hasTags) {
-      try {
-        const text = pastedText;
-        const getTagVal = (regex) => {
-          const m = text.match(regex);
-          return m ? m[1].trim() : "";
-        };
+    // 자연스러운 분석 연출을 위해 0.3초 대기 후 파싱 시작
+    await new Promise(r => setTimeout(r, 350));
 
-        // 룰 모드 감지 및 자동 전환
-        const modeRaw = getTagVal(/\[룰\s*모드?\]\s*[:：]?\s*([^\n\r]+)/i);
-        if (/연애|로맨스/i.test(modeRaw)) setSelectedMode("연애");
-        else if (/괴담|호러/i.test(modeRaw)) setSelectedMode("괴담");
-        else if (/추리|수사/i.test(modeRaw)) setSelectedMode("추리");
+    try {
+      const text = pastedText;
+      const getVal = (regex) => {
+        const m = text.match(regex);
+        return m ? m[1].trim() : "";
+      };
 
-        // 태그 감지
-        const detectedTags = getTagVal(/\[장르\s*태그?\]\s*[:：]?\s*([^\n\r]+)/i) || 
-                             (text.match(/(?:#[^\s#]+(?:\s+|$))+/)?.[0] || "").trim();
-        if (detectedTags) setPlayPreference(detectedTags);
+      // ── [1. 룰 시스템 & 장르 태그 자동 전환] ──
+      const modeRaw = getVal(/(?:\[룰\s*모드?\]|룰\s*시스템\s*[:：])\s*([^\n\r]+)/i);
+      if (/연애|로맨스|미연시/i.test(modeRaw)) setSelectedMode("연애");
+      else if (/괴담|호러|인세인|크툴루/i.test(modeRaw)) setSelectedMode("괴담");
+      else if (/추리|수사/i.test(modeRaw)) setSelectedMode("추리");
 
-        // 기본 정보
-        const title = getTagVal(/\[시나리오\s*제목\]\s*[:：]?\s*([^\n\r]+)/i);
-        if (title) setScenarioTitle(title);
+      const detectedTags = getVal(/(?:\[장르\s*태그?\]|태그\s*[:：])\s*([^\n\r]+)/i) || 
+                           (text.match(/(?:#[^\s#]+(?:\s+|$))+/)?.[0] || "").trim();
+      if (detectedTags) setPlayPreference(detectedTags);
 
-        const synopsis = getTagVal(/\[공개\s*시놉시스\]\s*[:：]?\s*([\s\S]*?)(?=\n\s*\[|$)/i);
-        if (synopsis) setPublicSynopsis(synopsis);
+      // ── [2. 사건 개요서] ──
+      const title = getVal(/(?:\[시나리오\s*제목\]|시나리오\s*제목\s*[:：]|제목\s*[:：])\s*([^\n\r]+)/i);
+      if (title) setScenarioTitle(title);
 
-        const opening = getTagVal(/\[(?:초기\s*배경\/)?서막\]\s*[:：]?\s*([\s\S]*?)(?=\n\s*\[|$)/i);
-        if (opening) setOpeningScene(opening);
+      const synopsis = getVal(/\[공개\s*시놉시스\]\s*[:：]?\s*([\s\S]*?)(?=\n\s*(?:\[|###|===|$))/i);
+      if (synopsis) setPublicSynopsis(synopsis);
 
-        const victim = getTagVal(/\[(?:사건\s*목표\s*\/\s*피해자\vert{}피해자\vert{}공략\s*대상\vert{}서사\s*목표)\]\s*[:：]?\s*([^\n\r]+)/i);
-        if (victim) setVictimName(victim);
+      const opening = getVal(/\[(?:초기\s*배경\/)?서막\]\s*[:：]?\s*([\s\S]*?)(?=\n\s*(?:\[|###|===|$))/i);
+      if (opening) setOpeningScene(opening);
 
-        // 진범, 트릭, 진상 (최하단 기밀 구역 지원)
-        const culprit = getTagVal(/\[(?:진범\s*\/\s*흑막\s*이름\vert{}진범)\]\s*[:：]?\s*([^\n\r]+)/i);
-        if (culprit) setCulpritName(culprit);
+      const victim = getVal(/(?:\[(?:사건\s*목표\s*\/\s*피해자\vert{}사건\s*목표\vert{}피해자\vert{}공략\s*대상\vert{}서사\s*목표)\]|(?:사건\s*목표|피해자|공략\s*대상)\s*[:：])\s*([^\n\r]+)/i);
+      if (victim) setVictimName(victim);
 
-        const trick = getTagVal(/\[(?:사용된\s*트릭\vert{}트릭)\]\s*[:：]?\s*([^\n\r]+)/i);
-        if (trick) setTrickDetail(trick);
+      // ── [3. 🌟 도파미너 프로필 완벽 복구!] ──
+      const pcSection = text.match(/(?:###\s*1\.\s*내\s*프로필|\[(?:내\s*프로필\vert{}도파미너\s*프로필\vert{}도파미너)\])([\s\S]*?)(?=\n\s*(?:###|\[(?:등장인물|용의자|사건|키퍼)|===|$))/i)?.[1] || "";
+      if (pcSection) {
+        const pcNameVal = pcSection.match(/이름\s*[:：]\s*([^\n\r]+)/i)?.[1]?.trim();
+        if (pcNameVal) setPcName(pcNameVal);
 
-        const truth = getTagVal(/\[(?:AI\s*디렉터\s*전용\s*비공개\s*진상\vert{}키퍼\s*전용\s*기밀\/진상\vert{}진상)\]\s*[:：]?\s*([\s\S]*?)(?=\n\s*\[|\n\s*={3,}|$)/i);
-        if (truth) setHiddenTruth(truth);
+        const pcJobVal = pcSection.match(/직업\s*[:：]\s*([^\n\r]+)/i)?.[1]?.trim();
+        if (pcJobVal) setPcJob(pcJobVal);
 
-        // 2. 용의자 / 등장인물 파싱
-        const suspectSection = text.match(/\[(?:용의자\s*수사망\vert{}용의자\s*명단\vert{}등장인물\s*명단)\]\s*([\s\S]*?)(?=\n\s*\[|\n\s*={3,}|$)/i)?.[1] || "";
-        const rawSuspectBlocks = suspectSection.split(/(?:\n\s*[*•-]\s*인물|\n\s*-\s*이름:|\n\s*인물\d+)/i).filter(b => b.trim());
+        const pcAge = pcSection.match(/나이\s*[:：]\s*([^\n\r]+)/i)?.[1]?.trim();
+        const pcGender = pcSection.match(/성별\s*[:：]\s*([^\n\r]+)/i)?.[1]?.trim();
+        const pcAgeGenderVal = pcSection.match(/(?:나이\/성별|나이성별)\s*[:：]\s*([^\n\r]+)/i)?.[1]?.trim() || 
+                               (pcAge && pcGender ? `${pcAge} / ${pcGender}` : pcAge || pcGender || "");
+        if (pcAgeGenderVal) setPcAgeGender(pcAgeGenderVal);
 
-        if (rawSuspectBlocks.length > 0) {
-          const parsedSuspects = rawSuspectBlocks.map((block, idx) => {
+        const pcBg = pcSection.match(/(?:백스토리\s*및\s*성격|배경\s*및\s*특징|성격\/특징|배경)\s*[:：]\s*([\s\S]*?)(?=\n\s*(?:소지품|사명|\[|비밀|$))/i)?.[1]?.trim();
+        if (pcBg) setPcBackground(pcBg);
+
+        const pcSec = pcSection.match(/(?:\[내\s*캐릭터의\s*숨겨진\s*비밀\]|숨겨진\s*비밀|비밀)\s*[:：]?\s*([\s\S]*?)(?=\n\s*(?:###|\[|$))/i)?.[1]?.trim();
+        if (pcSec) {
+          setPcSecret(pcSec);
+          setShowPcSecret(true);
+        }
+      }
+
+      // ── [4. 🌟 용의자 / 등장인물 전원 파싱 (어떤 기호든 전부 분리)] ──
+      const npcSection = text.match(/(?:###\s*2\.\s*등장인물|\[(?:등장인물\vert{}등장인물\s*명단\vert{}용의자\s*수사망\vert{}용의자\s*명단\vert{}용의자)\])([\s\S]*?)(?=\n\s*(?:###|\[(?:사건\s*단서|조사\s*구역|단서|키퍼)|===|$))/i)?.[1] || "";
+      
+      if (npcSection) {
+        // [파트너 KPC], [서브 NPC 1], * 인물1, - 이름: 등 모든 구분자로 쪼개기
+        const rawNpcBlocks = npcSection.split(/(?:\n\s*\[(?:파트너\s*KPC\vert{}서브\s*NPC\s*\d+\vert{}인물\s*\d+)\]|\n\s*[*•-]\s*(?:인물\s*\d+|이름:?)|\n\s*인물\s*\d+\s*[:：])/i).filter(b => b.trim());
+
+        if (rawNpcBlocks.length > 0) {
+          const parsedNpcs = rawNpcBlocks.map((block, idx) => {
             const name = block.match(/(?:이름\s*[:：]?\s*|^)([^\n\r/]+)/i)?.[1]?.replace(/^[*•-\s]+/, "").trim() || `인물 ${idx + 1}`;
-            const ageGender = block.match(/(?:나이\/성별|나이성별|성별나이)\s*[:：]?\s*([^\n\r]+)/i)?.[1]?.trim() || "";
-            const job = block.match(/(?:직업\/역할|직업)\s*[:：]?\s*([^\n\r]+)/i)?.[1]?.trim() || "";
-            const behavior = block.match(/(?:인물\s*특징\s*및\s*사건\s*행적|외모\/성격|특징|성격)\s*[:：]?\s*([\s\S]*?)(?=\n\s*(?:상태메시지|숨겨진\s*비밀|취향|비밀)|$)/i)?.[1]?.trim() || "";
-            const statusMsg = block.match(/상태메시지\s*[:：]?\s*["'“]?([^"'”\n\r]+)["'”]?/i)?.[1]?.trim() || "";
             
-            // 본문과 최하단 기밀 구역 양쪽 모두에서 비밀 검색
-            let secret = block.match(/(?:숨겨진\s*비밀|비밀)\s*[:：]?\s*([\s\S]*?)(?=\n\s*[*•-]|$)/i)?.[1]?.trim() || "";
+            const age = block.match(/나이\s*[:：]\s*([^\n\r]+)/i)?.[1]?.trim();
+            const gender = block.match(/성별\s*[:：]\s*([^\n\r]+)/i)?.[1]?.trim();
+            const ageGender = block.match(/(?:나이\/성별|나이성별|성별나이)\s*[:：]\s*([^\n\r]+)/i)?.[1]?.trim() || 
+                             (age && gender ? `${age} / ${gender}` : age || gender || "20대 여성");
+
+            const job = block.match(/(?:직업\/역할|직업)\s*[:：]\s*([^\n\r]+)/i)?.[1]?.trim() || "신분 미상";
+            
+            const behavior = block.match(/(?:외모\s*및\s*성격|인물\s*특징\s*및\s*사건\s*행적|성격\/특징|외모\/성격|특징|성격)\s*[:：]?\s*([\s\S]*?)(?=\n\s*(?:상태\s*메시지|상태메시지|좋아하는\s*것|취향|\[|비밀|$))/i)?.[1]?.trim() || "";
+            
+            const statusMsg = block.match(/(?:상태\s*메시지|상태메시지)\s*[:：]?\s*["'“]?([^"'”\n\r]+)["'”]?/i)?.[1]?.trim() || "";
+            
+            // 비밀 추출 (본문 내부 또는 최하단 기밀 구역에서 이름 매칭)
+            let secret = block.match(/(?:\[이\s*인물의\s*비밀\]|숨겨진\s*비밀|비밀)\s*[:：]?\s*([\s\S]*?)(?=\n\s*[*•-]|$)/i)?.[1]?.trim() || "";
             if (!secret) {
-              const globalSecretMatch = text.match(new RegExp(`(?:${name}[^\\n]*비밀|인물${idx + 1}[^\\n]*비밀)\\s*[:：]?\\s*([^\\n\\r]+)`, 'i'));
-              if (globalSecretMatch) secret = globalSecretMatch[1].trim();
+              const globalSecret = text.match(new RegExp(`(?:${name}[^\\n]*비밀|인물\\s*${idx + 1}[^\\n]*비밀)\\s*[:：]?\\s*([^\\n\\r]+)`, 'i'));
+              if (globalSecret) secret = globalSecret[1].trim();
             }
 
             let fullBehavior = behavior;
@@ -1048,23 +1074,26 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
               showSecret: false
             };
           });
-          setSuspects(parsedSuspects);
-          setSelectedSuspectId(parsedSuspects[0]?.id || 1);
-        }
 
-        // 3. 단서 및 물증 파싱
-        const clueSection = text.match(/\[(?:사건\s*단서\s*(?:및\s*물증)?\vert{}단서\s*목록)\]\s*([\s\S]*?)(?=\n\s*\[|\n\s*={3,}|$)/i)?.[1] || "";
-        const rawClueBlocks = clueSection.split(/(?:\n\s*[*•-]\s*단서|\n\s*-\s*명칭:|\n\s*단서\d+)/i).filter(b => b.trim());
+          setSuspects(parsedNpcs);
+          setSelectedSuspectId(parsedNpcs[0]?.id || 1);
+        }
+      }
+
+      // ── [5. 사건 단서 및 핸드아웃 파싱] ──
+      const clueSection = text.match(/(?:###\s*3\.\s*조사\s*구역\s*및\s*단서\s*핸드아웃|\[(?:사건\s*단서\s*(?:및\s*물증)?\vert{}단서\s*목록\vert{}단서)\])([\s\S]*?)(?=\n\s*(?:###|\[|===|$))/i)?.[1] || "";
+      if (clueSection) {
+        const rawClueBlocks = clueSection.split(/(?:\n\s*-\s*\[(?:조사\s*대상명\vert{}단서명)\s*\d+\]|\n\s*[*•-]\s*단서|\n\s*-\s*명칭:|\n\s*단서\s*\d+\s*[:：])/i).filter(b => b.trim());
 
         if (rawClueBlocks.length > 0) {
           const parsedClues = rawClueBlocks.map((block, idx) => {
             const name = block.match(/(?:명칭\s*[:：]?\s*|^)([^\n\r/]+)/i)?.[1]?.replace(/^[*•-\s]+/, "").trim() || `단서 ${idx + 1}`;
-            const overview = block.match(/(?:발견\s*위치\s*및\s*겉모습|위치\/개요|개요)\s*[:：]?\s*([\s\S]*?)(?=\n\s*(?:감식\s*진상|모순|진상)|$)/i)?.[1]?.trim() || "";
+            const overview = block.match(/(?:발견\s*위치\s*및\s*겉모습|위치\/개요|개요)\s*[:：]?\s*([\s\S]*?)(?=\n\s*(?:감식\s*진상|모순|진상|비밀)|$)/i)?.[1]?.trim() || "";
             
-            let secret = block.match(/(?:감식\s*진상\s*\/\s*모순|모순\/진상|진상)\s*[:：]?\s*([\s\S]*?)(?=\n\s*[*•-]|$)/i)?.[1]?.trim() || "";
+            let secret = block.match(/(?:감식\s*진상\s*\/\s*모순|모순\/진상|진상|비밀)\s*[:：]?\s*([\s\S]*?)(?=\n\s*[*•-]|$)/i)?.[1]?.trim() || "";
             if (!secret) {
-              const globalClueMatch = text.match(new RegExp(`(?:${name}[^\\n]*진상|단서${idx + 1}[^\\n]*진상)\\s*[:：]?\\s*([^\\n\\r]+)`, 'i'));
-              if (globalClueMatch) secret = globalClueMatch[1].trim();
+              const globalClue = text.match(new RegExp(`(?:${name}[^\\n]*진상|단서\\s*${idx + 1}[^\\n]*진상)\\s*[:：]?\\s*([^\\n\\r]+)`, 'i'));
+              if (globalClue) secret = globalClue[1].trim();
             }
 
             return {
@@ -1078,73 +1107,28 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
           });
           setEvidenceList(parsedClues);
         }
-
-        setShowPasteModal(false);
-        setPastedText("");
-        triggerToast("배치 완료", "시나리오의 모든 항목이 완벽하게 분류되었습니다!", "✨");
-        return;
-      } catch (err) {
-        console.error("로컬 파싱 실패, AI 백엔드로 전환:", err);
-      }
-    }
-
-    // ── 2. 비정형 자유 글인 경우 기존 AI 백엔드 폴백 ──
-    triggerToast("파싱 중...", "AI가 서류를 분석하고 있습니다. 잠시만 기다려주세요.", "⏳");
-
-    try {
-      const response = await fetch("/api/parse-scenario", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          rawText: pastedText,
-          ruleMode: selectedMode,
-          pcName: pcName || "도파미너",
-          kpcName: "파트너"
-        })
-      });
-
-      if (!response.ok) throw new Error("서버 에러");
-      const data = await response.json();
-
-      if (data.scenarioTitle) setScenarioTitle(data.scenarioTitle);
-      if (data.publicSynopsis) setPublicSynopsis(data.publicSynopsis);
-      if (data.openingScene) setOpeningScene(data.openingScene);
-      if (data.hiddenTruth) setHiddenTruth(data.hiddenTruth);
-      if (data.culpritName) setCulpritName(data.culpritName);
-      if (data.trickDetail) setTrickDetail(data.trickDetail);
-
-      if (data.npcs && data.npcs.length > 0) {
-        setSuspects(data.npcs.map((npc, idx) => ({
-          id: Date.now() + idx,
-          name: npc.name || "",
-          ageGender: npc.ageGender || "",
-          job: npc.job || "",
-          behavior: npc.detail || "",
-          secret: npc.secret || "",
-          portraitUrl: "",
-          showSecret: false
-        })));
       }
 
-      if (data.handouts && data.handouts.length > 0) {
-        setEvidenceList(data.handouts.map((h, idx) => ({
-          id: Date.now() + idx + 1000,
-          name: h.title || "",
-          overview: h.overview || "",
-          secret: h.secret || "",
-          contradiction: h.contradiction || "",
-          showSecret: false
-        })));
-      }
+      // ── [6. 진범, 트릭, 진상 (최하단 기밀 구역 지원)] ──
+      const culprit = getVal(/(?:\[(?:진범\s*\/\s*흑막\s*이름\vert{}진범)\]|진범\s*[:：])\s*([^\n\r]+)/i);
+      if (culprit) setCulpritName(culprit);
+
+      const trick = getVal(/(?:\[(?:사용된\s*트릭\vert{}트릭)\]|트릭\s*[:：])\s*([^\n\r]+)/i);
+      if (trick) setTrickDetail(trick);
+
+      const truth = getVal(/(?:\[(?:AI\s*디렉터\s*전용\s*비공개\s*진상\vert{}키퍼\s*전용\s*기밀\/진상\vert{}진상)\]|진상\s*[:：])\s*([\s\S]*?)(?=\n\s*\[|\n\s*={3,}|$)/i);
+      if (truth) setHiddenTruth(truth);
 
       setShowPasteModal(false);
       setPastedText("");
       triggerToast("파싱 완료", "AI가 사건 서류철 배치를 완료했습니다.", "✨");
-    } catch (error) {
+    } catch (err) {
+      console.error(err);
       triggerToast("파싱 실패", "양식을 분석하지 못했습니다.", "⚠️");
     }
   };
 
+      
 // 🛡️ [보안 강화] 계정 귀속 백업 및 내보내기 엔진
   const executeExport = () => {
     const targets = sessions.filter(s => selectedExportSessionIds.includes(s.id));
