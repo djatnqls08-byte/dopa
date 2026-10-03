@@ -2363,11 +2363,20 @@ let newPhoneMsg = null;
               진행 중인 세션 기록이 없습니다.
             </div>
           ) : (
-            sessions.map(s => (
-<div 
+                        sessions.map(s => (
+              <div 
                 key={s.id} 
                 onClick={() => { setActiveSessionId(s.id); setIsDrawerOpen(false); }}
-                style={{ borderRadius: "10px", cursor: "pointer", cursor: "pointer", backgroundColor: activeSessionId === s.id ? theme.panelAlt : theme.panel, border: `1px solid ${activeSessionId === s.id ? theme.accent : theme.border}`, overflow: "hidden", display: "flex", flexDirection: "column" }}
+                style={{ 
+                  borderRadius: "10px", 
+                  cursor: "pointer", 
+                  flexShrink: 0, 
+                  backgroundColor: activeSessionId === s.id ? theme.panelAlt : theme.panel, 
+                  border: `1px solid ${activeSessionId === s.id ? theme.accent : theme.border}`, 
+                  overflow: "hidden", 
+                  display: "flex", 
+                  flexDirection: "column" 
+                }}
               >
                 {/* 🌟 16:9 세션 카드 썸네일 & 모달 호출 버튼 */}
                 <div style={{ width: "100%", aspectRatio: "16/9", flexShrink: 0, backgroundColor: theme.inputBg, display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", position: "relative" }}>
@@ -2406,6 +2415,7 @@ let newPhoneMsg = null;
                 </div>
               </div>
             ))
+
           )}
         </div>
 
