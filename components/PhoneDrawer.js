@@ -7,24 +7,40 @@ import {
   UserRound, Heart, Phone, ShieldAlert, Flame, Droplet, Activity, Radio, Wifi
 } from "lucide-react";
 
-// 🌟 상태메시지 정밀 추출기 (빈 따옴표 및 객체 필드 안전 처리)
+// 🌟 스마트 4단 상태메시지 추출기 (명시적 태그 ➔ 따옴표 대사 ➔ 첫 줄 성격 요약)
 function extractStatusMsg(npcOrText) {
   if (!npcOrText) return "상태 메시지 없음";
   
+  // 1. 객체 필드 직접 확인
   if (typeof npcOrText === "object") {
     if (npcOrText.statusMessage?.trim()) return npcOrText.statusMessage.trim();
     if (npcOrText.statusMsg?.trim()) return npcOrText.statusMsg.trim();
-    npcOrText = npcOrText.behavior || npcOrText.background || "";
+    npcOrText = npcOrText.behavior || npcOrText.background || npcOrText.detail || "";
   }
 
-  const str = String(npcOrText);
+  const str = String(npcOrText).trim();
+  if (!str) return "상태 메시지 없음";
+
+  // 2. '상태메시지 :' 명시적 키워드가 있는 경우 우선 추출
   const match = str.match(/상태\s*메시지\s*[:：]\s*["'“]?([^"'\n]+)/i) || str.match(/상태메시지\s*[:：]\s*["'“]?([^"'\n]+)/i);
-  
   if (match) {
     const cleaned = match[1].replace(/["'”]/g, '').trim();
     if (cleaned.length > 0) return cleaned;
   }
-  
+
+  // 3. 따옴표로 감싸진 인물의 대사나 각오("..." 형태) 자동 추출
+  const quoteMatch = str.match(/["'“]([^"'”\n\r]{2,30})["'”]/);
+  if (quoteMatch && quoteMatch[1]?.trim()) {
+    return quoteMatch[1].trim();
+  }
+
+  // 4. 키워드나 따옴표가 없으면 캐릭터 성격/배경의 첫 문장을 스마트 추출 (최대 25자)
+  const firstLine = str.split(/[\n\r]/)[0].replace(/^(특징|성격|외모|설정)\s*[:：]?\s*/i, '').trim();
+  const firstSentence = firstLine.split(/[.!?]/)[0].trim();
+  if (firstSentence.length > 0) {
+    return firstSentence.length > 25 ? `${firstSentence.slice(0, 25)}...` : firstSentence;
+  }
+
   return "상태 메시지 없음";
 }
 
