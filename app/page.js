@@ -966,55 +966,6 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
     setEvidenceList(evidenceList.map(ev => ev.id === id ? { ...ev, [field]: value } : ev));
   };
 
- // 🌟 AI 백엔드와 통신하는 스마트 파서 엔진 (연애 모드 CG, 루트 연동 완료!)
-  const handleApplyPastedScenario = async () => {
-    if (!pastedText.trim()) return;
-
-    triggerToast("파싱 중...", "AI가 서류를 분석하고 있습니다. 잠시만 기다려주세요.", "⏳");
-
-    try {
-      const response = await fetch("/api/parse-scenario", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          rawText: pastedText,
-          ruleMode: selectedMode,
-          pcName: pcName || "도파미너",
-          kpcName: "파트너"
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error("서버 에러가 발생했습니다.");
-      }
-
-      const data = await response.json();
-
-      // 1. 기본 정보 맵핑
-      if (data.scenarioTitle) setScenarioTitle(data.scenarioTitle);
-      if (data.publicSynopsis) setPublicSynopsis(data.publicSynopsis);
-      if (data.openingScene) setOpeningScene(data.openingScene);
-      if (data.hiddenTruth) setHiddenTruth(data.hiddenTruth);
-      
-      // 🌟 추가: AI가 찾아낸 진범과 트릭을 전용 칸에 쏙쏙 꽂아줍니다!
-      if (data.culpritName) setCulpritName(data.culpritName);
-      if (data.trickDetail) setTrickDetail(data.trickDetail);
-      
-      // 2. 용의자/공략대상(NPC) 리스트 자동 생성
-      let generatedSuspects = [];
-      if (data.npcs && data.npcs.length > 0) {
-        generatedSuspects = data.npcs.map((npc, idx) => ({
-          id: Date.now() + idx,
-          name: npc.name || "",
-          job: npc.job || "",
-          behavior: npc.detail || "",
-          secret: npc.secret || "",
-          ageGender: "",
-          portraitUrl: "",
-          showSecret: false
-        }));
-        setSuspects(generatedSuspects);
-      }
   // 🌟 [초강력 하이브리드 파서] 태그형 텍스트는 0초 로컬 파싱, 비정형 글은 AI 백엔드로 자동 처리!
   const handleApplyPastedScenario = async () => {
     if (!pastedText.trim()) return;
