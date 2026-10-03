@@ -149,20 +149,7 @@ export default function PhoneDrawer({
   const [inputText, setInputText] = useState("");
   const [zoomedPhoto, setZoomedPhoto] = useState(null);
 
-  // 상태메시지 추출 헬퍼
-  const getStatusMsg = (behaviorText) => {
-    if (!behaviorText) return "상태 메시지 없음";
-    const match = behaviorText.match(/상태\s*메시지\s*[:：]\s*["'“]?([^"'\n]+)/i) || behaviorText.match(/상태메시지\s*[:：]\s*["'“]?([^"'\n]+)/i);
-    return match ? match[1].replace(/["'”]$/, '').trim() : "상태 메시지가 없습니다.";
-  };
-
-  const handleSendMessage = () => {
-    if (!phoneInput.trim()) return;
-    if (executeMessage) {
-      executeMessage(`[메신저 전송] ${phoneInput.trim()}`);
-    }
-    setPhoneInput("");
-  };
+  if (!isOpen) return null;
 
   // 🌟 모바일 / PC 반응형 화면 폭 자동 감지
   const isMobileView = isMobile || (typeof window !== "undefined" && window.innerWidth < 768);
@@ -191,10 +178,6 @@ export default function PhoneDrawer({
     }
     setInputText("");
   };
-
-  const npcs = activeSession.sheet?.npcs || [];
-  const currentChatMsgs = activePhoneContactId !== null ? ((activeSession.sheet?.phoneChats || {})[activePhoneContactId] || []) : [];
-  const activeNpc = npcs.find(n => n.id === activePhoneContactId);
 
   return (
     <div 
