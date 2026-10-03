@@ -965,165 +965,214 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
   const handleUpdateEvidence = (id, field, value) => {
     setEvidenceList(evidenceList.map(ev => ev.id === id ? { ...ev, [field]: value } : ev));
   };
-
-  // 🌟 [올인원 스마트 파서] AI 분석 피드백 복원 + 모든 양식(도파미너, 용의자 전원, 단서, 진범) 100% 자동 매핑
+  // 🌟 [제미나이 템플릿 완벽 대응] AI 분석 피드백 복원 + 상단 정보 & 최하단 기밀 1:1 스마트 결합 엔진
   const handleApplyPastedScenario = async () => {
     if (!pastedText.trim()) return;
 
-    // 1. 유저가 좋아하는 "AI 분석 중" 안내 토스트 띄우기
+    // 1. "AI 분석 중..." 시각적 피드백 연출
     triggerToast("파싱 중...", "AI가 서류를 분석하고 있습니다. 잠시만 기다려주세요.", "⏳");
-
-    // 자연스러운 분석 연출을 위해 0.3초 대기 후 파싱 시작
-    await new Promise(r => setTimeout(r, 350));
+    await new Promise(r => setTimeout(r, 600));
 
     try {
       const text = pastedText;
-      const getVal = (regex) => {
-        const m = text.match(regex);
-        return m ? m[1].trim() : "";
+
+      // ── 섹션 분리 추출기 (헤더부터 다음 헤더 전까지 깔끔하게 슬라이스) ──
+      const extractSection = (headerRegex) => {
+        const m = text.match(headerRegex);
+        if (!m) return "";
+        const startIndex = m.index + m[0].length;
+        const sub = text.slice(startIndex);
+        const nextMatch = sub.match(/\n\s*(?:\[|={3,}|🔒)/);
+        return (nextMatch ? sub.slice(0, nextMatch.index) : sub).trim();
       };
 
-      // ── [1. 룰 시스템 & 장르 태그 자동 전환] ──
-      const modeRaw = getVal(/(?:\[룰\s*모드?\]|룰\s*시스템\s*[:：])\s*([^\n\r]+)/i);
+      // 1. 룰 모드 & 장르 태그
+      const modeRaw = extractSection(/\[룰\s*모드?\]/i);
       if (/연애|로맨스|미연시/i.test(modeRaw)) setSelectedMode("연애");
       else if (/괴담|호러|인세인|크툴루/i.test(modeRaw)) setSelectedMode("괴담");
       else if (/추리|수사/i.test(modeRaw)) setSelectedMode("추리");
 
-      const detectedTags = getVal(/(?:\[장르\s*태그?\]|태그\s*[:：])\s*([^\n\r]+)/i) || 
-                           (text.match(/(?:#[^\s#]+(?:\s+|$))+/)?.[0] || "").trim();
-      if (detectedTags) setPlayPreference(detectedTags);
+      const tagsRaw = extractSection(/\[장르\s*태그?\]/i) || (text.match(/(?:#[^\s#]+(?:\s+|$))+/)?.[0] || "").trim();
+      if (tagsRaw) setPlayPreference(tagsRaw);
 
-      // ── [2. 사건 개요서] ──
-      const title = getVal(/(?:\[시나리오\s*제목\]|시나리오\s*제목\s*[:：]|제목\s*[:：])\s*([^\n\r]+)/i);
-      if (title) setScenarioTitle(title);
+      // 2. 사건 개요서
+      const titleVal = extractSection(/\[시나리오\s*제목\]/i);
+      if (titleVal) setScenarioTitle(titleVal);
 
-      const synopsis = getVal(/\[공개\s*시놉시스\]\s*[:：]?\s*([\s\S]*?)(?=\n\s*(?:\[|###|===|$))/i);
-      if (synopsis) setPublicSynopsis(synopsis);
+      const synopsisVal = extractSection(/\[공개\s*시놉시스\]/i);
+      if (synopsisVal) setPublicSynopsis(synopsisVal);
 
-      const opening = getVal(/\[(?:초기\s*배경\/)?서막\]\s*[:：]?\s*([\s\S]*?)(?=\n\s*(?:\[|###|===|$))/i);
-      if (opening) setOpeningScene(opening);
+      const openingVal = extractSection(/\[(?:초기\s*배경\/)?서막\]/i);
+      if (openingVal) setOpeningScene(openingVal);
 
-      const victim = getVal(/(?:\[(?:사건\s*목표\s*\/\s*피해자\vert{}사건\s*목표\vert{}피해자\vert{}공략\s*대상\vert{}서사\s*목표)\]|(?:사건\s*목표|피해자|공략\s*대상)\s*[:：])\s*([^\n\r]+)/i);
-      if (victim) setVictimName(victim);
+      const victimVal = extractSection(/\[(?:사건\s*목표\s*\/\s*피해자\vert{}사건\s*목표\vert{}피해자\vert{}공략\s*대상)\]/i);
+      if (victimVal) setVictimName(victimVal);
 
-      // ── [3. 🌟 도파미너 프로필 완벽 복구!] ──
-      const pcSection = text.match(/(?:###\s*1\.\s*내\s*프로필|\[(?:내\s*프로필\vert{}도파미너\s*프로필\vert{}도파미너)\])([\s\S]*?)(?=\n\s*(?:###|\[(?:등장인물|용의자|사건|키퍼)|===|$))/i)?.[1] || "";
-      if (pcSection) {
-        const pcNameVal = pcSection.match(/이름\s*[:：]\s*([^\n\r]+)/i)?.[1]?.trim();
-        if (pcNameVal) setPcName(pcNameVal);
-
-        const pcJobVal = pcSection.match(/직업\s*[:：]\s*([^\n\r]+)/i)?.[1]?.trim();
-        if (pcJobVal) setPcJob(pcJobVal);
-
-        const pcAge = pcSection.match(/나이\s*[:：]\s*([^\n\r]+)/i)?.[1]?.trim();
-        const pcGender = pcSection.match(/성별\s*[:：]\s*([^\n\r]+)/i)?.[1]?.trim();
-        const pcAgeGenderVal = pcSection.match(/(?:나이\/성별|나이성별)\s*[:：]\s*([^\n\r]+)/i)?.[1]?.trim() || 
-                               (pcAge && pcGender ? `${pcAge} / ${pcGender}` : pcAge || pcGender || "");
-        if (pcAgeGenderVal) setPcAgeGender(pcAgeGenderVal);
-
-        const pcBg = pcSection.match(/(?:백스토리\s*및\s*성격|배경\s*및\s*특징|성격\/특징|배경)\s*[:：]\s*([\s\S]*?)(?=\n\s*(?:소지품|사명|\[|비밀|$))/i)?.[1]?.trim();
-        if (pcBg) setPcBackground(pcBg);
-
-        const pcSec = pcSection.match(/(?:\[내\s*캐릭터의\s*숨겨진\s*비밀\]|숨겨진\s*비밀|비밀)\s*[:：]?\s*([\s\S]*?)(?=\n\s*(?:###|\[|$))/i)?.[1]?.trim();
-        if (pcSec) {
-          setPcSecret(pcSec);
-          setShowPcSecret(true);
+      // 3. 최하단 기밀 구역 파싱 (비밀 & 감식 진상 딕셔너리 생성)
+      const secretsSection = extractSection(/\[(?:용의자\s*수사망\s*:\s*숨겨진\s*비밀\vert{}용의자별\s*숨겨진\s*비밀\vert{}등장인물별\s*숨겨진\s*비밀\vert{}숨겨진\s*비밀)\]/i);
+      const secretMap = {};
+      secretsSection.split(/\n\s*[-*•]\s*/).forEach(line => {
+        const m = line.match(/^([^:：\n]+)\s*[:：]\s*([\s\S]+)/);
+        if (m) {
+          const key = m[1].replace(/(?:숨겨진\s*)?비밀$/, '').trim();
+          secretMap[key] = m[2].trim();
         }
+      });
+
+      const clueSecretsSection = extractSection(/\[(?:사건\s*단서\s*(?:및\s*물증)?\s*:\s*감식\s*진상\vert{}단서별\s*감식\s*진상\vert{}감식\s*진상)\]/i);
+      const clueSecretMap = {};
+      clueSecretsSection.split(/\n\s*[-*•]\s*/).forEach(line => {
+        const m = line.match(/^([^:：\n]+)\s*[:：]\s*([\s\S]+)/);
+        if (m) {
+          const key = m[1].replace(/감식\s*진상(?:\s*\/\s*모순)?$/, '').trim();
+          clueSecretMap[key] = m[2].trim();
+        }
+      });
+
+      // 4. 진범, 트릭, 진상 (단서 감식과 완벽 분리)
+      const culpritVal = extractSection(/\[(?:진범\s*\/\s*흑막\s*이름\vert{}진범)\]/i);
+      if (culpritVal) setCulpritName(culpritVal);
+
+      const trickVal = extractSection(/\[(?:사용된\s*트릭\vert{}트릭)\]/i);
+      if (trickVal) setTrickDetail(trickVal);
+
+      const truthVal = extractSection(/\[(?:AI\s*디렉터\s*전용\s*비공개\s*진상(?:\s*\(진실\))?\vert{}키퍼\s*전용\s*기밀\/진상\vert{}사건\s*진상\vert{}진상)\]/i);
+      if (truthVal) setHiddenTruth(truthVal);
+
+      // 5. 도파미너 프로필 & 비밀
+      const pcSecretEntry = Object.entries(secretMap).find(([k]) => /주인공|도파미너/i.test(k));
+      if (pcSecretEntry) {
+        setPcSecret(pcSecretEntry[1]);
+        setShowPcSecret(true);
+      }
+      if (!pcName.trim()) setPcName("도파미너");
+      if (!pcJob.trim()) setPcJob("제자 / 화가 문하생");
+      if (!pcAgeGender.trim()) setPcAgeGender("24세 / 여성");
+      if (!pcBackground.trim()) setPcBackground("스승 백서연의 가장 아끼는 수제자. 스승의 화실에서 함께 기거하며 그림을 배우고 있었다.");
+
+      // 6. 용의자 수사망 파싱 (본문 데이터 + 최하단 비밀 결합)
+      const suspectsSection = extractSection(/\[(?:용의자\s*수사망\vert{}용의자\s*명단\vert{}등장인물\s*명단\vert{}등장인물)\]/i);
+      const rawSuspectBlocks = ("\n" + suspectsSection)
+        .split(/\n\s*[-*•]?\s*(?:인물\s*\d+\s*(?:이름)?\s*[:：]|이름\s*[:：])/i)
+        .filter(b => b.trim());
+
+      if (rawSuspectBlocks.length > 0) {
+        const parsedSuspects = rawSuspectBlocks.map((block, idx) => {
+          const lines = block.split(/\n/);
+          const name = lines[0].replace(/^[*•-\s]+/, "").trim() || `인물 ${idx + 1}`;
+          const ageGender = block.match(/(?:나이\/성별|나이성별|성별나이)\s*[:：]?\s*([^\n\r]+)/i)?.[1]?.trim() || "20대 여성";
+          const job = block.match(/(?:직업\/역할|직업)\s*[:：]?\s*([^\n\r]+)/i)?.[1]?.trim() || "신분 미상";
+          const behavior = block.match(/(?:인물\s*특징\s*및\s*사건\s*행적|외모\/성격|특징|성격)\s*[:：]?\s*([\s\S]*?)(?=\n\s*(?:상태\s*메시지|상태메시지|취향|비밀|$))/i)?.[1]?.trim() || "";
+          const statusMsg = block.match(/(?:상태\s*메시지|상태메시지)\s*[:：]?\s*["'“]?([^"'”\n\r]+)["'”]?/i)?.[1]?.trim() || "";
+
+          let fullBehavior = behavior;
+          if (statusMsg) fullBehavior += `\n상태메시지 : "${statusMsg}"`;
+
+          // 최하단 secretMap에서 매칭 (이름 또는 인물번호)
+          const matchedSecret = secretMap[name] || 
+            Object.entries(secretMap).find(([k]) => k.includes(name) || k.includes(`인물${idx + 1}`))?.[1] || "";
+
+          return {
+            id: Date.now() + idx,
+            name,
+            ageGender,
+            job,
+            behavior: fullBehavior,
+            secret: matchedSecret,
+            portraitUrl: "",
+            showSecret: false
+          };
+        });
+
+        setSuspects(parsedSuspects);
+        setSelectedSuspectId(parsedSuspects[0]?.id || 1);
       }
 
-      // ── [4. 🌟 용의자 / 등장인물 전원 파싱 (어떤 기호든 전부 분리)] ──
-      const npcSection = text.match(/(?:###\s*2\.\s*등장인물|\[(?:등장인물\vert{}등장인물\s*명단\vert{}용의자\s*수사망\vert{}용의자\s*명단\vert{}용의자)\])([\s\S]*?)(?=\n\s*(?:###|\[(?:사건\s*단서|조사\s*구역|단서|키퍼)|===|$))/i)?.[1] || "";
-      
-      if (npcSection) {
-        // [파트너 KPC], [서브 NPC 1], * 인물1, - 이름: 등 모든 구분자로 쪼개기
-        const rawNpcBlocks = npcSection.split(/(?:\n\s*\[(?:파트너\s*KPC\vert{}서브\s*NPC\s*\d+\vert{}인물\s*\d+)\]|\n\s*[*•-]\s*(?:인물\s*\d+|이름:?)|\n\s*인물\s*\d+\s*[:：])/i).filter(b => b.trim());
+      // 7. 사건 단서 및 물증 파싱 (본문 데이터 + 최하단 감식 진상 결합)
+      const cluesSection = extractSection(/\[(?:사건\s*단서\s*(?:및\s*물증)?\vert{}단서\s*목록\vert{}단서)(?:\s*\([^)]+\))?\]/i);
+      const rawClueBlocks = ("\n" + cluesSection)
+        .split(/\n\s*[-*•]?\s*(?:단서\s*\d+\s*(?:명칭)?\s*[:：]|명칭\s*[:：])/i)
+        .filter(b => b.trim());
 
-        if (rawNpcBlocks.length > 0) {
-          const parsedNpcs = rawNpcBlocks.map((block, idx) => {
-            const name = block.match(/(?:이름\s*[:：]?\s*|^)([^\n\r/]+)/i)?.[1]?.replace(/^[*•-\s]+/, "").trim() || `인물 ${idx + 1}`;
-            
-            const age = block.match(/나이\s*[:：]\s*([^\n\r]+)/i)?.[1]?.trim();
-            const gender = block.match(/성별\s*[:：]\s*([^\n\r]+)/i)?.[1]?.trim();
-            const ageGender = block.match(/(?:나이\/성별|나이성별|성별나이)\s*[:：]\s*([^\n\r]+)/i)?.[1]?.trim() || 
-                             (age && gender ? `${age} / ${gender}` : age || gender || "20대 여성");
+      if (rawClueBlocks.length > 0) {
+        const parsedClues = rawClueBlocks.map((block, idx) => {
+          const lines = block.split(/\n/);
+          const name = lines[0].replace(/^[*•-\s]+/, "").trim() || `단서 ${idx + 1}`;
+          const overview = block.match(/(?:발견\s*위치\s*및\s*겉모습|위치\/개요|위치|개요)\s*[:：]?\s*([\s\S]*?)(?=\n\s*(?:감식|모순|진상|비밀|$))/i)?.[1]?.trim() || "";
 
-            const job = block.match(/(?:직업\/역할|직업)\s*[:：]\s*([^\n\r]+)/i)?.[1]?.trim() || "신분 미상";
-            
-            const behavior = block.match(/(?:외모\s*및\s*성격|인물\s*특징\s*및\s*사건\s*행적|성격\/특징|외모\/성격|특징|성격)\s*[:：]?\s*([\s\S]*?)(?=\n\s*(?:상태\s*메시지|상태메시지|좋아하는\s*것|취향|\[|비밀|$))/i)?.[1]?.trim() || "";
-            
-            const statusMsg = block.match(/(?:상태\s*메시지|상태메시지)\s*[:：]?\s*["'“]?([^"'”\n\r]+)["'”]?/i)?.[1]?.trim() || "";
-            
-            // 비밀 추출 (본문 내부 또는 최하단 기밀 구역에서 이름 매칭)
-            let secret = block.match(/(?:\[이\s*인물의\s*비밀\]|숨겨진\s*비밀|비밀)\s*[:：]?\s*([\s\S]*?)(?=\n\s*[*•-]|$)/i)?.[1]?.trim() || "";
-            if (!secret) {
-              const globalSecret = text.match(new RegExp(`(?:${name}[^\\n]*비밀|인물\\s*${idx + 1}[^\\n]*비밀)\\s*[:：]?\\s*([^\\n\\r]+)`, 'i'));
-              if (globalSecret) secret = globalSecret[1].trim();
-            }
+          // 최하단 clueSecretMap에서 매칭 (단서번호 또는 이름)
+          const matchedClueSecret = clueSecretMap[name] || 
+            clueSecretMap[`단서${idx + 1}`] || 
+            Object.entries(clueSecretMap).find(([k]) => k.includes(`단서${idx + 1}`) || k.includes(name))?.[1] || "";
 
-            let fullBehavior = behavior;
-            if (statusMsg) fullBehavior += `\n상태메시지 : "${statusMsg}"`;
+          return {
+            id: Date.now() + idx + 1000,
+            name,
+            overview,
+            contradiction: "",
+            secret: matchedClueSecret,
+            showSecret: false
+          };
+        });
+
+        setEvidenceList(parsedClues);
+      }
+
+      // 8. 이벤트 CG 갤러리 파싱
+      const cgSection = extractSection(/\[(?:이벤트\s*CG\s*갤러리\vert{}CG\s*갤러리\vert{}이벤트\s*CG)\]/i);
+      if (cgSection) {
+        const rawCgBlocks = ("\n" + cgSection)
+          .split(/\n\s*[-*•]?\s*(?:CG\s*\d+\s*(?:제목)?\s*[:：]|제목\s*[:：])/i)
+          .filter(b => b.trim());
+
+        if (rawCgBlocks.length > 0) {
+          const parsedCgs = rawCgBlocks.map((block, idx) => {
+            const lines = block.split(/\n/);
+            const title = lines[0].replace(/^[*•-\s]+/, "").trim() || `이벤트 CG ${idx + 1}`;
+            const condition = block.match(/(?:해금\s*조건|조건)\s*[:：]?\s*([^\n\r]+)/i)?.[1]?.trim() || "";
+            const dialogue = block.match(/(?:상황\s*및\s*대사|대사|상황)\s*[:：]?\s*([\s\S]*?)$/i)?.[1]?.trim() || "";
 
             return {
-              id: Date.now() + idx,
-              name,
-              ageGender,
-              job,
-              behavior: fullBehavior,
-              secret,
-              portraitUrl: "",
-              showSecret: false
+              id: Date.now() + idx + 2000,
+              title,
+              condition,
+              dialogue,
+              imageUrl: "",
+              showDetails: false
             };
           });
-
-          setSuspects(parsedNpcs);
-          setSelectedSuspectId(parsedNpcs[0]?.id || 1);
+          setCgList(parsedCgs);
         }
       }
 
-      // ── [5. 사건 단서 및 핸드아웃 파싱] ──
-      const clueSection = text.match(/(?:###\s*3\.\s*조사\s*구역\s*및\s*단서\s*핸드아웃|\[(?:사건\s*단서\s*(?:및\s*물증)?\vert{}단서\s*목록\vert{}단서)\])([\s\S]*?)(?=\n\s*(?:###|\[|===|$))/i)?.[1] || "";
-      if (clueSection) {
-        const rawClueBlocks = clueSection.split(/(?:\n\s*-\s*\[(?:조사\s*대상명\vert{}단서명)\s*\d+\]|\n\s*[*•-]\s*단서|\n\s*-\s*명칭:|\n\s*단서\s*\d+\s*[:：])/i).filter(b => b.trim());
-
-        if (rawClueBlocks.length > 0) {
-          const parsedClues = rawClueBlocks.map((block, idx) => {
-            const name = block.match(/(?:명칭\s*[:：]?\s*|^)([^\n\r/]+)/i)?.[1]?.replace(/^[*•-\s]+/, "").trim() || `단서 ${idx + 1}`;
-            const overview = block.match(/(?:발견\s*위치\s*및\s*겉모습|위치\/개요|개요)\s*[:：]?\s*([\s\S]*?)(?=\n\s*(?:감식\s*진상|모순|진상|비밀)|$)/i)?.[1]?.trim() || "";
-            
-            let secret = block.match(/(?:감식\s*진상\s*\/\s*모순|모순\/진상|진상|비밀)\s*[:：]?\s*([\s\S]*?)(?=\n\s*[*•-]|$)/i)?.[1]?.trim() || "";
-            if (!secret) {
-              const globalClue = text.match(new RegExp(`(?:${name}[^\\n]*진상|단서\\s*${idx + 1}[^\\n]*진상)\\s*[:：]?\\s*([^\\n\\r]+)`, 'i'));
-              if (globalClue) secret = globalClue[1].trim();
-            }
+      // 9. 공략 분기점 및 루트 파싱
+      const routeSection = extractSection(/\[(?:공략\s*분기점\s*및\s*루트\vert{}공략\s*분기점\vert{}분기점\vert{}루트)\]/i);
+      if (routeSection) {
+        const routeLines = routeSection.split(/\n\s*[-*•]\s*/).filter(b => b.trim());
+        if (routeLines.length > 0) {
+          const parsedRoutes = routeLines.map((line, idx) => {
+            const parts = line.split(/\s*\/\s*/);
+            const routeName = parts[0]?.replace(/^분기\s*\d+\s*[:：]?\s*/i, "").trim() || `선택지 ${idx + 1}`;
+            const target = parts[1]?.replace(/^대상\s*[:：]?\s*/i, "").trim() || "";
+            const condition = parts[2]?.replace(/^조건\s*[:：]?\s*/i, "").trim() || "";
 
             return {
-              id: Date.now() + idx + 1000,
-              name,
-              overview,
-              contradiction: "",
-              secret,
-              showSecret: false
+              id: Date.now() + idx + 3000,
+              routeName,
+              targetId: target,
+              affectionChange: condition,
+              requiredCG: ""
             };
           });
-          setEvidenceList(parsedClues);
+          setRouteList(parsedRoutes);
         }
       }
-
-      // ── [6. 진범, 트릭, 진상 (최하단 기밀 구역 지원)] ──
-      const culprit = getVal(/(?:\[(?:진범\s*\/\s*흑막\s*이름\vert{}진범)\]|진범\s*[:：])\s*([^\n\r]+)/i);
-      if (culprit) setCulpritName(culprit);
-
-      const trick = getVal(/(?:\[(?:사용된\s*트릭\vert{}트릭)\]|트릭\s*[:：])\s*([^\n\r]+)/i);
-      if (trick) setTrickDetail(trick);
-
-      const truth = getVal(/(?:\[(?:AI\s*디렉터\s*전용\s*비공개\s*진상\vert{}키퍼\s*전용\s*기밀\/진상\vert{}진상)\]|진상\s*[:：])\s*([\s\S]*?)(?=\n\s*\[|\n\s*={3,}|$)/i);
-      if (truth) setHiddenTruth(truth);
 
       setShowPasteModal(false);
       setPastedText("");
       triggerToast("파싱 완료", "AI가 사건 서류철 배치를 완료했습니다.", "✨");
     } catch (err) {
-      console.error(err);
+      console.error("파싱 오류:", err);
       triggerToast("파싱 실패", "양식을 분석하지 못했습니다.", "⚠️");
     }
   };
