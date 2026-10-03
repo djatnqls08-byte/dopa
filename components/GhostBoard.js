@@ -159,7 +159,7 @@ export default function GhostBoard({
             </div>
             <div>
               <div style={{ display: "flex", alignItems: "center", gap: "8px", color: "#ea580c", fontWeight: "900", fontSize: isMobile ? "1.08rem" : "1.25rem", letterSpacing: "-0.3px" }}>
-                괴이 조사록 (OCCULT DOSSIER)
+                괴이 조사록
               </div>
               <div style={{ fontSize: isMobile ? "0.76rem" : "0.84rem", color: theme?.textMuted || "#a8a29e", marginTop: "2px", fontWeight: "600" }}>
                 사건: 《{activeSession.title}》 · 확보 단서 {clues.length}건 · 생존 인원 {npcs.length}명
