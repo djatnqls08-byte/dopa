@@ -1015,55 +1015,182 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
         }));
         setSuspects(generatedSuspects);
       }
+  // 🌟 [초강력 하이브리드 파서] 태그형 텍스트는 0초 로컬 파싱, 비정형 글은 AI 백엔드로 자동 처리!
+  const handleApplyPastedScenario = async () => {
+    if (!pastedText.trim()) return;
 
-      // 3. 단서(Handouts) 리스트 자동 생성
+    // ── 1. 태그형 텍스트 로컬 초고속 파싱 (구글 시트급 정확도) ──
+    const hasTags = /\[시나리오\s*제목\]|\[진범\]|\[용의자|\[단서|\[룰/i.test(pastedText);
+
+    if (hasTags) {
+      try {
+        const text = pastedText;
+        const getTagVal = (regex) => {
+          const m = text.match(regex);
+          return m ? m[1].trim() : "";
+        };
+
+        // 룰 모드 감지 및 자동 전환
+        const modeRaw = getTagVal(/\[룰\s*모드?\]\s*[:：]?\s*([^\n\r]+)/i);
+        if (/연애|로맨스/i.test(modeRaw)) setSelectedMode("연애");
+        else if (/괴담|호러/i.test(modeRaw)) setSelectedMode("괴담");
+        else if (/추리|수사/i.test(modeRaw)) setSelectedMode("추리");
+
+        // 태그 감지
+        const detectedTags = getTagVal(/\[장르\s*태그?\]\s*[:：]?\s*([^\n\r]+)/i) || 
+                             (text.match(/(?:#[^\s#]+(?:\s+|$))+/)?.[0] || "").trim();
+        if (detectedTags) setPlayPreference(detectedTags);
+
+        // 기본 정보
+        const title = getTagVal(/\[시나리오\s*제목\]\s*[:：]?\s*([^\n\r]+)/i);
+        if (title) setScenarioTitle(title);
+
+        const synopsis = getTagVal(/\[공개\s*시놉시스\]\s*[:：]?\s*([\s\S]*?)(?=\n\s*\[|$)/i);
+        if (synopsis) setPublicSynopsis(synopsis);
+
+        const opening = getTagVal(/\[(?:초기\s*배경\/)?서막\]\s*[:：]?\s*([\s\S]*?)(?=\n\s*\[|$)/i);
+        if (opening) setOpeningScene(opening);
+
+        const victim = getTagVal(/\[(?:사건\s*목표\s*\/\s*피해자\vert{}피해자\vert{}공략\s*대상\vert{}서사\s*목표)\]\s*[:：]?\s*([^\n\r]+)/i);
+        if (victim) setVictimName(victim);
+
+        // 진범, 트릭, 진상 (최하단 기밀 구역 지원)
+        const culprit = getTagVal(/\[(?:진범\s*\/\s*흑막\s*이름\vert{}진범)\]\s*[:：]?\s*([^\n\r]+)/i);
+        if (culprit) setCulpritName(culprit);
+
+        const trick = getTagVal(/\[(?:사용된\s*트릭\vert{}트릭)\]\s*[:：]?\s*([^\n\r]+)/i);
+        if (trick) setTrickDetail(trick);
+
+        const truth = getTagVal(/\[(?:AI\s*디렉터\s*전용\s*비공개\s*진상\vert{}키퍼\s*전용\s*기밀\/진상\vert{}진상)\]\s*[:：]?\s*([\s\S]*?)(?=\n\s*\[|\n\s*={3,}|$)/i);
+        if (truth) setHiddenTruth(truth);
+
+        // 2. 용의자 / 등장인물 파싱
+        const suspectSection = text.match(/\[(?:용의자\s*수사망\vert{}용의자\s*명단\vert{}등장인물\s*명단)\]\s*([\s\S]*?)(?=\n\s*\[|\n\s*={3,}|$)/i)?.[1] || "";
+        const rawSuspectBlocks = suspectSection.split(/(?:\n\s*[*•-]\s*인물|\n\s*-\s*이름:|\n\s*인물\d+)/i).filter(b => b.trim());
+
+        if (rawSuspectBlocks.length > 0) {
+          const parsedSuspects = rawSuspectBlocks.map((block, idx) => {
+            const name = block.match(/(?:이름\s*[:：]?\s*|^)([^\n\r/]+)/i)?.[1]?.replace(/^[*•-\s]+/, "").trim() || `인물 ${idx + 1}`;
+            const ageGender = block.match(/(?:나이\/성별|나이성별|성별나이)\s*[:：]?\s*([^\n\r]+)/i)?.[1]?.trim() || "";
+            const job = block.match(/(?:직업\/역할|직업)\s*[:：]?\s*([^\n\r]+)/i)?.[1]?.trim() || "";
+            const behavior = block.match(/(?:인물\s*특징\s*및\s*사건\s*행적|외모\/성격|특징|성격)\s*[:：]?\s*([\s\S]*?)(?=\n\s*(?:상태메시지|숨겨진\s*비밀|취향|비밀)|$)/i)?.[1]?.trim() || "";
+            const statusMsg = block.match(/상태메시지\s*[:：]?\s*["'“]?([^"'”\n\r]+)["'”]?/i)?.[1]?.trim() || "";
+            
+            // 본문과 최하단 기밀 구역 양쪽 모두에서 비밀 검색
+            let secret = block.match(/(?:숨겨진\s*비밀|비밀)\s*[:：]?\s*([\s\S]*?)(?=\n\s*[*•-]|$)/i)?.[1]?.trim() || "";
+            if (!secret) {
+              const globalSecretMatch = text.match(new RegExp(`(?:${name}[^\\n]*비밀|인물${idx + 1}[^\\n]*비밀)\\s*[:：]?\\s*([^\\n\\r]+)`, 'i'));
+              if (globalSecretMatch) secret = globalSecretMatch[1].trim();
+            }
+
+            let fullBehavior = behavior;
+            if (statusMsg) fullBehavior += `\n상태메시지 : "${statusMsg}"`;
+
+            return {
+              id: Date.now() + idx,
+              name,
+              ageGender,
+              job,
+              behavior: fullBehavior,
+              secret,
+              portraitUrl: "",
+              showSecret: false
+            };
+          });
+          setSuspects(parsedSuspects);
+          setSelectedSuspectId(parsedSuspects[0]?.id || 1);
+        }
+
+        // 3. 단서 및 물증 파싱
+        const clueSection = text.match(/\[(?:사건\s*단서\s*(?:및\s*물증)?\vert{}단서\s*목록)\]\s*([\s\S]*?)(?=\n\s*\[|\n\s*={3,}|$)/i)?.[1] || "";
+        const rawClueBlocks = clueSection.split(/(?:\n\s*[*•-]\s*단서|\n\s*-\s*명칭:|\n\s*단서\d+)/i).filter(b => b.trim());
+
+        if (rawClueBlocks.length > 0) {
+          const parsedClues = rawClueBlocks.map((block, idx) => {
+            const name = block.match(/(?:명칭\s*[:：]?\s*|^)([^\n\r/]+)/i)?.[1]?.replace(/^[*•-\s]+/, "").trim() || `단서 ${idx + 1}`;
+            const overview = block.match(/(?:발견\s*위치\s*및\s*겉모습|위치\/개요|개요)\s*[:：]?\s*([\s\S]*?)(?=\n\s*(?:감식\s*진상|모순|진상)|$)/i)?.[1]?.trim() || "";
+            
+            let secret = block.match(/(?:감식\s*진상\s*\/\s*모순|모순\/진상|진상)\s*[:：]?\s*([\s\S]*?)(?=\n\s*[*•-]|$)/i)?.[1]?.trim() || "";
+            if (!secret) {
+              const globalClueMatch = text.match(new RegExp(`(?:${name}[^\\n]*진상|단서${idx + 1}[^\\n]*진상)\\s*[:：]?\\s*([^\\n\\r]+)`, 'i'));
+              if (globalClueMatch) secret = globalClueMatch[1].trim();
+            }
+
+            return {
+              id: Date.now() + idx + 1000,
+              name,
+              overview,
+              contradiction: "",
+              secret,
+              showSecret: false
+            };
+          });
+          setEvidenceList(parsedClues);
+        }
+
+        setShowPasteModal(false);
+        setPastedText("");
+        triggerToast("배치 완료", "시나리오의 모든 항목이 완벽하게 분류되었습니다!", "✨");
+        return;
+      } catch (err) {
+        console.error("로컬 파싱 실패, AI 백엔드로 전환:", err);
+      }
+    }
+
+    // ── 2. 비정형 자유 글인 경우 기존 AI 백엔드 폴백 ──
+    triggerToast("파싱 중...", "AI가 서류를 분석하고 있습니다. 잠시만 기다려주세요.", "⏳");
+
+    try {
+      const response = await fetch("/api/parse-scenario", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          rawText: pastedText,
+          ruleMode: selectedMode,
+          pcName: pcName || "도파미너",
+          kpcName: "파트너"
+        })
+      });
+
+      if (!response.ok) throw new Error("서버 에러");
+      const data = await response.json();
+
+      if (data.scenarioTitle) setScenarioTitle(data.scenarioTitle);
+      if (data.publicSynopsis) setPublicSynopsis(data.publicSynopsis);
+      if (data.openingScene) setOpeningScene(data.openingScene);
+      if (data.hiddenTruth) setHiddenTruth(data.hiddenTruth);
+      if (data.culpritName) setCulpritName(data.culpritName);
+      if (data.trickDetail) setTrickDetail(data.trickDetail);
+
+      if (data.npcs && data.npcs.length > 0) {
+        setSuspects(data.npcs.map((npc, idx) => ({
+          id: Date.now() + idx,
+          name: npc.name || "",
+          ageGender: npc.ageGender || "",
+          job: npc.job || "",
+          behavior: npc.detail || "",
+          secret: npc.secret || "",
+          portraitUrl: "",
+          showSecret: false
+        })));
+      }
+
       if (data.handouts && data.handouts.length > 0) {
-        const newEvidence = data.handouts.map((h, idx) => ({
+        setEvidenceList(data.handouts.map((h, idx) => ({
           id: Date.now() + idx + 1000,
           name: h.title || "",
           overview: h.overview || "",
           secret: h.secret || "",
-          contradiction: "",
+          contradiction: h.contradiction || "",
           showSecret: false
-        }));
-        setEvidenceList(newEvidence);
-      }
-
-      // 🌟 4. [연애 모드 추가] 이벤트 CG 갤러리 맵핑
-      if (data.cgList && data.cgList.length > 0) {
-        const newCgs = data.cgList.map((cg, idx) => ({
-          id: Date.now() + idx + 2000,
-          title: cg.title || "",
-          condition: cg.condition || "",
-          imageUrl: "",
-          showDetails: false
-        }));
-        setCgList(newCgs);
-      }
-
-      // 🌟 5. [연애 모드 추가] 분기점/루트 맵핑
-      if (data.routeList && data.routeList.length > 0) {
-        const newRoutes = data.routeList.map((rt, idx) => {
-          // AI가 뽑아준 targetName과 일치하는 NPC의 ID를 찾아 연결해줍니다.
-          const matchedNpc = generatedSuspects.find(s => s.name === rt.targetName);
-          return {
-            id: Date.now() + idx + 3000,
-            routeName: rt.routeName || "",
-            targetId: matchedNpc ? matchedNpc.id : "",
-            affectionChange: rt.affectionChange || "+10",
-            requiredCG: ""
-          };
-        });
-        setRouteList(newRoutes);
+        })));
       }
 
       setShowPasteModal(false);
       setPastedText("");
       triggerToast("파싱 완료", "AI가 사건 서류철 배치를 완료했습니다.", "✨");
-
     } catch (error) {
-      console.error(error);
-      triggerToast("파싱 실패", "양식을 분석하지 못했습니다. 백엔드 연결을 확인해 주세요.", "⚠️");
+      triggerToast("파싱 실패", "양식을 분석하지 못했습니다.", "⚠️");
     }
   };
 
