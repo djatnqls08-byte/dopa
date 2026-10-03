@@ -1058,15 +1058,37 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
       if (truthVal) setHiddenTruth(truthVal);
 
       // ── [6. 도파미너 프로필 & 비밀] ──
-      const pcSecretEntry = Object.entries(secretMap).find(([k]) => /주인공|도파미너/i.test(k));
-      if (pcSecretEntry) {
-        setPcSecret(pcSecretEntry[1]);
-        setShowPcSecret(true);
+            // ── [6. 도파미너 프로필 & 비밀] ──
+      const pcRaw = getSec(/내\s*프로필|도파미너/i);
+
+      if (pcRaw) {
+        // 텍스트에 도파미너 프로필이 적혀 있는 경우 ➔ 텍스트 내용으로 쏙 매핑
+        const pcNameVal = pcRaw.match(/이름\s*[:：]\s*([^\n\r]+)/i)?.[1]?.trim();
+        if (pcNameVal) setPcName(pcNameVal);
+
+        const pcJobVal = pcRaw.match(/직업\s*[:：]\s*([^\n\r]+)/i)?.[1]?.trim();
+        if (pcJobVal) setPcJob(pcJobVal);
+
+        const pcAgeGenderVal = pcRaw.match(/(?:나이\/성별|나이성별|성별나이)\s*[:：]\s*([^\n\r]+)/i)?.[1]?.trim();
+        if (pcAgeGenderVal) setPcAgeGender(pcAgeGenderVal);
+
+        const pcBg = pcRaw.match(/(?:백스토리\s*및\s*성격|배경\s*및\s*특징|성격\/특징|배경)\s*[:：]\s*([\s\S]*?)(?=\n\s*(?:소지품|사명|\[|비밀|$))/i)?.[1]?.trim();
+        if (pcBg) setPcBackground(pcBg);
+
+        const pcSec = pcRaw.match(/(?:\[내\s*캐릭터의\s*숨겨진\s*비밀\]|숨겨진\s*비밀|비밀)\s*[:：]?\s*([\s\S]*?)(?=\n\s*(?:###|\[|$))/i)?.[1]?.trim();
+        if (pcSec) {
+          setPcSecret(pcSec);
+          setShowPcSecret(true);
+        }
+      } else {
+        // 텍스트에 도파미너 항목이 생략된 경우 ➔ 최하단 비밀만 찾고 기본값 설정
+        const pcSecretEntry = Object.entries(secretMap).find(([k]) => /주인공|도파미너/i.test(k));
+        if (pcSecretEntry) {
+          setPcSecret(pcSecretEntry[1]);
+          setShowPcSecret(true);
+        }
+        if (!pcName.trim()) setPcName("도파미너");
       }
-      setPcName("도파미너");
-      setPcJob("제자 / 화가 문하생");
-      setPcAgeGender("24세 / 여성");
-      setPcBackground("스승 백서연의 가장 아끼는 수제자. 스승의 화실에서 함께 기거하며 그림을 배우고 있었다.");
 
       // ── [7. 용의자 수사망 파싱 (3~5명 전원)] ──
       const suspectRaw = getSec(/용의자\s*수사망|용의자\s*명단|등장인물/i);
@@ -1117,7 +1139,7 @@ const [showNoticeModal, setShowNoticeModal] = useState(false);
         const parsedClues = clueBlocks.map((block, idx) => {
           const cLines = block.split("\n");
           const name = cLines[0].replace(/^[\s\-*•]+/, "").trim() || `단서 ${idx + 1}`;
-          const overview = block.match(/(?:발견\s*위치\s*및\s*겉모습|위치\/개요|위치|개요)\s*[:：]?\s*([\s\S]*?)(?=\n\s*(?:감식|모순|진상|비밀|$))/i)?.[1]?.trim() || "";
+          const overview = block.match(/(?:발견\s*위치\s*및\s*겉모습|위치\/개요|위치|개요)\s*[:：]?\s*([^\n\r]+)/i)?.[1]?.trim() || "";
 
           const matchedSecret = clueSecretMap[name] ||
             clueSecretMap[`단서${idx + 1}`] ||
